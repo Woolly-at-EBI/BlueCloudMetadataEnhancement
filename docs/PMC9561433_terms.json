@@ -1,0 +1,1782 @@
+[
+    {
+        "source": "MED",
+        "extId": "36274560",
+        "pmcid": "PMC9561433",
+        "annotations": [
+            {
+                "prefix": " by a new strain of ",
+                "exact": "coronavirus",
+                "postfix": ", known as Severe Ac",
+                "tags": [
+                    {
+                        "name": "coronavirus",
+                        "uri": "http://identifiers.org/taxonomy/693996"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-bf9da2e5b1a3d5fd66f1540b6a6c2a31",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ronavirus, known as ",
+                "exact": "Severe Acute Respiratory Syndrome Coronavirus",
+                "postfix": " 2 (SARS-CoV-2) (Wan",
+                "tags": [
+                    {
+                        "name": "Severe Acute Respiratory Syndrome Coronavirus",
+                        "uri": "http://identifiers.org/taxonomy/227859"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-b4a8137e147baee9a7c5938d22124b67",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "otective equipment (",
+                "exact": "PPE",
+                "postfix": ") and single-use pla",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-389b33dc5a0b390058163104bbf84be1",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "pment (PPE) and single-use plastics (",
+                "exact": "SUP",
+                "postfix": "). ",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-236526805d3ee0accb48679b8f2e9120",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The use of ",
+                "exact": "PPE",
+                "postfix": ", such as disposable gloves, ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-a6d8f53725fbe23b80f0408332f6e6a7",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "At first, ",
+                "exact": "PPE",
+                "postfix": " was explicitly recommended fo",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-e3a71c5199c7ec68425c6125c7975db5",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "tion started to use ",
+                "exact": "PPE",
+                "postfix": " as a protective gea",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-38d0f582d28a94435bc637481598b593",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "Most ",
+                "exact": "PPE",
+                "postfix": " is primarily made of plastic mater",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-89666eebbf96704dcc5b1c2072aca03a",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "uggested the use of ",
+                "exact": "SUP",
+                "postfix": " and packaging to co",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-152972a9a06346ffee9cdced70d8f19b",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "elivery services, and subsequently in ",
+                "exact": "SUP",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-5f0e32a82215edf79ef718e58da345e5",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "aged food, takeaway ",
+                "exact": "coffee",
+                "postfix": " and disposable uten",
+                "tags": [
+                    {
+                        "name": "coffee",
+                        "uri": "http://identifiers.org/taxonomy/13443"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-48a4a093e312559941b9bdd4a9366d36",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ethods, typically a ",
+                "exact": "reverse transcription",
+                "postfix": "-polymerase chain re",
+                "tags": [
+                    {
+                        "name": "reverse transcription",
+                        "uri": "http://identifiers.org/go/GO:0001171"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-b02404eaecb864e1cd6fb38ccb58e9db",
+                "type": "Gene Ontology",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "s, including marine ",
+                "exact": "mammals",
+                "postfix": ", sea turtles, and b",
+                "tags": [
+                    {
+                        "name": "mammals",
+                        "uri": "http://identifiers.org/taxonomy/40674"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3e64467d6b8d1ffdea4ecdf41663256b",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ing marine mammals, ",
+                "exact": "sea turtles",
+                "postfix": ", and birds (Kühn e",
+                "tags": [
+                    {
+                        "name": "sea turtles",
+                        "uri": "http://identifiers.org/taxonomy/8465"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-64191e6a297a8d5f256fa8f7e0ad730e",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "s, sea turtles, and ",
+                "exact": "birds",
+                "postfix": " (Kühn et al., 2015",
+                "tags": [
+                    {
+                        "name": "birds",
+                        "uri": "http://identifiers.org/taxonomy/8782"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-af372ec6f4ca12b56e2e90b9a4c3a2dc",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ühn et al., 2015). ",
+                "exact": "Neto",
+                "postfix": " et al. (2021) recen",
+                "tags": [
+                    {
+                        "name": "Neto",
+                        "uri": "http://identifiers.org/go/GO:0051519"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-f7fa124ad5393ef05cb7fd4d6dcbb254",
+                "type": "Gene Ontology",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "Magellanic penguin (",
+                "exact": "Spheniscus magellanicus",
+                "postfix": ") who had ingested a",
+                "tags": [
+                    {
+                        "name": "Spheniscus magellanicus",
+                        "uri": "http://identifiers.org/taxonomy/37081"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-55f3143a398d656caf86448bec600e8f",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " generated from the ",
+                "exact": "breakdown",
+                "postfix": " of PPE into micropl",
+                "tags": [
+                    {
+                        "name": "breakdown",
+                        "uri": "http://identifiers.org/go/GO:0009056"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-6cab10faaa9b8a8fe0d393566df077bb",
+                "type": "Gene Ontology",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "om the breakdown of ",
+                "exact": "PPE",
+                "postfix": " into microplastic p",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-8bdb766d0c9b3ae204e43fab1c4683e6",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "dous chemicals from ",
+                "exact": "PPE",
+                "postfix": " exposure to UV radi",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ecf8e4681f08cf1372ae4bdc8a48c165",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "al. (2021) reported ",
+                "exact": "red algae",
+                "postfix": " colonization of two",
+                "tags": [
+                    {
+                        "name": "red algae",
+                        "uri": "http://identifiers.org/taxonomy/2763"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-950ade023620e9d14abc877756146c87",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ce masks, therefore ",
+                "exact": "PPE",
+                "postfix": " can act as an artif",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-7babfd14ca8694b0f08cf084a48c708a",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "icial substrate for ",
+                "exact": "algae",
+                "postfix": " and marine inverteb",
+                "tags": [
+                    {
+                        "name": "algae",
+                        "uri": "http://identifiers.org/taxonomy/3041"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-1b4c177a8b2717836c7b92da4d8cc96f",
+                "type": "Organisms",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ng on the buoyancy, ",
+                "exact": "PPE",
+                "postfix": " can become vectors ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-f1922c772c3c181026ea45ba882a26de",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "species (García-Gó",
+                "exact": "mez",
+                "postfix": " et al., 2021), ther",
+                "tags": [
+                    {
+                        "name": "mez",
+                        "uri": "http://purl.uniprot.org/uniprot/P9WK24"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-8750c9cfb6b66dbc477e88de5bfbd7f3",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ly, the disposal of ",
+                "exact": "PPE",
+                "postfix": " in the environment ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-611327b16f51e17e2007b712870c7059",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "tact with discarded ",
+                "exact": "PPE",
+                "postfix": " (Urban and Nakada, ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ae9315a954350c4a0d1db7365677fd8d",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "about the amount of ",
+                "exact": "PPE",
+                "postfix": " used on average in ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-c3dfa3360ae7a12ed1c042fa911b4f3d",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " an overview of the ",
+                "exact": "PPE",
+                "postfix": " pollution caused by",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3ef9cc252939ab35fffd536b1a2fcf66",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "rata et al., 2020), ",
+                "exact": "water",
+                "postfix": " bodies, such as riv",
+                "tags": [
+                    {
+                        "name": "water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-f610400bf0d8abed574aab2d62dde7b5",
+                "type": "Chemicals",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " accepted protocol for ",
+                "exact": "PPE",
+                "postfix": " waste research. ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-cedf2bba315514131ae0792b3deffd29",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "n density values of ",
+                "exact": "PPE",
+                "postfix": " (items/m2, items/10",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-008d7614158a3121055f554dd8f1d4a9",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "c litter other than ",
+                "exact": "PPE",
+                "postfix": " (e.g., wet wipes). ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-535e8d7500ea55b6409f31be48cb3810",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ormation concerning ",
+                "exact": "PPE",
+                "postfix": " pollution in the Me",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-bc72c1c775937201699f791d3ea8b2fb",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ion, and density of ",
+                "exact": "PPE",
+                "postfix": " and COVID-19-relate",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-bf38c91045313a910744114f5f807b0f",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": ", this is the first ",
+                "exact": "PPE",
+                "postfix": " monitoring carried ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-1750b2b6e7feb82d8df30b861aeda823",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ddition, the use of ",
+                "exact": "SUP",
+                "postfix": " increased during th",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-0166464cc9c05dd93275e013e95d4d4a",
+                "type": "Gene_Proteins",
+                "section": "Introduction (http://purl.org/orb/Introduction)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "een the 3rd and 4th ",
+                "exact": "coronavirus",
+                "postfix": " pandemic wave, 59 b",
+                "tags": [
+                    {
+                        "name": "coronavirus",
+                        "uri": "http://identifiers.org/taxonomy/693996"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-c8a0a77011812f52c1222aeb2b678cf8",
+                "type": "Organisms",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "13), appropriately amended to include ",
+                "exact": "PPE",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-4d6633e24b1414e9f8a8a363371b2fcf",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "e temporal trend of ",
+                "exact": "PPE",
+                "postfix": " litter accumulation",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-47d010052ee16f3543cda911660d05a1",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "5 cm, depending on ",
+                "exact": "water",
+                "postfix": " column visibility, ",
+                "tags": [
+                    {
+                        "name": "water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-468cff8da30a5e3f6431034395ab64b4",
+                "type": "Chemicals",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "In particular:1)",
+                "exact": "PPE",
+                "postfix": " litter, represented by ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-929f64188944bfe539d7ce586295e6e2",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": ".2)COVID-19-related litter, including ",
+                "exact": "PPE",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-db293e02568121be77ae8902f2d30519",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "l before COVID-19.3)",
+                "exact": "SUP",
+                "postfix": " takeaway, according",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-21e8c85ac8ec382dedeacac68177f792",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ds, food packaging, ",
+                "exact": "water",
+                "postfix": "/soft drink bottles)",
+                "tags": [
+                    {
+                        "name": "water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ec414d4328c6b1180c2cd27153a9132d",
+                "type": "Chemicals",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " pandemic increased ",
+                "exact": "SUP",
+                "postfix": " litter.4)Takeaway i",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-4c2227f61af931d4f1ec40a80dbf123d",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "r.4)Takeaway items (",
+                "exact": "SUP",
+                "postfix": " and additional non-",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ecc829a9545d748a897c0c8fded16814",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "beverage packaging, ",
+                "exact": "aluminum",
+                "postfix": " soft drink/beer can",
+                "tags": [
+                    {
+                        "name": "aluminum",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_49470"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-c5bca69f89349efebcc67bd70d0695f8",
+                "type": "Chemicals",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " the percentages of ",
+                "exact": "SUP",
+                "postfix": " and takeaway litter",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-035994e32ff7f0ea336aced4221676c6",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The density of ",
+                "exact": "PPE",
+                "postfix": " items on each beach (ite",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-fd37f07138c9040001c0fa45a29f4e35",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "d using the average ",
+                "exact": "PPE",
+                "postfix": " density (items m−",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-02f03f174b79468ec3844e297fbc663a",
+                "type": "Gene_Proteins",
+                "section": "Methods (http://purl.org/orb/Methods)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": " were observed on 37 out of the 59 surve",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-88641a85e785f589aaec8a27caf955af",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The ",
+                "exact": "PPE",
+                "postfix": " items found were disposable or reus",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-77a3913830efe7a578c0286925a72b96",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "st abundant type of ",
+                "exact": "PPE",
+                "postfix": " (86.21 %) on the b",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-16875afdf5bf52b0b70705cd1ff53103",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The mean ",
+                "exact": "PPE",
+                "postfix": " density was 3.1 × 10−3 it",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-427bbcfc0a602c9e9f36ac9ff6213a82",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "−2), and the mean ",
+                "exact": "PPE",
+                "postfix": " density per 100 m ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d9ee4e0aceaed0515bc37b606b7cdb32",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "SUP",
+                "postfix": " accounted for 17.2 % of the total and ",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-5a9560c0f7e5f8f29eb250cf02edcd9e",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "poral variations of ",
+                "exact": "PPE",
+                "postfix": " litter, three of th",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3d826a92dbbd61441baacf5a67e2cbd1",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "owed an increase of ",
+                "exact": "PPE",
+                "postfix": " densities in spring",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-30667e22fcf53c37d4a6ac6aca19f36f",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "Similarly, the ",
+                "exact": "PPE",
+                "postfix": "/total litter items perce",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ca3a597f182803c563219ebb4b5f0811",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "mporal variation of ",
+                "exact": "PPE",
+                "postfix": " density (left) and ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-558726705e06d1e82da7957bbd0e4516",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " density (left) and ",
+                "exact": "PPE",
+                "postfix": " percentages over th",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-97e3ec29e19f48e6aab4fa1cf2cce403",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ial distribution of ",
+                "exact": "PPE",
+                "postfix": " litter, highest den",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-957de4545250015f82e376fabb17dc5e",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ial distribution of ",
+                "exact": "PPE",
+                "postfix": " densities on Greek ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3503755feecaef39087a0ae341ee1b55",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " the most abundant type of ",
+                "exact": "PPE",
+                "postfix": " (83.95 %). ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-95b5661d5b7609cf91528d61a5928b42",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The mean ",
+                "exact": "PPE",
+                "postfix": " density was 2.5 × 10−3 it",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3a3b22ddde3ad1c770278d6039188905",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "In addition to ",
+                "exact": "PPE",
+                "postfix": ", 30 wet wipes were count",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d6c134ca632b911bd276e63059c30f0a",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The occurrence of ",
+                "exact": "PPE",
+                "postfix": " seems to increase ove",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-70261c91636d7471d0e860a1397fd995",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "%.Fig. 4Examples of ",
+                "exact": "PPE",
+                "postfix": " found in underwater",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-45bacc2bcc907f1918787e84fd5174f2",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ial distribution of ",
+                "exact": "PPE",
+                "postfix": " litter densities in",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-bd7bfcfb66935ce54e5697a06405e8f9",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ial distribution of ",
+                "exact": "PPE",
+                "postfix": " densities in underw",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d113dcfe56e95665127e1b4eed5653aa",
+                "type": "Gene_Proteins",
+                "section": "Results (http://purl.org/orb/Results)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": ", especially face masks, are being used ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-cabde9c208ba30f50a8de56923487fdf",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "quantities to limit the spread of the ",
+                "exact": "coronavirus",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "coronavirus",
+                        "uri": "http://identifiers.org/taxonomy/693996"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-3e1c60db4a37a28c9fa6443432db2fcc",
+                "type": "Organisms",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The presence of ",
+                "exact": "PPE",
+                "postfix": " waste (0.29 %) on Gree",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d8cf9ffc44468a1800700f8e365812ff",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": " has been used as an indicator of plasti",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-0799357285506ae027b76cde11f47ea6",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "an and the range of ",
+                "exact": "PPE",
+                "postfix": " densities on beache",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-4aadbb61496ee47328f3366a56689db2",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The mean ",
+                "exact": "PPE",
+                "postfix": " density reported on Greek beac",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-56019be294e8250ad5fd239b8c8eaadd",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "2021) reported that ",
+                "exact": "PPE",
+                "postfix": " density ranged betw",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-46e6c9a135083c49f9c08fa237e35a64",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "On Kenyan beaches, ",
+                "exact": "PPE",
+                "postfix": " densities reached up",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-86567a57613e21e961818bea15d1c5b5",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "Face masks dominate ",
+                "exact": "PPE",
+                "postfix": " (86.2 %) in Greece",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d6bb1e297d254f7e262dd642f60f31bd",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "e the most abundant ",
+                "exact": "PPE",
+                "postfix": " category even in tw",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d2703511617e4972747d80c7670baaf9",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "t al., 2021; Mghili et al., 2022) and ",
+                "exact": "sea turtles",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "sea turtles",
+                        "uri": "http://identifiers.org/taxonomy/8465"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-2b4eb8b5d2d140c20fcd37ff60130db5",
+                "type": "Organisms",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "the ability of wild ",
+                "exact": "birds",
+                "postfix": " to be zoonotic spre",
+                "tags": [
+                    {
+                        "name": "birds",
+                        "uri": "http://identifiers.org/taxonomy/8782"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-1fba0a5106c04d868f31c07d7987f309",
+                "type": "Organisms",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "conduits of the new ",
+                "exact": "coronavirus",
+                "postfix": " has been suggested ",
+                "tags": [
+                    {
+                        "name": "coronavirus",
+                        "uri": "http://identifiers.org/taxonomy/693996"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-c0c5ed0a22faaf0a3c81109de0ee203b",
+                "type": "Organisms",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "80 %) of the total ",
+                "exact": "PPE",
+                "postfix": " and only 0.04 % of",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-35d6925013fa1e26d9eb9e510a2745fc",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "n-ups.Table 2Items% ",
+                "exact": "PPE",
+                "postfix": "% COVID-19-related% ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-5cdca8b1b03d9de7c4c36012cb7c65b4",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "n-ups.Table 3Items% ",
+                "exact": "SUP",
+                "postfix": "% Takeaway% TotalStr",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-e77319f822a81439596772c31c465ee4",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "3.2 %11.8 %2.27 %",
+                "exact": "Water",
+                "postfix": "/soft drink bottles7",
+                "tags": [
+                    {
+                        "name": "Water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-529e6ca0d4b446f0308092dfbe026bae",
+                "type": "Chemicals",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "�10−1Items% ",
+                "exact": "PPE",
+                "postfix": "% COVID-19-related% ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-cb579a92bbbc16f2848c4a98760d14c7",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "rts and evidence of ",
+                "exact": "PPE",
+                "postfix": " pollution in marine",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-0d1cd48c962e275553be86c47e4f5e21",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "d articles focus on ",
+                "exact": "PPE",
+                "postfix": " as a pandemic-drive",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-24235047e2181f6f58ab49c230a2fbc8",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ot always access to ",
+                "exact": "water",
+                "postfix": ", people use wet wip",
+                "tags": [
+                    {
+                        "name": "water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-0b8ea143168adab752f214b86722e84a",
+                "type": "Chemicals",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "synthetic fibers of ",
+                "exact": "polyester",
+                "postfix": ", polypropylene and ",
+                "tags": [
+                    {
+                        "name": "polyester",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_60160"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-4a6b830ae3ed91fb872e473517c2429f",
+                "type": "Chemicals",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ibers of polyester, ",
+                "exact": "polypropylene",
+                "postfix": " and nylon (Shruti e",
+                "tags": [
+                    {
+                        "name": "polypropylene",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_53550"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-48e245ccafc2c3bc7cf9b1a38a8016d2",
+                "type": "Chemicals",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "gher densities than ",
+                "exact": "PPE",
+                "postfix": ", while also showing",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-7070152fb2634dfeeb2e824441e98a25",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "wo types of litter, ",
+                "exact": "PPE",
+                "postfix": " (face masks, gloves",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-ae96556532f63bd373338853abd1638b",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "examine whether the ",
+                "exact": "SUP",
+                "postfix": " and takeaway litter",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-0e6c9b0f681d861abb6051ef175128a0",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ntly no increase in the percentage of ",
+                "exact": "SUP",
+                "postfix": ". ",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-6db668506b8933dd73d9769106c30280",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " was estimated that ",
+                "exact": "SUP",
+                "postfix": " accounted for 17.4�",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-84d6621b99d0a793c16c03a911ad5266",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": " it was estimated that ",
+                "exact": "SUP",
+                "postfix": " occupy 17.2 %. ",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d05e24550fa17d3346c6871320d36ba1",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "poral variations of ",
+                "exact": "PPE",
+                "postfix": " were beyond the sco",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-6ebaad42dbbe9394291c5898c10ad203",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ss, the increase of ",
+                "exact": "PPE",
+                "postfix": " abundance over time",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-5cd62219c36f07ae69590d4fa74f4fae",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "In addition, higher ",
+                "exact": "PPE",
+                "postfix": " densities were foun",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-7cf52b0c4294f1b01d676d5c3ad0bbc1",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ific litterbins for ",
+                "exact": "PPE",
+                "postfix": " or signposts to inf",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-7f097586ce2b2e03ff3e45f1bc855505",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "High ",
+                "exact": "PPE",
+                "postfix": " densities on recreational beaches ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-30030162275a3bcae7f938527c3814d5",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ith the increase of ",
+                "exact": "PPE",
+                "postfix": " litter densities in",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-25df60e9977228f3660812d16f8ab4d2",
+                "type": "Gene_Proteins",
+                "section": "Discussion (http://purl.org/orb/Discussion)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": " (face masks, gloves) and wet wipes are ",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-4d43f00a47a3d7829046cacddabba794",
+                "type": "Gene_Proteins",
+                "section": "Conclusion (http://purl.obolibrary.org/obo/IAO_0000615)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": " represented 0.29 % of all litter items",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-fdb15a9cc79402eba01963e5b55e861b",
+                "type": "Gene_Proteins",
+                "section": "Conclusion (http://purl.obolibrary.org/obo/IAO_0000615)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "No increase in ",
+                "exact": "SUP",
+                "postfix": " and takeaway items was o",
+                "tags": [
+                    {
+                        "name": "SUP",
+                        "uri": "http://purl.uniprot.org/uniprot/P60878"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-d40ae29467d1d37b675c93ce4f2ba077",
+                "type": "Gene_Proteins",
+                "section": "Conclusion (http://purl.obolibrary.org/obo/IAO_0000615)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "ormation concerning ",
+                "exact": "PPE",
+                "postfix": " pollution in the Me",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-bc72c1c775937201699f791d3ea8b2fb",
+                "type": "Gene_Proteins",
+                "section": "Conclusion (http://purl.obolibrary.org/obo/IAO_0000615)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "- review & editing. ",
+                "exact": "Phoebe",
+                "postfix": " Koundouri: Sampling",
+                "tags": [
+                    {
+                        "name": "Phoebe",
+                        "uri": "http://identifiers.org/taxonomy/128686"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-dcb73104d1ed70e85c22a11072886b9f",
+                "type": "Organisms",
+                "section": "Article (http://semanticscience.org/resource/SIO_001029)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "� review & editing. ",
+                "exact": "Elias",
+                "postfix": " Fakiris: Data curat",
+                "tags": [
+                    {
+                        "name": "Elias",
+                        "uri": "http://identifiers.org/taxonomy/1289997"
+                    }
+                ],
+                "id": "http://europepmc.org/article/PMC/PMC9561433#europepmc-82a284076689267ffc82613da80dca4c",
+                "type": "Organisms",
+                "section": "Article (http://semanticscience.org/resource/SIO_001029)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "es and nearshore shallow ",
+                "exact": "water",
+                "postfix": " environments. ",
+                "tags": [
+                    {
+                        "name": "water",
+                        "uri": "http://purl.obolibrary.org/obo/CHEBI_15377"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-09acce1538ec436bf8897027f7b105c6",
+                "type": "Chemicals",
+                "section": "Title (http://purl.org/dc/elements/1.1/title)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "was categorized as: ",
+                "exact": "PPE",
+                "postfix": " (face masks and glo",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-c86c9e57e288626e28c86df5a5b53ba8",
+                "type": "Gene_Proteins",
+                "section": "Abstract (http://purl.org/dc/terms/abstract)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "",
+                "exact": "PPE",
+                "postfix": ", dominated by face masks (86.21 %), ac",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-b89e5ed7c950d30dce1e4eb2d165ca6a",
+                "type": "Gene_Proteins",
+                "section": "Abstract (http://purl.org/dc/terms/abstract)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The average ",
+                "exact": "PPE",
+                "postfix": " density was 3.1 × 10<sup",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-b5cb451c0ebbfc543a40fc71593ade72",
+                "type": "Gene_Proteins",
+                "section": "Abstract (http://purl.org/dc/terms/abstract)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "Benthic ",
+                "exact": "PPE",
+                "postfix": ", dominated by gloves (83.95 %)",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-419f6f17ac852ffc9ed552c39d7b97be",
+                "type": "Gene_Proteins",
+                "section": "Abstract (http://purl.org/dc/terms/abstract)",
+                "provider": "Europe PMC"
+            },
+            {
+                "prefix": "The mean ",
+                "exact": "PPE",
+                "postfix": " density was 2.5 × 10<sup>-3",
+                "tags": [
+                    {
+                        "name": "PPE",
+                        "uri": "http://purl.uniprot.org/uniprot/Q9SE42"
+                    }
+                ],
+                "id": "http://europepmc.org/article/MED/36274560#europepmc-abc971ebe811585b33caaf87f8d023cc",
+                "type": "Gene_Proteins",
+                "section": "Abstract (http://purl.org/dc/terms/abstract)",
+                "provider": "Europe PMC"
+            }
+        ],
+        "fullTextIdList": [
+            "PMC9561433"
+        ]
+    }
+]

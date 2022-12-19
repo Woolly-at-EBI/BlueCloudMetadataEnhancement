@@ -1,0 +1,21 @@
+Hi Peter,
+Here's some information on BlueCloud and the Context service. I suggest we start discussions on this in the environmental fortnightly and organise a meeting with Stephane.
+Best wishes,
+Josie
+ClearingHouse:
+API with swagger interface: https://www.ebi.ac.uk/ena/clearinghouse/api/
+endpoint to retrieve documentation: https://www.ebi.ac.uk/ena/clearinghouse/api/doc
+BlueCloud project website: https://blue-cloud.org/
+Description of Context service from Stephane:
+The objective of the Context service is (1) to provide a consistent and more extensive set of metadata describing the provenance and environmental context of samples, (2) to ensure that metadata are documented using controlled vocabularies and 
+formats, and (3) to provide updated and augmented metadata over time.
+BioSamples and other data submission services at EBI are required to ensure the integrity of metadata submitted by users. The interoperability and usability of data derived from samples registered at BioSamples is therefore limited by the extent to 
+which communities use checklists when submitting metadata, often resulting in heterogeneous metadata fields and formats. Addressing this issue, Context would curate and generate consistent metadata that greatly improve the interoperability and 
+usability of data derived from samples.
+Context would curate metadata from BioSamples and generate a consistent set of minimum provenance metadata, including taxonomy and georeferences such as date/time, latitude, longitude and elevation. This will initially require intensive curation in 
+the case of existing samples for which georeferences are documented in various fields and formats. The recent “Spatio-temporal annotation policy” adopted by the INSDC is a step forward, but it falls short of meeting the requirements of Context. The 
+definition and use of a minimum set of mandatory metadata fields for future submissions to BioSamples must be considered in order to offer efficient and scalable Context services.
+Context would use the minimum provenance metadata to generate additional sample annotations regarding their provenance and environment such as the local sampling time, country of origin (EEZ), solar and lunar cycles parameters, bathymetry, 
+temperature, chlorophyll and nutrient concentrations, or primary production (see for example https://doi.org/10.5281/zenodo.4068293).
+These additional sample annotations would be obtained programmatically from gazetteers, astronomical almanacs, climatologies and satellite products, using web services based on georeferences (date/time, latitude, longitude, elevation).
+

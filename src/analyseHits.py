@@ -314,7 +314,8 @@ def get_all_ena_lat_lon(samples_dir):
 
 def categoryPlotting(df_merged_all_categories, plot_dir):
     """  categoryPlotting
-
+                plotting using the category column subset
+                is using the scope aspect of plotly, this uses the inbuilt maps rather than the shapefile maps
         __params__:
             df_merged_all_categories, plot_dir
         __returns__:

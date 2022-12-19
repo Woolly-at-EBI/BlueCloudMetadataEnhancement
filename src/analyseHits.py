@@ -33,7 +33,7 @@ def get_directory_paths(base_dir):
              takes a base directory, checks this exists
              also sets the directory paths for analysis and plots etc. and checks that these all exist
         __params__:
-               args: base_dir
+               passed_args: base_dir
         __returns__:
             (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir)
     """
@@ -61,7 +61,7 @@ def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
             plotting some special graphs, that needs some customisation
             e.g. a specific shapefile as the base for the plot
         __params__:
-               args: df_merged_all_categories, plot_dir, shape_dir
+               passed_args: df_merged_all_categories, plot_dir, shape_dir
     """
     crs_value = "EPSG:4326"
     shapefile = shape_dir + "GIS_hs_snapped/feow_hydrosheds.shp"
@@ -104,7 +104,7 @@ def plot_merge_all(df_merged_all, plot_dir):
               takes the largest merge all of all columns of the merged hit results and does plots that need all this,
               not just the category subset of columns
         __params__:
-               args df_merged_all, plot_dir)
+               passed_args df_merged_all, plot_dir)
     """
     width = 1500
     out_graph_file = plot_dir + 'IHO_ocean_by_lon.pdf'
@@ -517,7 +517,7 @@ def processHitFiles(hit_dir):
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
         __params__:
-               args
+               passed_args
     """
     base_dir = "/Users/woollard/projects/bluecloud/"
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir) = get_directory_paths(base_dir)

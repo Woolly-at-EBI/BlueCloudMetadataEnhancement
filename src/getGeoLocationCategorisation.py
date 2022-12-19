@@ -25,14 +25,13 @@ __docformat___ = 'reStructuredText'
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
 from icecream import ic
-import pandas as pd
 
 import matplotlib.pyplot as plt
 import geopandas as gpd
-from geopandas import GeoDataFrame
+
 from geopandas.geoseries import *
 from shapely.geometry import Polygon, Point
-import earthpy as et
+
 import argparse
 
 
@@ -48,11 +47,6 @@ def read_shape(shapefile):
 
     eez_shape = gpd.read_file(shapefile)
     ic(len(eez_shape.index))  # getting the total number of images
-    # tmp = eez_shape.head(10)
-    # outfilename = "/Users/woollard/projects/bluecloud/data/tests/eez_top.shp"
-    # tmp.to_file(outfilename)
-
-    # eez_shape = pd.DataFrame(columns=['A', 'B', 'C'])
     ic("finished reading eez_shape")
     pd.set_option('display.max_columns', None)
     # ic(eez_shape.head(1))
@@ -61,15 +55,11 @@ def read_shape(shapefile):
 
 
 def old_test_location(eez_shape, lat, lon):
-    ''' Not being used'''
+    """ Not being used"""
     ic(lat)
     ic(lon)
-    p1 = Point([lat, lon])
-    p2 = Point([100, 100])
 
-    # c(eez_shape.head(5))
-    # ic(list(eez_shape.columns))
-    # eez_shape.head(2).to_csv("eez_shape.csv")
+    ic(eez_shape.head(5))
     # see http://www.wvview.org/os_gisc/python/python_spatial/site/
 
     p1 = Point([1, 1])
@@ -88,6 +78,8 @@ def old_test_location(eez_shape, lat, lon):
     ic(p2.within(poly))
     ic(p3)
     ic(p3.within(poly))
+    ic(p4)
+    ic(p4.within(poly))
 
 
 def create_points_geoseries(coordfile):
@@ -127,15 +119,15 @@ def create_points_geoseries(coordfile):
 
     ic(points_geodf.head(2))
 
-    return (points_series, points_geodf)
+    return points_series, points_geodf
 
 
-def addEEZDetails(eez_shape, points_series, df):
-    """ addEEZDetails for any hit points. Only hit points are returned.
+def add_eez_details(eez_shape, points_series, df):
+    """ add_eez_details for any hit points. Only hit points are returned.
 
     DEPRECATED
         __params__:
-                eez_shape   -used to get the EEZ etc details
+                eez_shape   -used to get the EEZ etc. details
                 points_series  -used to get the lat and lon from
                 df (data frame matrx of all the hits
         __returns__:
@@ -169,8 +161,19 @@ def addEEZDetails(eez_shape, points_series, df):
     return df_eez_hit_points
 
 
-def plottingEEZPoints(eez_shape, pointInPolys_geodf, points_geodf):
-    ic(pointInPolys_geodf.head())
+def plotting_eez_points(eez_shape, point_in_polys_geodf, points_geodf):
+    """ add_eez_details for any hit points. Only hit points are returned.
+
+    DEPRECATED
+        __params__:
+                eez_shape   -used to get the EEZ etc. details
+                point_in_polys_geod
+                points_geodf
+
+        __returns__:
+
+    """
+    ic(point_in_polys_geodf.head())
     ic("base plot")
     base = eez_shape.boundary.plot(linewidth = 1, edgecolor = "black")
     # ic("points_geodf.plot")
@@ -178,9 +181,9 @@ def plottingEEZPoints(eez_shape, pointInPolys_geodf, points_geodf):
     #
     # quit()
     # ic("pointsInEEZ_geodf")
-    ic(pointInPolys_geodf.ISO_SOV1 == 'USA')
-    ic(points_geodf[pointInPolys_geodf.ISO_SOV1 == 'USA'])
-    pointsInEEZ_geodf = points_geodf[~pointInPolys_geodf['MRGID'].isnull()]
+    ic(point_in_polys_geodf.ISO_SOV1 == 'USA')
+    ic(points_geodf[point_in_polys_geodf.ISO_SOV1 == 'USA'])
+    # pointsInEEZ_geodf = points_geodf[~point_in_polys_geodf['MRGID'].isnull()]
     # quit()
     # ic(pointsInEEZ_geodf.head(2))
     # N.b. if can have multiple plots over each other!
@@ -202,12 +205,12 @@ def test_locations(eez_shape, points_series, points_geodf):
                 points_series
                 points_geodf
         __returns__:
-                get_locations as pointInPolys_geodf
+                get_locations as point_in_polys_geodf
     """
     ic()
     pd.set_option('display.max_columns', None)
     # ic(eez_shape.head(1))
-    # ic(points_series.head(15))
+    ic(points_series.head(3))
     # ic(type(points_series))
     # tmp_df = points_series.to_frame()
     # tmp_df = tmp_df.rename(columns = {0: 'geometry'}).set_geometry('geometry')
@@ -228,55 +231,56 @@ def test_locations(eez_shape, points_series, points_geodf):
         eez_shape = eez_shape.to_crs(points_geodf.crs)
 
     df = gpd.tools.sjoin(points_geodf, eez_shape, predicate = "within", how = 'left')
-    # the above geo dataframe contains one row per query point. So pick on points not matched, by checking GEONAME, to ignore those for now
-    # pointInPolys_geodf = df[df['GEONAME'].notna()]
+    # the above geo dataframe contains one row per query point. So pick on points not matched, by checking GEONAME,
+    # to ignore those for now
+    # point_in_polys_geodf = df[df['GEONAME'].notna()]
     pointInPolys_geodf = df
 
     ic(len(pointInPolys_geodf.index))
     return pointInPolys_geodf
 
 
-def main(args):
+def main(passed_args):
     """ main
         __params__:
-               args
+               passed_args
     """
     ic()
 
-    # defaults if note specified on the command line
-    coordinates_file = "/Users/woollard/projects/bluecloud/data/tests/test_lat_lon.tsv"
-    coordinates_file = "/Users/woollard/projects/bluecloud/data/samples/all_sample_lat_longs_present.tsv"
+    # defaults if not specified on the command line
+    # coordinates_file = "/Users/woollard/projects/bluecloud/data/tests/test_lat_lon.tsv"
+    # coordinates_file = "/Users/woollard/projects/bluecloud/data/samples/all_sample_lat_longs_present.tsv"
     coordinates_file = "/Users/woollard/projects/bluecloud/data/samples/all_sample_lat_longs_present_uniq.tsv"
     # coordinates_file = "/Users/woollard/projects/bluecloud/data/tests/American_Somoa_some_points.tsv"
     shape_file = "/Users/woollard/projects/bluecloud/data/shapefiles/World_EEZ_v11_20191118/eez_v11.shp"
     # shape_file = "/Users/woollard/projects/bluecloud/data/tests/eez_top.shp"
     out_dirname = "/Users/woollard/projects/bluecloud/data/tests/"
     out_filename = out_dirname + "eez_hit.tsv"
-    if args.coordinatesfile:
-        coordinates_file = args.coordinatesfile
-    if args.shapefile:
-        shape_file = args.shapefile
-    if args.outfile:
-        out_filename = args.outfile
+    if passed_args.coordinatesfile:
+        coordinates_file = passed_args.coordinatesfile
+    if passed_args.shapefile:
+        shape_file = passed_args.shapefile
+    if passed_args.outfile:
+        out_filename = passed_args.outfile
     ic(coordinates_file)
     ic(shape_file)
     ic(out_filename)
 
     eez_shape = read_shape(shape_file)
 
-    ic(args.typeofcontents)
-    if args.typeofcontents == "point":
+    ic(passed_args.typeofcontents)
+    if passed_args.typeofcontents == "point":
         (points_series, points_geodf) = create_points_geoseries(coordinates_file)
         pointInPolys_geodf = test_locations(eez_shape, points_series, points_geodf)
         print(f"writing to {out_filename}")
         pointInPolys_geodf.to_csv(out_filename, sep = "\t")
-        # plottingEEZPoints(eez_shape, pointInPolys_geodf, points_geodf)
-    elif args.typeofcontents == "line":
+        # plotting_eez_points(eez_shape, point_in_polys_geodf, points_geodf)
+    elif passed_args.typeofcontents == "line":
         ic()
 
     # getting all the ena_cordinates including regions in geometry format for the analysis
-    all_ena_coordinates_file='/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
-    out_filename ='/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
+    all_ena_coordinates_file = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
+    out_filename = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
     (points_series, points_geodf) = create_points_geoseries(all_ena_coordinates_file)
     points_geodf.to_csv(out_filename, sep = "\t")
     ic(out_filename)
@@ -305,7 +309,7 @@ if __name__ == '__main__':
     if args.verbosity:
         print("verbosity turned on")
 
-    # ic(args.coordinatesfile)
-    # ic(args.shapefile)
+    # ic(passed_args.coordinatesfile)
+    # ic(passed_args.shapefile)
 
     main(args)

@@ -11,6 +11,8 @@ __docformat___ = 'reStructuredText'
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
 import os
+
+import pandas as pd
 from icecream import ic
 from functools import reduce
 
@@ -513,19 +515,55 @@ def processHitFiles(hit_dir):
 
     return (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
 
-def processTrawlFindings(yes, no, skip,trawl_count):
+def processTrawlFindings(yes, yes_both_not_eez , no, skip,trawl_count):
     """ processTrawlFindings
         __params__:
                passed_args
-                 3 dictionaries: yes, no, skip
+                 3 dictionaries: yes, yes_both_not_eez no, skip
                  1 integer: trawl_count
     """
     ic(skip)
     ic(trawl_count)
     ic(len(yes))
-    ic(len(no))
+    ic(len(yes_both_not_eez))
     ic(len(skip))
 
+    coordinate_entry_errors = {}
+    one_coordinate_not_mapped = {}
+    different_EEZs = {}
+    other_no = {}
+    """ Doing the search for nan last as otherwise could miss errors in coorinates"""
+    for external_id in no:
+        # ic(no[external_id])
+        if no[external_id]['start_coords'][0] == '-' and no[external_id]['end_coords'][0] != '-':
+            # ic("error in latitudes")
+            coordinate_entry_errors[external_id] = no[external_id]
+        elif no[external_id]['end_coords'][0] != '-' and no[external_id]['end_coords'][0] == '-':
+            # ic("error in latitudes")
+            coordinate_entry_errors[external_id] = no[external_id]
+        else:
+            start_lon_minus_found = '_-' in no[external_id]['start_coords']
+            end_lon_minus_found = '_-' in no[external_id]['end_coords']
+            if start_lon_minus_found != end_lon_minus_found :
+                # ic("error in longitudes")
+                coordinate_entry_errors[external_id] = no[external_id]
+            elif no[external_id]['start_GEONAME'] == 'nan' and no[external_id]['end_GEONAME'] == 'nan':
+                ic('Error Two nan found, should have been captured earlier')
+                quit()
+            elif no[external_id]['start_GEONAME'] == 'nan' or no[external_id]['end_GEONAME'] == 'nan':
+                one_coordinate_not_mapped[external_id] = no[external_id]
+            elif no[external_id]['start_GEONAME'] != no[external_id]['end_GEONAME']:
+                different_EEZs[external_id] = no[external_id]
+            else:
+                other_no[external_id] = no[external_id]
+    ic(len(no))
+    ic("no matches breakdown:")
+    ic(len(coordinate_entry_errors))
+    ic(len(one_coordinate_not_mapped))
+    ic(len(different_EEZs))
+    ic(len(other_no))
+    ic(different_EEZs)
+    ic(coordinate_entry_errors)
 
 def analyse_trawl_data(df_merged_all,df_trawl_samples):
     """ analyse_trawl_data(df_merged_all,df_trawl_samples)
@@ -533,33 +571,43 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
                passed_args
                 analyse_trawl_data(df_merged_all,df_trawl_samples)
     """
+
     ic(df_merged_all.shape[0])
     ic(df_merged_all.head(2))
     ic(df_trawl_samples.shape[0])
     ic(df_trawl_samples.head(2))
     df_trawl_samples['start_index'] = df_trawl_samples['lon_start'].apply(str) + "_" + \
-                                      df_trawl_samples['lat_start'].apply(str)
+                                      df_trawl_samples['lat_start'].apply(str) + "_" + \
+                                      df_trawl_samples['external_id'].apply(str)
+    df_trawl_samples['actual_start_index'] = df_trawl_samples['start_index']
+
+
     df_trawl_samples['end_index'] = df_trawl_samples['lon_end'].apply(str) + "_" + \
-                                      df_trawl_samples['lat_end'].apply(str)
+                                      df_trawl_samples['lat_end'].apply(str)+ "_" + \
+                                      df_trawl_samples['external_id'].apply(str)
+    df_trawl_samples['actual_end_index'] = df_trawl_samples['end_index']
 
     """ want to look up each pair of lat/lon starts and sea if they are in the same EEZ as lat/lon ends
     so doing via doing two intersection's """
     df_merged_starts = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
                                 right_on=['lon_start','lat_start'])
-    df_merged_starts = df_merged_starts.set_index('start_index')
-    df_merged_starts = df_merged_starts[df_merged_starts['external_id'].notna()]
+
+    df_merged_starts = df_merged_starts.set_index('actual_start_index')
+    # df_merged_starts = df_merged_starts[df_merged_starts['external_id'].notna()].reset_index()
     ic(df_merged_starts.shape[0])
     ic(df_merged_starts.head(2))
 
     df_merged_ends = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
                                 right_on=['lon_end','lat_end'])
-    df_merged_ends = df_merged_ends.set_index('end_index')
-    df_merged_ends = df_merged_ends[df_merged_ends['external_id'].notna()]
+    df_merged_ends = df_merged_ends.set_index('actual_end_index')
+    # df_merged_ends = df_merged_ends[df_merged_ends['external_id'].notna()].reset_index()
     ic(df_merged_ends.shape[0])
     ic(df_merged_ends.head(2))
 
+
     count = 0
     yes = {}
+    yes_both_not_eez = {}
     no = {}
     skip = {}
     """ looping though panda dataframe, bad form! 
@@ -567,28 +615,90 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
     """
     ic(df_merged_starts.shape[0])
     for start_index, row in df_merged_starts.iterrows():
+        ic('-----------------------------------------------------------------------')
         count += 1
-
+        ic(start_index)
+        ic(row['end_index'])
+        # ic(row)
         if 'end_index' not in row:
             local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in start dict'}
+            ic(local_dict)
             next
         elif 'end_index' not in df_merged_ends:
             local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in end dict'}
+            ic(local_dict)
+            next
+        else:
+            ic("so end_index found in both row and in df_merged_ends")
+
+        df = pd.DataFrame()
+        row_end_index = row['end_index']
+        ffs=0
+
         try:
-            df  = df_merged_ends.loc[row['end_index']].reset_index()
+            ic("in try for looking up merged_ends")
+            ic(row_end_index)
+            df  = df_merged_ends.loc[[row_end_index]]
+            ffs=1
+            df = df.reset_index()
+            # ic(df)
+            ic(df.shape[0])
+
         except:
             local_dict = {'start_coords': start_index, 'problem': 'not able able to reset_index'}
             next
 
+        # ic(df)
+        # ic(df.columns)
+        # ic(df.shape[0])
+        if df.shape[0] == 0:
+            ic('df is 0---------------------------------so next')
+            next
+
+        ic(row['external_id'])
+        external_id = row['external_id']
+        # ic(df.columns)
+        # if 'external_id' not in df.columns:
+        #     if 'end_index' in df.columns:
+        #         ic(df['end_index'][0])
+        #         (lat,lon,external_id) = df['end_index'][0].split('_')
+        #         ic(external_id)
+        #         df['external_id'] = external_id
+        #     elif 'start_index' in df.columns:
+        #         ic(df['start_index'][0])
+        #         (lat,lon,external_id) = df['start_index'][0].split('_')
+        #         ic(external_id)
+        #         df['external_id'] = external_id
+
         if 'external_id' not in df.columns:
+            ic('external_id not in cols')
+            # ic(df)
             local_dict = {'start_coords': start_index, 'problem': 'external_id not in df.columns'}
+            ic(df.columns)
             skip[row['external_id']] = local_dict
+            # ic(local_dict)
             next
         else:
             df = df.set_index('external_id')
+            # ic(df.head(3))
 
-            short_end = df.loc[row['external_id']].to_dict()
-            # ic(short_end)
+            # df = df.set_index('external_id')
+            ic(df.loc[[row['external_id']]])
+            ic(df.loc[[row['external_id']]].shape[0])
+            df_total_row_num= df.loc[[row['external_id']]].shape[0]
+            short_end = []
+            if(df_total_row_num == 1):
+                short_end = df.loc[row['external_id']].to_dict()
+            elif(df_total_row_num >1):
+                ic("Multiple matches! So just select first one, as all checked are identical.")
+                df_tmp = df.loc[[row['external_id']]].head(1)
+                short_end = df_tmp.squeeze().to_dict()
+                ic(short_end)
+            else:
+                short_end = df.loc[row['external_id']].to_dict()
+                ic("ERROR Getting zero matches, this should not happen")
+                quit()
+
             key_name = 'GEONAME'
             start_key = "start_" + key_name
             end_key = "end_" + key_name
@@ -596,17 +706,44 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
                           'end_coords': short_end['end_index'] }
             if row[key_name] == short_end[key_name]:
                 yes[row['external_id']] = local_dict
+            elif row[key_name] == 'nan' and short_end[key_name] == 'nan':
+                yes_both_not_eez[row['external_id']] = local_dict
+                ic(yes_both_not_eez)
+                # quit()
             else:
                 no[row['external_id']] = local_dict
+
+                if row['external_id'] == 'SAMEA3692423':
+                    ic(local_dict)
+                    ic(short_end)
+                    print(f"start=\"{row[key_name]}\"")
+                    print(f"  end=\"{short_end[key_name]}\"")
+                    quit()
 
             # if count > 100:
             #      break
 
-    processTrawlFindings(yes,no,skip,count)
+    processTrawlFindings(yes,yes_both_not_eez,no,skip,count)
 
 
     return
 
+def clean_merge_all(df_merged_all):
+    """ clean_merge_all
+        __params__:
+               passed_args
+                  df_merged_all
+        __rtn__
+           df_merged_all
+
+        return
+    """
+    df_merged_all['GEONAME'] = df_merged_all['GEONAME'].astype(str)
+
+    geoname_list = df_merged_all['GEONAME'].unique()
+    # ic(sorted(geoname_list))
+
+    return df_merged_all
 
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
@@ -630,6 +767,9 @@ def main():
      '''
 
     df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
+
+    df_merged_all = clean_merge_all(df_merged_all)
+
     df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     analyse_trawl_data(df_merged_all,df_trawl_samples)
 

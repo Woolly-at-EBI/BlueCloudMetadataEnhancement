@@ -513,10 +513,18 @@ def processHitFiles(hit_dir):
 
     return (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
 
-def processTrawlFindings(yes, no, skip):
-    ic(yes)
-    ic(no)
+def processTrawlFindings(yes, no, skip,trawl_count):
+    """ processTrawlFindings
+        __params__:
+               passed_args
+                 3 dictionaries: yes, no, skip
+                 1 integer: trawl_count
+    """
     ic(skip)
+    ic(trawl_count)
+    ic(len(yes))
+    ic(len(no))
+    ic(len(skip))
 
 
 def analyse_trawl_data(df_merged_all,df_trawl_samples):
@@ -591,10 +599,10 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
             else:
                 no[row['external_id']] = local_dict
 
-            if count > 100:
-                 break
+            # if count > 100:
+            #      break
 
-    processTrawlFindings(yes,no,skip)
+    processTrawlFindings(yes,no,skip,count)
 
 
     return

@@ -106,7 +106,7 @@ def plot_merge_all(df_merged_all, plot_dir):
         __params__:
                passed_args df_merged_all, plot_dir)
     """
-    width = 1500
+    width = width
     out_graph_file = plot_dir + 'IHO_ocean_by_lon.pdf'
     ic(out_graph_file)
     fig = px.scatter(df_merged_all, title = "IHO, lats and longhurst", x = "IHO_category", y = "lat", width = width,
@@ -513,6 +513,92 @@ def processHitFiles(hit_dir):
 
     return (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
 
+def processTrawlFindings(yes, no, skip):
+    ic(yes)
+    ic(no)
+    ic(skip)
+
+
+def analyse_trawl_data(df_merged_all,df_trawl_samples):
+    """ analyse_trawl_data(df_merged_all,df_trawl_samples)
+        __params__:
+               passed_args
+                analyse_trawl_data(df_merged_all,df_trawl_samples)
+    """
+    ic(df_merged_all.shape[0])
+    ic(df_merged_all.head(2))
+    ic(df_trawl_samples.shape[0])
+    ic(df_trawl_samples.head(2))
+    df_trawl_samples['start_index'] = df_trawl_samples['lon_start'].apply(str) + "_" + \
+                                      df_trawl_samples['lat_start'].apply(str)
+    df_trawl_samples['end_index'] = df_trawl_samples['lon_end'].apply(str) + "_" + \
+                                      df_trawl_samples['lat_end'].apply(str)
+
+    """ want to look up each pair of lat/lon starts and sea if they are in the same EEZ as lat/lon ends
+    so doing via doing two intersection's """
+    df_merged_starts = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
+                                right_on=['lon_start','lat_start'])
+    df_merged_starts = df_merged_starts.set_index('start_index')
+    df_merged_starts = df_merged_starts[df_merged_starts['external_id'].notna()]
+    ic(df_merged_starts.shape[0])
+    ic(df_merged_starts.head(2))
+
+    df_merged_ends = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
+                                right_on=['lon_end','lat_end'])
+    df_merged_ends = df_merged_ends.set_index('end_index')
+    df_merged_ends = df_merged_ends[df_merged_ends['external_id'].notna()]
+    ic(df_merged_ends.shape[0])
+    ic(df_merged_ends.head(2))
+
+    count = 0
+    yes = {}
+    no = {}
+    skip = {}
+    """ looping though panda dataframe, bad form! 
+        need to index on lat lon and extenal_id for uniq rows
+    """
+    ic(df_merged_starts.shape[0])
+    for start_index, row in df_merged_starts.iterrows():
+        count += 1
+
+        if 'end_index' not in row:
+            local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in start dict'}
+            next
+        elif 'end_index' not in df_merged_ends:
+            local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in end dict'}
+        try:
+            df  = df_merged_ends.loc[row['end_index']].reset_index()
+        except:
+            local_dict = {'start_coords': start_index, 'problem': 'not able able to reset_index'}
+            next
+
+        if 'external_id' not in df.columns:
+            local_dict = {'start_coords': start_index, 'problem': 'external_id not in df.columns'}
+            skip[row['external_id']] = local_dict
+            next
+        else:
+            df = df.set_index('external_id')
+
+            short_end = df.loc[row['external_id']].to_dict()
+            # ic(short_end)
+            key_name = 'GEONAME'
+            start_key = "start_" + key_name
+            end_key = "end_" + key_name
+            local_dict = {'start_coords': start_index , start_key: row[key_name], end_key: short_end[key_name],
+                          'end_coords': short_end['end_index'] }
+            if row[key_name] == short_end[key_name]:
+                yes[row['external_id']] = local_dict
+            else:
+                no[row['external_id']] = local_dict
+
+            if count > 100:
+                 break
+
+    processTrawlFindings(yes,no,skip)
+
+
+    return
+
 
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
@@ -522,27 +608,30 @@ def main():
     base_dir = "/Users/woollard/projects/bluecloud/"
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir) = get_directory_paths(base_dir)
 
-    df_ena = get_all_ena_lat_lon(sample_dir)
-
-    (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho) \
-        = processHitFiles(hit_dir)
-    df_merged_all = mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin,
-                                     df_hydrosheds, df_intersect_eez_iho, hit_dir)
-    merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
+    # df_ena = get_all_ena_lat_lon(sample_dir)
+    #
+    # (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho) \
+    #     = processHitFiles(hit_dir)
+    # df_merged_all = mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin,
+    #                                  df_hydrosheds, df_intersect_eez_iho, hit_dir)
+    # merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
 
     ic("Do the plotting")
-    ''' these are the plotting sections , can comment out all above and just run these.
+    ''' these are the plotting sections , can comment out all above once they have all they all been run.
         Done so that can save the time etc. of re-running the merging
      '''
+
+    df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
+    df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
+    analyse_trawl_data(df_merged_all,df_trawl_samples)
+
+    quit()
+    extra_plots(df_merged_all, plot_dir, shape_dir)
+    plot_merge_all(df_merged_all, plot_dir)
 
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
     categoryPlotting(df_merged_all_categories, plot_dir)
-
-    infile = hit_dir + "merged_all.tsv"
-    df_merged_all = pd.read_csv(infile, sep = "\t")
-    extra_plots(df_merged_all, plot_dir, shape_dir)
-    plot_merge_all(df_merged_all, plot_dir)
 
     return ()
 

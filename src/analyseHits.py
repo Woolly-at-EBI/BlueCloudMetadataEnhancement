@@ -24,38 +24,11 @@ from shapely.geometry import Point
 
 import plotly.express as px
 import plotly
+from get_directory_paths import get_directory_paths
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
-
-
-def get_directory_paths(base_dir):
-    """ get_directory_paths
-             takes a base directory, checks this exists
-             also sets the directory paths for analysis and plots etc. and checks that these all exist
-        __params__:
-               passed_args: base_dir
-        __returns__:
-            (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir)
-    """
-    analysis_dir = base_dir + "analysis/"
-    plot_dir = base_dir + "analysis/plots/"
-    hit_dir = base_dir + "data/hits/"
-    sample_dir = base_dir + 'data/samples/'
-    shape_dir = base_dir + 'data/shapefiles/'
-
-    dir_list = [base_dir, hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir]
-    dir_err = False
-    for my_dir in dir_list:
-        if not os.path.isdir(my_dir):
-            print(f"This directory path does not exist, please create it: {my_dir}")
-            dir_err = True
-    if dir_err:
-        print("Please fix all this configuration")
-        quit()
-
-    return hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir
 
 
 def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
@@ -750,8 +723,8 @@ def main():
         __params__:
                passed_args
     """
-    base_dir = "/Users/woollard/projects/bluecloud/"
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir) = get_directory_paths(base_dir)
+
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     # df_ena = get_all_ena_lat_lon(sample_dir)
     #

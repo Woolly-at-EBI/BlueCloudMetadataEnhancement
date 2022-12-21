@@ -88,9 +88,14 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
     ic(out_file)
     df_metag_is_in_ena_latlon.to_csv(out_file, sep = '\t')
 
+    # how many runs are for these samples
+    sample_acc = ["SAMN18146923", "SAMN18146924", "SAMN18146925", "SAMN18146926", "SAMN18146927", "SAMN18146928", "SAMN18146929", "SAMN18146930", "SAMN18146931", "SAMN18146932", "SAMN18146933", "SAMN18146934", "SAMN18146935", "SAMN18146936", "SAMN18146937", "SAMN18146938", "SAMN18146939", "SAMN18146940", "SAMN18146941", "SAMN18146942", "SAMN18146943", "SAMN18146944", "SAMN18146945", "SAMN18146946", "SAMN18146947", "SAMN18146948", "SAMN18146949", "SAMN18146950", "SAMN18146951", "SAMN18146952", "SAMN18146953", "SAMN18146954", "SAMN18146955", "SAMN18146956", "SAMN18146957", "SAMN18146958", "SAMN18146959", "SAMN18146960", "SAMN18146961", "SAMN18146962", "SAMN18146963", "SAMN18146964", "SAMN18146965", "SAMN18146966", "SAMN18146967", "SAMN18146968", "SAMN18146969", "SAMN18146970", "SAMN18146971", "SAMN18146972", "SAMN18146973", "SAMN18146974", "SAMN18146975", "SAMN18146976", "SAMN21876556"]
+    ic(len(sample_acc))
+
+
     return
 
-def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
+def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
     """ taxa_with_ena_coords
     NCBI Taxa from samples that have at least 1 coordinate at ENA.
 
@@ -103,7 +108,9 @@ def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysi
 
         __params__:
                passed_args
-               df_ena_sample_detail, df_metag_tax, df_tax2env
+               df_merged_all_categories
+               df_ena_sample_detail,
+                df_metag_tax, df_tax2env
         __return__:
     """
     ic(len(df_ena_sample_detail))
@@ -126,13 +133,27 @@ def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysi
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
 
-
-
     out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
     df2 = df_merged_ena_metag_tax[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
     ic(df2.head(2))
     df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
     ic(df3.head(2))
+    ic(out_file)
+    df3.to_csv(out_file, sep = '\t')
+
+    """ wnat to get samples in sea, sea & land, land"""
+    ic(df_merged_ena_metag_tax.head(2))
+    ic(df_merged_all_categories.head(2))
+    df_mega = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'inner', left_on = ['lat', 'lon'],
+                                     right_on = ['lat', 'lon'])
+    ic(df_mega.head(2))
+    ic(len(df_mega))
+
+    out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
+    df2 = df_mega[['NCBI:taxid', 'NCBI term','location_designation']]
+    ic(df2.head(2))
+    df3 = df2.groupby(["NCBI:taxid", "NCBI term",'location_designation']).size().to_frame('count')
+    ic(df3)
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
 
@@ -174,11 +195,15 @@ def main(passed_args):
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
     ic(df_merged_all_categories.head(3))
 
-
-    taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
-
+    taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
+    quit()
 
     taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
+    quit()
+
+
+    quit()
+
 
 
     return ()

@@ -49,10 +49,46 @@ def get_ena_detailed_sample_info(sample_dir):
     """
     ic()
     infile = sample_dir + "sample_much_lat_filtered.tsv"
-    df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows=100000000)
+    df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows=10000000)
     ic(df_ena_sample_detail.head())
 
     return df_ena_sample_detail
+
+def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
+    """ taxa_notin_ena_coords
+    NCBI Taxa from samples that have at least 1 coordinate at ENA.
+
+    For each taxon, please inform the following fields:
+
+    NCBI taxID
+    #samples in sea, sea & land, land
+    #of associated runs in sea, sea & land, land (if possible, to assess relevance/importance)
+
+
+        __params__:
+               passed_args
+               df_ena_sample_detail, df_metag_tax, df_tax2env
+        __return__:
+    """
+    ic(len(df_ena_sample_detail))
+
+    df_metag_not_in_ena_latlon =df_metag_tax[~df_metag_tax['NCBI:taxid'].isin(df_ena_sample_detail['tax_id'])]
+    ic(df_metag_not_in_ena_latlon.head(10))
+    ic(len(df_metag_tax))
+    ic(len(df_metag_not_in_ena_latlon))
+    out_file = analysis_dir + 'tax_metag_notin_ena_latlon.tsv'
+    ic(out_file)
+    df_metag_not_in_ena_latlon.to_csv(out_file, sep = '\t')
+
+    df_metag_is_in_ena_latlon =df_metag_tax[df_metag_tax['NCBI:taxid'].isin(df_ena_sample_detail['tax_id'])]
+    ic(df_metag_is_in_ena_latlon.head(2))
+    ic(len(df_metag_tax))
+    ic(len(df_metag_is_in_ena_latlon))
+    out_file = analysis_dir + 'tax_metag_is_in_ena_latlon.tsv'
+    ic(out_file)
+    df_metag_is_in_ena_latlon.to_csv(out_file, sep = '\t')
+
+    return
 
 def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
     """ taxa_with_ena_coords
@@ -90,6 +126,8 @@ def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysi
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
 
+
+
     out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
     df2 = df_merged_ena_metag_tax[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
     ic(df2.head(2))
@@ -98,21 +136,21 @@ def taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysi
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
 
-    """ tax2env get counts of sample rows by NCBI taxid"""
-    out_file = analysis_dir + 'tax2env_sample_counts.tsv'
-    df2 = df_merged_ena_tax2env[["NCBI:taxid", "accession", "NCBI term"]]
-    df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
-    ic(df3.head(2))
-    ic(out_file)
-    df3.to_csv(out_file, sep = '\t')
-
-    out_file = analysis_dir + 'tax2env__lat_lon_counts.tsv'
-    df2 = df_merged_ena_tax2env[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
-    ic(df2.head(2))
-    df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
-    ic(df3.head(2))
-    ic(out_file)
-    df3.to_csv(out_file, sep = '\t')
+    # """ tax2env get counts of sample rows by NCBI taxid"""
+    # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
+    # df2 = df_merged_ena_tax2env[["NCBI:taxid", "accession", "NCBI term"]]
+    # df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
+    # ic(df3.head(2))
+    # ic(out_file)
+    # df3.to_csv(out_file, sep = '\t')
+    #
+    # out_file = analysis_dir + 'tax2env__lat_lon_counts.tsv'
+    # df2 = df_merged_ena_tax2env[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
+    # ic(df2.head(2))
+    # df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
+    # ic(df3.head(2))
+    # ic(out_file)
+    # df3.to_csv(out_file, sep = '\t')
 
     return
 
@@ -136,7 +174,11 @@ def main(passed_args):
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
     ic(df_merged_all_categories.head(3))
 
+
     taxa_with_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
+
+
+    taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
 
 
     return ()

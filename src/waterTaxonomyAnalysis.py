@@ -11,6 +11,7 @@ import pandas as pd
 from icecream import ic
 
 import plotly.express as px
+import plotly
 
 import argparse
 
@@ -153,8 +154,10 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     df2 = df_mega[['NCBI:taxid', 'NCBI term','location_designation']]
     ic(df2.head(2))
     df3 = df2.groupby(["NCBI:taxid", "NCBI term",'location_designation']).size().to_frame('count')
+
     ic(df3)
     ic(out_file)
+    quit()
     df3.to_csv(out_file, sep = '\t')
     plotting(df3)
 
@@ -176,7 +179,7 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
 
     return
 
-def plotting(taxonomy_dir,df_merged_cats_metag_land_sea_counts):
+def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     """ plotting
         __params__:
                passed_args
@@ -184,20 +187,35 @@ def plotting(taxonomy_dir,df_merged_cats_metag_land_sea_counts):
     """
     ic(df_merged_cats_metag_land_sea_counts.head())
     df = df_merged_cats_metag_land_sea_counts
+    df['fraction']  =  df['count'] / df.groupby(["NCBI:taxid"])['count'].transform('sum')
+    ic(df.head(10))
 
     title_string = "Marine and Aqua metagenome Counts in ENA having GPS coordinates"
-    out_graph_file = taxonomy_dir + 'merged_cats_metag_land_sea_counts.pdf'
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_counts.pdf'
     mark_size = 8
     color_value = 'location_designation'
-    fig = px.bar(df, x = "NCBI term", y = "count", color = color_value, title = title_string)
+    fig = px.histogram(df, x = "NCBI term", y = "count",  color = color_value, title = title_string)
     fig.show()
-    # fig = pd.scatter(df_merged_cats_metag_land_sea_counts,
-    #                      width = width, color = color_value,
-    #                      title = title_string)
-    # fig.update_traces(marker = dict(size = marker_size))
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
-    # ic(out_graph_file)
-    # plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+    title_string = "Marine and Aqua metagenome log(Counts) in ENA having GPS coordinates"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_log_counts.pdf'
+    mark_size = 8
+    color_value = 'location_designation'
+    fig = px.histogram(df, x = "NCBI term", y = "count", log_y = True, color = color_value, title = title_string)
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+    title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts.pdf'
+    mark_size = 8
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack")
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
 def main(passed_args):
     """ main
@@ -205,13 +223,16 @@ def main(passed_args):
                passed_args
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir) = get_directory_paths()
+    ic(analysis_dir)
+    ic(plot_dir)
 
     """ This section can be deleted, plotting called else"""
     infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
     df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
-    plotting(taxonomy_dir, df_merged_cats_metag_land_sea_counts)
+    plotting(plot_dir, df_merged_cats_metag_land_sea_counts)
 
     quit()
+
     """ The section above can be deleted, plotting called else"""
 
     df_ena_sample_detail = get_ena_detailed_sample_info(sample_dir)

@@ -114,6 +114,9 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
                 df_metag_tax, df_tax2env
         __return__:
     """
+
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
     ic(len(df_ena_sample_detail))
     df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how='inner',left_on=['tax_id'],
                                 right_on=['NCBI:taxid'])
@@ -127,12 +130,15 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     ic(len(df_merged_ena_tax2env))
 
     """ metag get counts of sample rows by NCBI taxid"""
+    ic(" metag get counts of sample rows by NCBI taxid")
     out_file = analysis_dir + 'tax_metag_sample_counts.tsv'
-    df2 = df_merged_ena_metag_tax[["NCBI:taxid", "accession", "NCBI term"]]
-    df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
+    # df2 = df_merged_ena_metag_tax[["NCBI:taxid", "accession", "NCBI term", "marine (ocean connected)", "freshwater (land enclosed)"]]
+    df3 = df_merged_ena_metag_tax.groupby(["NCBI:taxid", "NCBI term", "NCBI metagenome category", "marine (ocean connected)", "freshwater (land enclosed)"]).size().to_frame('count').reset_index()
     ic(df3.head(2))
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
+    ic(df3.head())
+
 
     out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
     df2 = df_merged_ena_metag_tax[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
@@ -142,24 +148,23 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
 
-    """ wnat to get samples in sea, sea & land, land"""
+    """ want to get samples in sea, sea & land, land"""
     ic(df_merged_ena_metag_tax.head(2))
     ic(df_merged_all_categories.head(2))
     df_mega = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'inner', left_on = ['lat', 'lon'],
                                      right_on = ['lat', 'lon'])
     ic(df_mega.head(2))
     ic(len(df_mega))
-
     out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
-    df2 = df_mega[['NCBI:taxid', 'NCBI term','location_designation']]
-    ic(df2.head(2))
-    df3 = df2.groupby(["NCBI:taxid", "NCBI term",'location_designation']).size().to_frame('count')
+    df3 = df_mega.groupby(["NCBI:taxid", "NCBI term",'location_designation', "NCBI metagenome category", "marine (ocean connected)", "freshwater (land enclosed)"]).size().to_frame('count').reset_index()
 
-    ic(df3)
+    ic(df3.head())
     ic(out_file)
-    quit()
     df3.to_csv(out_file, sep = '\t')
-    plotting(df3)
+    df_tax_metag_sample_land_sea_counts = df3
+
+
+    plotting(plot_dir,df_tax_metag_sample_land_sea_counts )
 
     # """ tax2env get counts of sample rows by NCBI taxid"""
     # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
@@ -185,14 +190,17 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
                passed_args
                df_merged_cats_metag_land_sea_counts
     """
+    ic()
+    mark_size = 8
+
     ic(df_merged_cats_metag_land_sea_counts.head())
     df = df_merged_cats_metag_land_sea_counts
     df['fraction']  =  df['count'] / df.groupby(["NCBI:taxid"])['count'].transform('sum')
-    ic(df.head(10))
-
+    ic()
+    ic(df.head(5))
+    ic(df.columns)
     title_string = "Marine and Aqua metagenome Counts in ENA having GPS coordinates"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_counts.pdf'
-    mark_size = 8
     color_value = 'location_designation'
     fig = px.histogram(df, x = "NCBI term", y = "count",  color = color_value, title = title_string)
     ic(out_graph_file)
@@ -200,7 +208,6 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
 
     title_string = "Marine and Aqua metagenome log(Counts) in ENA having GPS coordinates"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_log_counts.pdf'
-    mark_size = 8
     color_value = 'location_designation'
     fig = px.histogram(df, x = "NCBI term", y = "count", log_y = True, color = color_value, title = title_string)
     ic(out_graph_file)
@@ -208,25 +215,95 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
 
     title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts.pdf'
-    mark_size = 8
     color_value = 'location_designation'
     fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack")
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
-    category_order = ['sea','sea and land','land']
+    """get the taxonomic geographical categories changed to boolean
+        and also change the location_designation to a more sensible order
+        """
+    df["marine (ocean connected)"] = df["marine (ocean connected)"].astype(bool)
+    df["freshwater (land enclosed)"] = df["freshwater (land enclosed)"].astype(bool)
+    category_order = ['sea', 'sea and land', 'land']
     df["location_designation"] = pd.Categorical(df["location_designation"], category_order)
-    df = df.sort_values(["location_designation","fraction"], ascending = [True,False])
+    df = df.sort_values(["location_designation", "fraction"], ascending = [True, False])
     ic(df.head(20))
     title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked ordered"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts_ordered.pdf'
-    mark_size = 8
     color_value = 'location_designation'
-    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack")
+    fig = px.bar(df, x = "NCBI term", y = "fraction", color = color_value, title = title_string, barmode = "stack")
+
+    """ creating a single column summary for the taxonomic geographic assignments"""
+    def categorise_df(df):
+        if(df["marine (ocean connected)"] and df["freshwater (land enclosed)"]):
+            return "tax:marine and freshwater"
+        elif (df["marine (ocean connected)"] and  not df["freshwater (land enclosed)"]):
+            return "tax:marine (ocean connected)"
+        elif (not df["marine (ocean connected)"] and df["freshwater (land enclosed)"]):
+            return "tax:freshwater (land enclosed)"
+    df["marine_freshwater_by_tax"] = df.apply(categorise_df, axis = 1)
+    category_order = ['sea','sea and land','land']
+    df["location_designation"] = pd.Categorical(df["location_designation"], category_order)
+    df = df.sort_values(["location_designation","fraction"], ascending = [True,False])
+
+    ic(df.head(20))
+    title_string = "Marine and Aqua metagenome sample counts in ENA having GPS coordinates + taxonomic categorisation" \
+                   + "<br><sup>stacked and ordered by the GPS location_designations - "\
+                   + "the taxonomic cat are in the patterns</sup>" \
+                   + "<br><sup>the numbers are sample counts foreach of the GPS location_designations</sup>"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_stacked_counts_ordered.pdf'
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
+                 text= "count", pattern_shape = "marine_freshwater_by_tax")
+    # fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+    title_string = "Marine and Aqua metagenome sample counts in ENA having GPS coordinates + taxonomic categorisation" \
+                   + "<br><sup>stacked and ordered by the GPS location_designations - "\
+                   + "the taxonomic cat are in the patterns</sup>" \
+                   + "<br><sup>the numbers are sample counts foreach of the GPS location_designations</sup>"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_stacked_counts_ordered_facet.pdf'
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
+                 text= "count", pattern_shape = "marine_freshwater_by_tax", facet_row="NCBI metagenome category")
     fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
+    df = df.sort_values(["marine (ocean connected)","freshwater (land enclosed)"])
+    ic(df.head(20))
+    title_string = "Marine and Aqua metagenome sample counts in ENA having GPS coordinates + taxonomic categorisation"\
+                   +  "<br><sup>stacked and ordered by the taxonomic geography</sup>"\
+                   +  "<br><sup>the numbers are sample counts foreach of the GPS location_designations </sup>"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_stacked_counts_ordered_by_tax_cat.pdf'
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
+                 text= "count", pattern_shape = "marine_freshwater_by_tax")
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_stacked_counts_ordered_by_tax_cat_facet.pdf'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
+                 text= "count", facet_row = "marine_freshwater_by_tax")
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+    title_string = "Marine and Aqua metagenome sample counts in ENA having GPS coordinates + taxonomic categorisation" \
+                   + "<br><sup>Is an overall (sunburst plot)</sup>"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_sunburst_LOOKATTHISONE.pdf'
+    fig = px.sunburst(
+        df,
+        title = title_string,
+        path=['marine_freshwater_by_tax', 'location_designation','NCBI term'],
+        values='count',
+    )
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
 
 
@@ -259,6 +336,8 @@ def main(passed_args):
     ic(df_merged_all_categories.head(3))
 
     taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
+
+    quit()
     taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
 
 

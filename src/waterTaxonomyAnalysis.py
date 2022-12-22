@@ -195,7 +195,6 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     mark_size = 8
     color_value = 'location_designation'
     fig = px.histogram(df, x = "NCBI term", y = "count",  color = color_value, title = title_string)
-    fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
@@ -204,7 +203,6 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     mark_size = 8
     color_value = 'location_designation'
     fig = px.histogram(df, x = "NCBI term", y = "count", log_y = True, color = color_value, title = title_string)
-    fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
@@ -213,9 +211,24 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     mark_size = 8
     color_value = 'location_designation'
     fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack")
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+    category_order = ['sea','sea and land','land']
+    df["location_designation"] = pd.Categorical(df["location_designation"], category_order)
+    df = df.sort_values(["location_designation","fraction"], ascending = [True,False])
+    ic(df.head(20))
+    title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked ordered"
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts_ordered.pdf'
+    mark_size = 8
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack")
     fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+
+
 
 def main(passed_args):
     """ main

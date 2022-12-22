@@ -1,4 +1,4 @@
-# README for the BlueCloud Metatadata Enhancement Project
+# README for the BlueCloud Metadata Enhancement Project
 
 The main purpose of this is to add useful contextual sample metadata for ENA samples at EMBL-EBI.
 This is  additional sample metadata to that which the submitter provided.  
@@ -19,7 +19,11 @@ The GPS coordinates can be rapidly searched against the polygons and mapped to t
 The computational geometry that underlies the polygon searching with coordinates is now straight forwards thanks to decades of work in the field by many people. Here we are using GDAL (C++) via GEOPANDAS https://geopandas.org/en/stable/docs/user_guide/data_structures.html . It can search 1/3 million coordinates against about hundred polygon shapefile in less than 20 seconds on my laptop, which is rather impressive.
 
 
-## Additionally marine samples can be determined by organism taxonomy too - to do
+## Additionally marine samples can be determined by organism taxonomy too 
+
+The metagenome information for marine and freshwater organisms was prepared. This is merged in with metadata above.
+
+It is complementary. The shape and taxonomic information do seem to be broadly agree, but there are many points of analysis needed.
 
 ## Sample Types
 
@@ -35,5 +39,5 @@ These are low in the priority list for this project, but we have gathered much m
 
 ## Contributors
 * Main author so far: Peter Woollard
-* Marine Domain expert: Stéphane Pesant
-* Some technical ideas: Josie Burgin and Suran Jayathilaka
+* Marine Domain expert and taxonomy details: Stéphane Pesant
+* Some technical ideas and work: Josie Burgin and Suran Jayathilaka

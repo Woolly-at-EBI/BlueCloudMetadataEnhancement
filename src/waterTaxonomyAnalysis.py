@@ -10,7 +10,7 @@ from get_directory_paths import get_directory_paths
 import pandas as pd
 from icecream import ic
 
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 import argparse
 
@@ -156,6 +156,7 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     ic(df3)
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
+    plotting(df3)
 
     # """ tax2env get counts of sample rows by NCBI taxid"""
     # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
@@ -175,15 +176,43 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
 
     return
 
+def plotting(taxonomy_dir,df_merged_cats_metag_land_sea_counts):
+    """ plotting
+        __params__:
+               passed_args
+               df_merged_cats_metag_land_sea_counts
+    """
+    ic(df_merged_cats_metag_land_sea_counts.head())
+    df = df_merged_cats_metag_land_sea_counts
+
+    title_string = "Marine and Aqua metagenome Counts in ENA having GPS coordinates"
+    out_graph_file = taxonomy_dir + 'merged_cats_metag_land_sea_counts.pdf'
+    mark_size = 8
+    color_value = 'location_designation'
+    fig = px.bar(df, x = "NCBI term", y = "count", color = color_value, title = title_string)
+    fig.show()
+    # fig = pd.scatter(df_merged_cats_metag_land_sea_counts,
+    #                      width = width, color = color_value,
+    #                      title = title_string)
+    # fig.update_traces(marker = dict(size = marker_size))
+
+    # ic(out_graph_file)
+    # plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
 def main(passed_args):
     """ main
         __params__:
                passed_args
     """
-    ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir) = get_directory_paths()
-    ic(taxonomy_dir)
+
+    """ This section can be deleted, plotting called else"""
+    infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
+    df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
+    plotting(taxonomy_dir, df_merged_cats_metag_land_sea_counts)
+
+    quit()
+    """ The section above can be deleted, plotting called else"""
 
     df_ena_sample_detail = get_ena_detailed_sample_info(sample_dir)
     df_ena_sample_detail = df_ena_sample_detail.drop(columns=['altitude', 'elevation', 'checklist', 'collection_date',
@@ -196,14 +225,7 @@ def main(passed_args):
     ic(df_merged_all_categories.head(3))
 
     taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
-    quit()
-
     taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
-    quit()
-
-
-    quit()
-
 
 
     return ()

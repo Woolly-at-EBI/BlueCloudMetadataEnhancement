@@ -55,6 +55,45 @@ def get_ena_detailed_sample_info(sample_dir):
 
     return df_ena_sample_detail
 
+def analyse_all_ena_all_taxonomy(df_all_ena_sample_detail,df_metag_tax, df_tax2env):
+    """ analyse_all_ena_all_taxonomy
+        __params__:
+               passed_args:
+
+        __return__:
+
+    """
+
+    ic()
+
+    #df_tax2env.head(10): NCBI taxID
+    ic(len(df_all_ena_sample_detail))
+    ic(len(df_tax2env))
+    df_merged = pd.merge(df_all_ena_sample_detail, df_tax2env, how='inner',left_on=['tax_id'], right_on=['NCBI taxID'])
+    ic(len(df_merged))
+    ic(df_merged.head())
+    print(f"")
+
+
+    df = []
+    return df
+
+def get_all_ena_detailed_sample_info(sample_dir):
+    """ get_all_ena_detailed_sample_info
+        __params__:
+               passed_args:
+                  sample_dir
+        __return__:
+            df_all_ena_sample_detail
+    """
+
+    infile = sample_dir + "sample_much_raw.tsv"
+    ic(infile)
+    df = pd.read_csv(infile, sep = "\t", nrows=1000)
+    ic(df.head())
+
+    return df
+
 def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
     """ taxa_notin_ena_coords
     NCBI Taxa from samples that have at least 1 coordinate at ENA.
@@ -305,6 +344,23 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     ic(out_graph_file)
     fig.write_html(out_graph_file)
 
+    title_string = "Marine and Aqua metagenome sample counts in ENA having GPS coordinates + taxonomic categorisation" \
+                   + "<br><sup>Is an overall (sunburst plot)</sup>"\
+                   + "<br><sup>Excluding the land/sea from GPS from plot</sup>"
+    out_graph_file = plot_dir + 'merged_cats_metag_tax_cat_exclusive_sunburst.pdf'
+    fig = px.sunburst(
+        df,
+        title = title_string,
+        path = ['marine_freshwater_by_tax', 'NCBI term'],
+        values = 'count',
+    )
+    fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_exclusive_sunburst.html'
+    ic(out_graph_file)
+    fig.write_html(out_graph_file)
+
 
 
 def main(passed_args):
@@ -316,21 +372,27 @@ def main(passed_args):
     ic(analysis_dir)
     ic(plot_dir)
 
-    """ This section can be deleted, plotting called else"""
-    infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
-    df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
-    plotting(plot_dir, df_merged_cats_metag_land_sea_counts)
-
-    quit()
+    """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without rerrunning everything"""
+    # infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
+    # df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
+    # plotting(plot_dir, df_merged_cats_metag_land_sea_counts)
+    #
+    # quit()
 
     """ The section above can be deleted, plotting called else"""
+
+    (df_metag_tax, df_tax2env) = getTaxonomyInfo(taxonomy_dir)
+    df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
+
+    analyse_all_ena_all_taxonomy(df_all_ena_sample_detail,df_metag_tax, df_tax2env)
+    quit()
 
     df_ena_sample_detail = get_ena_detailed_sample_info(sample_dir)
     df_ena_sample_detail = df_ena_sample_detail.drop(columns=['altitude', 'elevation', 'checklist', 'collection_date',
             'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
             'environment_biome', 'environment_feature'])
 
-    (df_metag_tax, df_tax2env) = getTaxonomyInfo(taxonomy_dir)
+
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
     ic(df_merged_all_categories.head(3))

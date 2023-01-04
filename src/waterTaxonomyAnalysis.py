@@ -268,7 +268,6 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     color_value = 'location_designation'
     fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
                  text= "count", pattern_shape = "marine_freshwater_by_tax", facet_row="NCBI metagenome category")
-    fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
@@ -281,14 +280,12 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     color_value = 'location_designation'
     fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
                  text= "count", pattern_shape = "marine_freshwater_by_tax")
-    fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_stacked_counts_ordered_by_tax_cat_facet.pdf'
     fig = px.bar(df, x = "NCBI term", y = "fraction",  color = color_value, title = title_string, barmode = "stack",
                  text= "count", facet_row = "marine_freshwater_by_tax")
-    fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
@@ -304,6 +301,9 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+    out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_sunburst.html'
+    ic(out_graph_file)
+    fig.write_html(out_graph_file)
 
 
 

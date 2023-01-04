@@ -14,6 +14,10 @@ import plotly.express as px
 import plotly
 
 import argparse
+import warnings
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn2
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -55,7 +59,7 @@ def get_ena_detailed_sample_info(sample_dir):
 
     return df_ena_sample_detail
 
-def analyse_all_ena_all_taxonomy(df_all_ena_sample_detail,df_metag_tax, df_tax2env):
+def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env):
     """ analyse_all_ena_all_taxonomy
         __params__:
                passed_args:
@@ -68,14 +72,63 @@ def analyse_all_ena_all_taxonomy(df_all_ena_sample_detail,df_metag_tax, df_tax2e
 
     #df_tax2env.head(10): NCBI taxID
     ic(len(df_all_ena_sample_detail))
+    # clean the df_tax2env so that every row has at least one true water species (marine of terristrial)
+    df = df_tax2env
+    # N.B. changed all NaN's to 0. Mapping 1's to True and 0's to False
+    warnings.simplefilter('ignore')
+    df["NCBI-to-terrestrial.1"] = df["NCBI-to-terrestrial.1"].replace(np.nan, 0).astype(bool)
+    df["NCBI-to-marine.1"] = df["NCBI-to-marine.1"].replace(np.nan, 0).astype(bool)
+    warnings.resetwarnings()
+    #get all those were it is water based and marine inclusive OR  terrestrial
+    df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
+    df_tax2env = df
+    ic(df_tax2env.head())
+
     ic(len(df_tax2env))
+
     df_merged = pd.merge(df_all_ena_sample_detail, df_tax2env, how='inner',left_on=['tax_id'], right_on=['NCBI taxID'])
     ic(len(df_merged))
     ic(df_merged.head())
-    print(f"")
+
+    print(f"total ENA samples={len(df_all_ena_sample_detail)}")
+    print(f"total Taxonomic entries={len(df_tax2env)}")
 
 
-    df = []
+
+    samples_with_marine_tax=len(df_merged)
+    samples_without_marine_tax = len(df_all_ena_sample_detail) - samples_with_marine_tax
+    print(f"total ENA samples with a marine or freshwater tax_id={samples_with_marine_tax} percentage= {(samples_with_marine_tax * 100)/len(df_all_ena_sample_detail):.2f} %")
+    print(f"total ENA samples without a marine or freshwater tax_id={samples_without_marine_tax} percentage= {(samples_without_marine_tax * 100)/len(df_all_ena_sample_detail):.2f} %")
+
+    df = df_merged[["accession","NCBI-to-marine.1","NCBI-to-terrestrial.1","NCBI taxID", "NCBI taxID Type", "NCBI taxID rank", "NCBI taxID Name"]]
+
+
+    # ic(df.head())
+
+    ic(df["NCBI-to-terrestrial.1"].value_counts())
+    ic(df["NCBI-to-marine.1"].value_counts())
+    both_true_total = len(df.loc[(df["NCBI-to-marine.1"] & df["NCBI-to-terrestrial.1"])])
+    print(f"NCBI-to-marine.1 and NCBI-to-terrestrial.1 ={both_true_total}")
+    just_marine_true_total = len(df.loc[(df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])])
+    print(f"NCBI-to-marine.1 and not NCBI-to-terrestrial.1 ={just_marine_true_total}")
+    just_terr_true_total = len(df.loc[(~df["NCBI-to-marine.1"] & df["NCBI-to-terrestrial.1"])])
+    print(f"not NCBI-to-marine.1 and  NCBI-to-terrestrial.1 ={just_terr_true_total}")
+    non_true_total = len(df.loc[(~df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])])
+    print(f"not NCBI-to-marine.1 and not NCBI-to-terrestrial.1 ={non_true_total}")
+
+    non_true = df.loc[(~df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])]
+    ic(non_true.head())
+
+    # Use the venn2 function
+    # ic("plotting as venn")
+    # # venn2(subsets = (10, 5, 2), set_labels = ('Group A', 'Group B'))
+    # venn2(subsets = (just_terr_true_total, both_true_total, just_terr_true_total), set_labels = ('Marine', 'Terrestrial'))
+    # plt.title("ENA marine and terrestrial water taxon counts")
+    # plt.show()
+    # plotfile=plot_dir + 'ENA_marine_terristrial_water_tax_counts.pdf'
+    # ic(plotfile)
+    # plt.savefig(plotfile)
+
     return df
 
 def get_all_ena_detailed_sample_info(sample_dir):
@@ -89,7 +142,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
-    df = pd.read_csv(infile, sep = "\t", nrows=1000)
+    df = pd.read_csv(infile, sep = "\t", nrows=10000000000)
     ic(df.head())
 
     return df
@@ -384,7 +437,7 @@ def main(passed_args):
     (df_metag_tax, df_tax2env) = getTaxonomyInfo(taxonomy_dir)
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
 
-    analyse_all_ena_all_taxonomy(df_all_ena_sample_detail,df_metag_tax, df_tax2env)
+    analyse_all_ena_all_taxonomy(plot_dir, df_all_ena_sample_detail,df_metag_tax, df_tax2env)
     quit()
 
     df_ena_sample_detail = get_ena_detailed_sample_info(sample_dir)

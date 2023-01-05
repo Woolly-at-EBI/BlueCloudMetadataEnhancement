@@ -366,6 +366,36 @@ def categoryPlotting(df_merged_all_categories, plot_dir):
 
     return
 
+def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all):
+    """  get_category_stats
+
+        __params__:
+            ena_total_sample_count, df_merged_all_categories, df_merged_all
+        __returns__:
+
+    """
+    ic()
+    ic(df_merged_all_categories.head())
+
+    ena_uniq_lat_lon_total = df_merged_all_categories.shape[0]
+    ic(ena_uniq_lat_lon_total)
+    ic(df_merged_all_categories["eez_category"].value_counts())
+    ic(df_merged_all_categories["location_designation"].value_counts())
+    stats_dict = {}
+    stats_dict["land_only_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'land'].shape[0]
+    stats_dict["sea_only_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'sea'].shape[0]
+    stats_dict["sea_land_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'sea and land'].shape[0]
+    stats_dict["other_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'neither land nor sea'].shape[0]
+    stats_dict["any_sea_total"] = stats_dict["sea_only_total"] + stats_dict["sea_land_total"]
+    stats_dict["total_uniq_GPS_coords"] = ena_uniq_lat_lon_total
+    ic(stats_dict)
+
+    print(f"ena_total_sample_count = {ena_total_sample_count}")
+    field_name: str
+    for field_name in stats_dict:
+        print(f"{field_name}={stats_dict[field_name]} = {(100 * stats_dict[field_name]/ena_uniq_lat_lon_total):.2f}%")
+
+    return
 
 def analysis(df_merged_all, analysis_dir, plot_dir):
     """  analysis
@@ -718,6 +748,17 @@ def clean_merge_all(df_merged_all):
 
     return df_merged_all
 
+def get_ena_total_sample_count(sample_dir):
+    """ get_ena_total_sample_count
+        __params__:
+               passed_args: sample_dir
+        rtn: integer line count
+    """
+    sample_file = sample_dir + 'sample_much_raw.tsv'
+    num_lines = sum(1 for line in open(sample_file))
+
+    return num_lines
+
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
         __params__:
@@ -725,6 +766,9 @@ def main():
     """
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+    ena_total_sample_count = get_ena_total_sample_count(sample_dir)
+    ic(ena_total_sample_count)
 
     # df_ena = get_all_ena_lat_lon(sample_dir)
     #
@@ -740,18 +784,20 @@ def main():
      '''
 
     df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
-
     df_merged_all = clean_merge_all(df_merged_all)
-
-    df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
-    analyse_trawl_data(df_merged_all,df_trawl_samples)
-
-    quit()
-    extra_plots(df_merged_all, plot_dir, shape_dir)
-    plot_merge_all(df_merged_all, plot_dir)
 
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
+
+    get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
+
+    quit()
+
+    # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
+    # analyse_trawl_data(df_merged_all,df_trawl_samples)
+
+    extra_plots(df_merged_all, plot_dir, shape_dir)
+    plot_merge_all(df_merged_all, plot_dir)
     categoryPlotting(df_merged_all_categories, plot_dir)
 
     return ()

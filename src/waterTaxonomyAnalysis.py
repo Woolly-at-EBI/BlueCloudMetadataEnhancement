@@ -59,31 +59,42 @@ def get_ena_detailed_sample_info(sample_dir):
 
     return df_ena_sample_detail
 
-def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env):
-    """ analyse_all_ena_all_taxonomy
-        __params__:
-               passed_args:
 
-        __return__:
+def clean_up_df_tax2env(df):
+    """ clean_up_df_tax2env
+       clean the df_tax2env so that every row has at least one true water species (marine of terrestrial)
+       Also forces 1 to True and 0 to False for the  NCBI-to-terrestrial.1 and "NCBI-to-marine.1"
+        __params__:
+               passed_args: df_tax2env
+
+        __return__: df_tax2env
 
     """
-
-    ic()
-
-    #df_tax2env.head(10): NCBI taxID
-    ic(len(df_all_ena_sample_detail))
-    # clean the df_tax2env so that every row has at least one true water species (marine of terristrial)
-    df = df_tax2env
     # N.B. changed all NaN's to 0. Mapping 1's to True and 0's to False
     warnings.simplefilter('ignore')
     df["NCBI-to-terrestrial.1"] = df["NCBI-to-terrestrial.1"].replace(np.nan, 0).astype(bool)
     df["NCBI-to-marine.1"] = df["NCBI-to-marine.1"].replace(np.nan, 0).astype(bool)
     warnings.resetwarnings()
+
     #get all those were it is water based and marine inclusive OR  terrestrial
     df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
-    df_tax2env = df
-    ic(df_tax2env.head())
 
+    return(df)
+
+def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env):
+    """ analyse_all_ena_all_taxonomy
+           analyse the taxononmy WRT the GPS coordinates
+        __params__:
+               passed_args: plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env)
+
+        __return__: df_merged
+
+    """
+
+    ic()
+    ic(len(df_all_ena_sample_detail))
+    # clean the df_tax2env so that every row has at least one true water species (marine of terrestrial)
+    df_tax2env = clean_up_df_tax2env(df_tax2env)
     ic(len(df_tax2env))
 
     df_merged = pd.merge(df_all_ena_sample_detail, df_tax2env, how='inner',left_on=['tax_id'], right_on=['NCBI taxID'])
@@ -93,8 +104,6 @@ def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax,
     print(f"total ENA samples={len(df_all_ena_sample_detail)}")
     print(f"total Taxonomic entries={len(df_tax2env)}")
 
-
-
     samples_with_marine_tax=len(df_merged)
     samples_without_marine_tax = len(df_all_ena_sample_detail) - samples_with_marine_tax
     print(f"total ENA samples with a marine or freshwater tax_id={samples_with_marine_tax} percentage= {(samples_with_marine_tax * 100)/len(df_all_ena_sample_detail):.2f} %")
@@ -102,9 +111,7 @@ def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax,
 
     df = df_merged[["accession","NCBI-to-marine.1","NCBI-to-terrestrial.1","NCBI taxID", "NCBI taxID Type", "NCBI taxID rank", "NCBI taxID Name"]]
 
-
     # ic(df.head())
-
     ic(df["NCBI-to-terrestrial.1"].value_counts())
     ic(df["NCBI-to-marine.1"].value_counts())
     both_true_total = len(df.loc[(df["NCBI-to-marine.1"] & df["NCBI-to-terrestrial.1"])])

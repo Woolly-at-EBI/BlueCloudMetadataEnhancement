@@ -81,8 +81,8 @@ def clean_up_df_tax2env(df):
 
     return(df)
 
-def analyse_all_ena_all_taxonomy(plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env):
-    """ analyse_all_ena_all_taxonomy
+def analyse_all_ena_all_tax2env(plot_dir,df_all_ena_sample_detail, df_tax2env):
+    """ analyse_all_ena_all_tax2env
            analyse the taxononmy WRT the GPS coordinates
         __params__:
                passed_args: plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env)
@@ -149,7 +149,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
-    df = pd.read_csv(infile, sep = "\t", nrows=10000000000)
+    df = pd.read_csv(infile, sep = "\t", nrows=100000)
     ic(df.head())
 
     return df
@@ -253,6 +253,7 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     df_mega = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'inner', left_on = ['lat', 'lon'],
                                      right_on = ['lat', 'lon'])
     ic(df_mega.head(2))
+    ic(df_mega.columns)
     ic(len(df_mega))
     out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
     df3 = df_mega.groupby(["NCBI:taxid", "NCBI term",'location_designation', "NCBI metagenome category", "marine (ocean connected)", "freshwater (land enclosed)"]).size().to_frame('count').reset_index()
@@ -297,6 +298,7 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     df['fraction']  =  df['count'] / df.groupby(["NCBI:taxid"])['count'].transform('sum')
     ic()
     ic(df.head(5))
+
     ic(df.columns)
     title_string = "Marine and Aqua metagenome Counts in ENA having GPS coordinates"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_counts.pdf'
@@ -328,6 +330,7 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     df["location_designation"] = pd.Categorical(df["location_designation"], category_order)
     df = df.sort_values(["location_designation", "fraction"], ascending = [True, False])
     ic(df.head(20))
+    quit()
     title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked ordered"
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts_ordered.pdf'
     color_value = 'location_designation'
@@ -421,7 +424,25 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     ic(out_graph_file)
     fig.write_html(out_graph_file)
 
+def analyse_all_ena_just_metag(plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax, df_tax2env):
+    """ analyse_all_ena_just_metag
+        __params__: plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax
+               passed_args
+    """
+    df_ena_sample_detail = df_all_ena_sample_detail.drop(columns=['altitude', 'elevation', 'checklist', 'collection_date',
+            'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
+            'environment_biome', 'environment_feature'])
 
+    merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
+    df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
+    ic(df_merged_all_categories.head(3))
+
+    taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
+
+    quit()
+    taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
+
+    return
 
 def main(passed_args):
     """ main
@@ -444,27 +465,11 @@ def main(passed_args):
     (df_metag_tax, df_tax2env) = getTaxonomyInfo(taxonomy_dir)
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
 
-    analyse_all_ena_all_taxonomy(plot_dir, df_all_ena_sample_detail,df_metag_tax, df_tax2env)
-    quit()
+    # df_tax2env_clean = analyse_all_ena_all_tax2env(plot_dir, df_all_ena_sample_detail,df_tax2env)
 
-    df_ena_sample_detail = get_ena_detailed_sample_info(sample_dir)
-    df_ena_sample_detail = df_ena_sample_detail.drop(columns=['altitude', 'elevation', 'checklist', 'collection_date',
-            'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
-            'environment_biome', 'environment_feature'])
-
-
-    merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
-    df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
-    ic(df_merged_all_categories.head(3))
-
-    taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
-
-    quit()
-    taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
-
+    analyse_all_ena_just_metag(plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax,df_tax2env)
 
     return ()
-
 
 if __name__ == '__main__':
     ic()

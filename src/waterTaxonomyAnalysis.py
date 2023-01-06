@@ -54,7 +54,7 @@ def get_ena_detailed_sample_info(sample_dir):
     """
     ic()
     infile = sample_dir + "sample_much_lat_filtered.tsv"
-    df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows=10000000)
+    df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows=1000000000)
     ic(df_ena_sample_detail.head())
 
     return df_ena_sample_detail
@@ -62,8 +62,10 @@ def get_ena_detailed_sample_info(sample_dir):
 
 def clean_up_df_tax2env(df):
     """ clean_up_df_tax2env
-       clean the df_tax2env so that every row has at least one true water species (marine of terrestrial)
-       Also forces 1 to True and 0 to False for the  NCBI-to-terrestrial.1 and "NCBI-to-marine.1"
+       For NCBI-to-terrestrial.1 NCBI-to-marine.1" columns apping 1's to True and 0's to False
+       make the key column names  the same as the metag one
+       N.B. also ensures that every row has at least one true water species (marine or terrestrial freshwate)
+
         __params__:
                passed_args: df_tax2env
 
@@ -76,40 +78,47 @@ def clean_up_df_tax2env(df):
     df["NCBI-to-marine.1"] = df["NCBI-to-marine.1"].replace(np.nan, 0).astype(bool)
     warnings.resetwarnings()
 
+
     #get all those were it is water based and marine inclusive OR  terrestrial
     df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
 
+    #make the key column names  the same as the metag one
+    df = df.rename(columns = {'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI term"})
+
     return(df)
 
-def analyse_all_ena_all_tax2env(plot_dir,df_all_ena_sample_detail, df_tax2env):
+def analyse_all_ena_all_tax2env(plot_dir,stats_dict,df_all_ena_sample_detail, df_tax2env):
     """ analyse_all_ena_all_tax2env
            analyse the taxononmy WRT the GPS coordinates
         __params__:
-               passed_args: plot_dir,df_all_ena_sample_detail,df_metag_tax, df_tax2env)
+               passed_args: plot_dir,df_all_ena_sample_detail, df_tax2env)
 
-        __return__: df_merged
+        __return__: stats_dict, df_merged
 
     """
 
     ic()
-    ic(len(df_all_ena_sample_detail))
-    # clean the df_tax2env so that every row has at least one true water species (marine of terrestrial)
-    df_tax2env = clean_up_df_tax2env(df_tax2env)
-    ic(len(df_tax2env))
+    ic(df_all_ena_sample_detail.shape[0])
+    ic(df_tax2env.shape[0])
 
-    df_merged = pd.merge(df_all_ena_sample_detail, df_tax2env, how='inner',left_on=['tax_id'], right_on=['NCBI taxID'])
-    ic(len(df_merged))
-    ic(df_merged.head())
+    df_tax2env = df_tax2env.rename(columns={'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI term"})
+    ic(df_tax2env.head())
+    df_merged_ena_tax2env = pd.merge(df_all_ena_sample_detail, df_tax2env, how='inner',left_on=['tax_id'],
+                                right_on=['NCBI:taxid'])
+
+    stats_dict["env_tax_in_ena_count"] =  df_merged_ena_tax2env["NCBI:taxid"].nunique()
+    stats_dict["env_tax_not_in_ena_count"] = stats_dict["_input_env_tax_id_count"] - stats_dict["env_tax_in_ena_count"]
+    stats_dict["env_tax_in_ena_sample_count"] = df_merged_ena_tax2env.shape[0]
 
     print(f"total ENA samples={len(df_all_ena_sample_detail)}")
     print(f"total Taxonomic entries={len(df_tax2env)}")
 
-    samples_with_marine_tax=len(df_merged)
-    samples_without_marine_tax = len(df_all_ena_sample_detail) - samples_with_marine_tax
+    samples_with_marine_tax= stats_dict["env_tax_in_ena_sample_count"]
+    samples_without_marine_tax = df_all_ena_sample_detail.shape[0] - samples_with_marine_tax
     print(f"total ENA samples with a marine or freshwater tax_id={samples_with_marine_tax} percentage= {(samples_with_marine_tax * 100)/len(df_all_ena_sample_detail):.2f} %")
     print(f"total ENA samples without a marine or freshwater tax_id={samples_without_marine_tax} percentage= {(samples_without_marine_tax * 100)/len(df_all_ena_sample_detail):.2f} %")
 
-    df = df_merged[["accession","NCBI-to-marine.1","NCBI-to-terrestrial.1","NCBI taxID", "NCBI taxID Type", "NCBI taxID rank", "NCBI taxID Name"]]
+    df = df_merged_ena_tax2env[["accession","NCBI-to-marine.1","NCBI-to-terrestrial.1","NCBI:taxid", "NCBI taxID Type", "NCBI taxID rank", "NCBI term"]]
 
     # ic(df.head())
     ic(df["NCBI-to-terrestrial.1"].value_counts())
@@ -136,10 +145,12 @@ def analyse_all_ena_all_tax2env(plot_dir,df_all_ena_sample_detail, df_tax2env):
     # ic(plotfile)
     # plt.savefig(plotfile)
 
-    return df
+    return stats_dict, df
 
 def get_all_ena_detailed_sample_info(sample_dir):
     """ get_all_ena_detailed_sample_info
+         This is using ALL ENA samples whether they have GPS coordinates (lat lons) or not.
+         It contains many, but not all columns of sample metadata
         __params__:
                passed_args:
                   sample_dir
@@ -150,6 +161,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t", nrows=100000)
+    # df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
     return df
@@ -195,7 +207,7 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
 
     return
 
-def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
+def taxa_with_ena_coords(stats_dict, df_merged_all_categories, df_ena_sample_detail, df_metag_tax, analysis_dir):
     """ taxa_with_ena_coords
     NCBI Taxa from samples that have at least 1 coordinate at ENA.
 
@@ -208,27 +220,30 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
 
         __params__:
                passed_args
+               stats_dict
                df_merged_all_categories
                df_ena_sample_detail,
                 df_metag_tax, df_tax2env
         __return__:
+          stats_dict, df_tax_metag_sample_land_sea_counts
     """
-
+    ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
-    ic(len(df_ena_sample_detail))
+    # ic(df_metag_tax.head())
+    # ic(df_ena_sample_detail.head())
+    # ic(df_ena_sample_detail.shape[0])
     df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how='inner',left_on=['tax_id'],
                                 right_on=['NCBI:taxid'])
-    ic(df_merged_ena_metag_tax.head())
-    ic(len(df_merged_ena_metag_tax))
+    # ic(df_merged_ena_metag_tax.head(5))
+    # ic(df_merged_ena_metag_tax.shape[0])
 
-    df_tax2env = df_tax2env.rename({'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI term"})
-    df_merged_ena_tax2env = pd.merge(df_ena_sample_detail, df_metag_tax, how='inner',left_on=['tax_id'],
-                                right_on=['NCBI:taxid'])
-    ic(df_merged_ena_tax2env.head())
-    ic(len(df_merged_ena_tax2env))
+    #how many taxonomies did we and did not find?
+    stats_dict["metag_tax_in_ena_count"] =  df_merged_ena_metag_tax["NCBI:taxid"].nunique()
+    stats_dict["metag_tax_in_ena_sample_count"] = df_merged_ena_metag_tax.shape[0]
+    stats_dict["metag_tax_not_in_ena_count"] = stats_dict["_input_metag_tax_id_count"] - stats_dict["metag_tax_in_ena_count"]
 
-    """ metag get counts of sample rows by NCBI taxid"""
+    """ metag get counts of sample rows by NCBI taxid" for simple plotting """
     ic(" metag get counts of sample rows by NCBI taxid")
     out_file = analysis_dir + 'tax_metag_sample_counts.tsv'
     # df2 = df_merged_ena_metag_tax[["NCBI:taxid", "accession", "NCBI term", "marine (ocean connected)", "freshwater (land enclosed)"]]
@@ -237,7 +252,6 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
     ic(df3.head())
-
 
     out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
     df2 = df_merged_ena_metag_tax[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
@@ -263,8 +277,8 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     df3.to_csv(out_file, sep = '\t')
     df_tax_metag_sample_land_sea_counts = df3
 
-
-    plotting(plot_dir,df_tax_metag_sample_land_sea_counts )
+    #only commented out plotting whilst debugging
+    # plotting(plot_dir,df_tax_metag_sample_land_sea_counts )
 
     # """ tax2env get counts of sample rows by NCBI taxid"""
     # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
@@ -282,7 +296,7 @@ def taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_meta
     # ic(out_file)
     # df3.to_csv(out_file, sep = '\t')
 
-    return
+    return stats_dict, df_tax_metag_sample_land_sea_counts
 
 def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     """ plotting
@@ -424,31 +438,34 @@ def plotting(plot_dir,df_merged_cats_metag_land_sea_counts):
     ic(out_graph_file)
     fig.write_html(out_graph_file)
 
-def analyse_all_ena_just_metag(plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax, df_tax2env):
+def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax):
+
     """ analyse_all_ena_just_metag
-        __params__: plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax
+        __params__: plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax
                passed_args
+               stats_dict, df_merged_all_categories
     """
+    ic()
     df_ena_sample_detail = df_all_ena_sample_detail.drop(columns=['altitude', 'elevation', 'checklist', 'collection_date',
             'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
             'environment_biome', 'environment_feature'])
 
+    #this file comes from analyseHits.py
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
     ic(df_merged_all_categories.head(3))
 
-    taxa_with_ena_coords(df_merged_all_categories, df_ena_sample_detail, df_metag_tax, df_tax2env,analysis_dir)
+    stats_dict, df = taxa_with_ena_coords(stats_dict, df_merged_all_categories, df_ena_sample_detail, df_metag_tax, analysis_dir)
+    # taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
 
-    quit()
-    taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
-
-    return
+    return stats_dict, df_merged_all_categories
 
 def main(passed_args):
     """ main
         __params__:
                passed_args
     """
+    stats_dict = {}
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir) = get_directory_paths()
     ic(analysis_dir)
     ic(plot_dir)
@@ -463,12 +480,19 @@ def main(passed_args):
     """ The section above can be deleted, plotting called else"""
 
     (df_metag_tax, df_tax2env) = getTaxonomyInfo(taxonomy_dir)
+    #gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
 
-    # df_tax2env_clean = analyse_all_ena_all_tax2env(plot_dir, df_all_ena_sample_detail,df_tax2env)
+    stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
+    stats_dict["_input_metag_tax_id_count"] = df_metag_tax["NCBI:taxid"].nunique()
+    stats_dict["_input_env_tax_id_count"] = df_tax2env["NCBI taxID"].nunique()
+    stats_dict["_input_total_tax_id_count"] = stats_dict["_input_metag_tax_id_count"] + stats_dict["_input_env_tax_id_count"]
 
-    analyse_all_ena_just_metag(plot_dir, analysis_dir, df_all_ena_sample_detail, df_metag_tax,df_tax2env)
+    df_tax2env = clean_up_df_tax2env(df_tax2env)
+    stats_dict, df_merge = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,df_tax2env)
+    stats_dict, df_merge = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax)
 
+    ic(stats_dict)
     return ()
 
 if __name__ == '__main__':

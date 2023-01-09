@@ -52,6 +52,7 @@ def get_taxonomy_info(taxonomy_dir):
 
 def get_ena_detailed_sample_info(sample_dir):
     """ get_ena_detailed_sample_info
+        This is filtered for just those with lat anlons
         __params__:
                passed_args:
                   sample_dir
@@ -402,12 +403,12 @@ def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
 
-    """gchange the location_designation to a more sensible order """
+    """change the location_designation to a more sensible order """
     category_order = ['sea', 'sea and land', 'land']
     df["location_designation"] = pd.Categorical(df["location_designation"], category_order)
     df = df.sort_values(["location_designation", "fraction"], ascending = [True, False])
     ic(df.head(20))
-    quit()
+
     # title_string = "Marine and Aqua metagenome counts in ENA having GPS coordinates - stacked ordered"
     # out_graph_file = plot_dir + 'merged_cats_metag_land_sea_stacked_counts_ordered.pdf'
     # color_value = 'location_designation'
@@ -599,6 +600,10 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     ic(out_file)
     df_mega.to_csv(out_file, sep = '\t')
 
+    """rm the rows where no_gps AND taxonomic_environment is no undetermined - reduce clutter"""
+    #df_mega = df_mega[(df_mega["location_designation"] != "no_gps")]
+    df_mega = df_mega[(df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
+
     df3 = df_mega.groupby(
         ["NCBI:taxid", "NCBI term", 'location_designation',
          "taxonomic_environment"]).size().to_frame('count').reset_index()
@@ -606,6 +611,7 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     ic(df3.head())
     ic(stats_dict)
 
+    """Plotting start"""
     title_string = "All ENA - incorporates Marine and Aqua metagenome, GPS coordinates + taxonomic categorisation" \
                    + "<br><sup>Is an overall (sunburst plot)</sup>" \
                    + "<br><sup>This should be all of ENA samples!</sup>"
@@ -622,6 +628,9 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     out_graph_file = plot_dir + 'all_ena_gps_tax_combined_sunburst.pdf'
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+
+
+    """Plotting end"""
 
     return stats_dict, df_mega
 
@@ -660,7 +669,6 @@ def main():
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
-    quit()
 
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)

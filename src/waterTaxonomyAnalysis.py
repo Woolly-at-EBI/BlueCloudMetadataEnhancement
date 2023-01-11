@@ -20,7 +20,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-import stylecloud
+
 # from matplotlib_venn import venn2
 
 pd.set_option('display.max_rows', 500)
@@ -708,6 +708,24 @@ def plot_combined_analysis(plot_dir,df_mega, stats_dict):
     """Plotting end"""
 
     return stats_dict
+
+
+def investigate_a_tax():
+    """ investigate_a_tax
+    cut -f2- all_ena_gps_tax_combined.tsv | egrep -e '(^accession|410658)'  | cut -f 3,7,8,9,16-18,22,49,50 > 410658.tsv
+    """
+    infile = "/Users/woollard/projects/bluecloud/analysis/410658.tsv"
+    ic(infile)
+    df = pd.read_csv(infile, sep = "\t")
+    ic(df.head())
+    ic(df["location_designation"].value_counts())
+    ic(df["taxonomic_environment"].value_counts())
+    df_sea_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    ic(df_sea_undetermined.shape[0])
+    ic(df_sea_undetermined["environment_biome"].value_counts())
+    ic(df_sea_undetermined["environment_feature"].value_counts())
+    ic(df_sea_undetermined["environment_material"].value_counts())
+
 def main():
     """ main
         __params__:
@@ -729,6 +747,9 @@ def main():
     """ The section above can be deleted, plotting called else"""
 
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
+    investigate_a_tax()
+
+    quit()
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)

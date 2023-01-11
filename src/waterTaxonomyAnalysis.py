@@ -18,7 +18,9 @@ import argparse
 import warnings
 import numpy as np
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+import stylecloud
 # from matplotlib_venn import venn2
 
 pd.set_option('display.max_rows', 500)
@@ -66,6 +68,19 @@ def get_ena_detailed_sample_info(sample_dir):
 
     return df_ena_sample_detail
 
+def get_ena_species_info(sample_dir):
+    """ get_ena_species_info
+          just the species tax_id and scientific name
+        __params__:
+               passed_args:
+                  sample_dir
+        __return__:
+            df_ena_species
+    """
+    infile = sample_dir + "ena_sample_species.txt"
+    df_ena_species = pd.read_csv(infile, sep = "\t")
+    ic(df_ena_species.head())
+    return df_ena_species
 
 def clean_up_df_metag_tax(df):
     """ clean_up_df_metag_tax
@@ -204,7 +219,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
-    df = pd.read_csv(infile, sep = "\t", nrows = 100000)
+    # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
     df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
@@ -481,7 +496,7 @@ def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
         path = ['marine_freshwater_by_tax', 'location_designation', 'NCBI term'],
         values = 'count',
     )
-    fig.show()
+    # fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_sunburst.html'
@@ -498,7 +513,7 @@ def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
         path = ['marine_freshwater_by_tax', 'NCBI term'],
         values = 'count',
     )
-    fig.show()
+    # fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
     out_graph_file = plot_dir + 'merged_cats_metag_land_sea_tax_cat_exclusive_sunburst.html'
@@ -545,6 +560,59 @@ def taxonomic_environment_assignment(df_mega):
 
     return df_mega
 
+
+def investigate_gps_tax(df_mega, stats_dict):
+
+    """ investigate_gps_tax
+        __params__:
+            passed_args
+        stats_dict, df_merged_ena_combined_tax 
+    """
+    ic()
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+    df_mega = df_mega[
+        (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
+
+    """ Want to investigate where sea from GPS but no marine species """
+    df_sea_notax = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+
+    df_ena_species = get_ena_species_info(sample_dir)
+    df_sea_notax = pd.merge(df_sea_notax, df_ena_species, how = 'inner', on = 'tax_id')
+    ic(df_sea_notax.shape[0])
+    ic(df_sea_notax.head())
+
+    df = df_sea_notax.groupby(
+        ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
+    ic(df.head(20))
+    outfile = analysis_dir + 'sea_no-marine-tax_species_sample_count.tsv'
+    ic(outfile)
+    df.to_csv(outfile, sep = "\t")
+
+    df_wordc = df_sea_notax["scientific_name"]
+    title = "Species observed where: Sea (From GPS), but no-marine-tax-defined"
+    my_wordc(df_wordc, title, plot_dir + 'Sea_no-marine-tax-defined-World_Cloud.png')
+
+    return stats_dict
+
+def my_wordc(df_wordc,title,outfile):
+    """my_wordc
+    providing a dataframe with just one column, it automatically generates counts.
+    """
+    plt.subplots(figsize = (8, 8))
+    warnings.simplefilter('ignore')
+    wordcloud = WordCloud(
+        background_color = 'white',
+        width = 512,
+        height = 384
+    ).generate(' '.join(df_wordc))
+    warnings.resetwarnings()
+    plt.imshow(wordcloud)  # image show
+    plt.axis('off')  # to off the axis of x and y
+    plt.title(title)
+    ic(outfile)
+    plt.savefig(outfile)
+    plt.show()
 
 def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax, df_tax2env):
     """ combine_analysis_all_tax
@@ -600,6 +668,15 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     ic(out_file)
     df_mega.to_csv(out_file, sep = '\t')
 
+    stats_dict = plot_combined_analysis(plot_dir, df_mega, stats_dict)
+    investigate_gps_tax(df_mega,stats_dict)
+
+    return stats_dict, df_mega
+
+def plot_combined_analysis(plot_dir,df_mega, stats_dict):
+    """plot_combined_analysis
+
+    """
     """rm the rows where no_gps AND taxonomic_environment is no undetermined - reduce clutter"""
     #df_mega = df_mega[(df_mega["location_designation"] != "no_gps")]
     df_mega = df_mega[(df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
@@ -622,19 +699,15 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
         path = ['location_designation', 'taxonomic_environment', 'NCBI term'],
         values = 'count',
     )
-    fig.show()
+    # fig.show()
     ic(out_graph_file)
     fig.write_html(out_graph_file)
     out_graph_file = plot_dir + 'all_ena_gps_tax_combined_sunburst.pdf'
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = 'pdf')
-
-
     """Plotting end"""
 
-    return stats_dict, df_mega
-
-
+    return stats_dict
 def main():
     """ main
         __params__:
@@ -669,11 +742,12 @@ def main():
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
-
+    quit()
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
+
 
     ic(stats_dict)
     return ()

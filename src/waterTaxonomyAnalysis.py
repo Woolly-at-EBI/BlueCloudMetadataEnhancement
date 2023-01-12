@@ -13,6 +13,7 @@ from icecream import ic
 
 import plotly.express as px
 import plotly
+from plotly.subplots import make_subplots
 
 import argparse
 import warnings
@@ -714,17 +715,31 @@ def investigate_a_tax():
     """ investigate_a_tax
     cut -f2- all_ena_gps_tax_combined.tsv | egrep -e '(^accession|410658)'  | cut -f 3,7,8,9,16-18,22,49,50 > 410658.tsv
     """
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     infile = "/Users/woollard/projects/bluecloud/analysis/410658.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
+
     ic(df["location_designation"].value_counts())
     ic(df["taxonomic_environment"].value_counts())
     df_sea_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
     ic(df_sea_undetermined.shape[0])
-    ic(df_sea_undetermined["environment_biome"].value_counts())
-    ic(df_sea_undetermined["environment_feature"].value_counts())
-    ic(df_sea_undetermined["environment_material"].value_counts())
+    taxa = '410658'
+    invfields = ["environment_biome", "environment_feature", "environment_material"]
+
+    for field in invfields:
+        ic(df_sea_undetermined[field].value_counts())
+        df_count = df_sea_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
+        ic(df_count.head(2))
+        title = field + ' Top 10 Counts for env_undetermined in GPS "sea" for specific taxa:' + taxa
+        fig = px.pie(df_count, values = 'count', names = field, title = title)
+        # fig.show()
+        outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_sea_for_taxa" + taxa + ".png"
+        ic(outfile)
+        fig.write_image(outfile)
+
+
 
 def main():
     """ main

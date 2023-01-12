@@ -13,7 +13,6 @@ from icecream import ic
 
 import plotly.express as px
 import plotly
-from plotly.subplots import make_subplots
 
 import argparse
 import warnings
@@ -69,6 +68,7 @@ def get_ena_detailed_sample_info(sample_dir):
 
     return df_ena_sample_detail
 
+
 def get_ena_species_info(sample_dir):
     """ get_ena_species_info
           just the species tax_id and scientific name
@@ -82,6 +82,7 @@ def get_ena_species_info(sample_dir):
     df_ena_species = pd.read_csv(infile, sep = "\t")
     ic(df_ena_species.head())
     return df_ena_species
+
 
 def clean_up_df_metag_tax(df):
     """ clean_up_df_metag_tax
@@ -220,8 +221,8 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
-    # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-    df = pd.read_csv(infile, sep = "\t")
+    df = pd.read_csv(infile, sep = "\t", nrows = 100000)
+    # df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
     return df
@@ -550,9 +551,9 @@ def taxonomic_environment_assignment(df_mega):
 
     conditions = [
          ((df_mega["marine (ocean connected)"]) & (df_mega["freshwater (land enclosed)"])),
-         ((df_mega["marine (ocean connected)"]) & (df_mega["freshwater (land enclosed)"] == False)),
-         ((df_mega["marine (ocean connected)"] == False) & (df_mega["freshwater (land enclosed)"])),
-         ((df_mega["marine (ocean connected)"] == False) & (df_mega["freshwater (land enclosed)"] == False))
+         ((df_mega["marine (ocean connected)"]) & (df_mega["freshwater (land enclosed)"] is False)),
+         ((df_mega["marine (ocean connected)"] is False) & (df_mega["freshwater (land enclosed)"])),
+         ((df_mega["marine (ocean connected)"] is False) & (df_mega["freshwater (land enclosed)"] is False))
     ]
 
     values =["marine and freshwater", "marine (ocean connected)", "freshwater (land enclosed)", "undetermined"]
@@ -716,6 +717,23 @@ def investigate_a_tax():
     cut -f2- all_ena_gps_tax_combined.tsv | egrep -e '(^accession|410658)'  | cut -f 3,7,8,9,16-18,22,49,50 > 410658.tsv
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+
+    infile = analysis_dir + 'all_ena_gps_tax_combined.tsv'
+    # df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
+    df_mega = pd.read_csv(infile, sep = "\t")
+    ic(df_mega.head(3))
+    df_sea_undetermined = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    ic(df_sea_undetermined.shape[0])
+    title = 'World view env_undetermined in GPS "sea" for all taxa'
+    fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", title = title)
+    outfile = plot_dir + title.replace(" ","_") + '.png'
+    outfile = outfile.replace('"', '')
+    ic(outfile)
+    fig.write_image(outfile)
+    fig.show()
+
+    quit()
     infile = "/Users/woollard/projects/bluecloud/analysis/410658.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t")
@@ -725,21 +743,27 @@ def investigate_a_tax():
     ic(df["taxonomic_environment"].value_counts())
     df_sea_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
     ic(df_sea_undetermined.shape[0])
+    ic(df_sea_undetermined.head(2))
     taxa = '410658'
     invfields = ["environment_biome", "environment_feature", "environment_material"]
 
     for field in invfields:
-        ic(df_sea_undetermined[field].value_counts())
+        # ic(df_sea_undetermined[field].value_counts())
         df_count = df_sea_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
-        ic(df_count.head(2))
+        # ic(df_count.head(2))
         title = field + ' Top 10 Counts for env_undetermined in GPS "sea" for specific taxa:' + taxa
         fig = px.pie(df_count, values = 'count', names = field, title = title)
         # fig.show()
         outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_sea_for_taxa" + taxa + ".png"
         ic(outfile)
         fig.write_image(outfile)
-
-
+    title = 'World view env_undetermined in GPS "sea" for specific taxa:' + taxa
+    fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", color = "environment_biome", title = title)
+    outfile = plot_dir + title.replace(" ","_") + '.png'
+    outfile = outfile.replace('"','')
+    ic(outfile)
+    fig.write_image(outfile)
+    fig.show()
 
 def main():
     """ main

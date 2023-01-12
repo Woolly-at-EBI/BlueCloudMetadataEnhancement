@@ -1,4 +1,4 @@
-"""Script of waterTaxonomyAnalysis.py is to take the taxonomy environment assignments
+"""Script of water_taxonomyAnalysis.py is to take the taxonomy environment assignments
    and combine them with the output from analyseHits.py
    to allow one to get analysis of what is marine or terrestrial/freshwater from different methods
 
@@ -54,7 +54,7 @@ def get_taxonomy_info(taxonomy_dir):
 
 def get_ena_detailed_sample_info(sample_dir):
     """ get_ena_detailed_sample_info
-        This is filtered for just those with lat anlons
+        This is filtered for just those with lat and lons
         __params__:
                passed_args:
                   sample_dir
@@ -105,9 +105,9 @@ def clean_up_df_metag_tax(df):
 
 def clean_up_df_tax2env(df):
     """ clean_up_df_tax2env
-       For NCBI-to-terrestrial.1 NCBI-to-marine.1" columns apping 1's to True and 0's to False
+       For NCBI-to-terrestrial.1 NCBI-to-marine.1" columns mapping 1's to True and 0's to False
        make the key column names  the same as the metag one
-       N.B. also ensures that every row has at least one true water species (marine or terrestrial freshwate)
+       N.B. also ensures that every row has at least one true water species (marine or terrestrial freshwater)
 
         __params__:
                passed_args: df_tax2env
@@ -172,7 +172,7 @@ def analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail, 
         f"total ENA samples without a marine or freshwater tax_id={samples_without_marine_tax} "
         f"percentage= {(samples_without_marine_tax * 100) / len(df_all_ena_sample_detail):.2f} %")
 
-    # reduce the columns dowm to make it easier to debug (not reused elsewere_
+    # reduce the columns down to make it easier to debug (not reused elsewhere_
     df = df_merged_ena_tax2env[
         ["accession", "NCBI-to-marine.1", "NCBI-to-terrestrial.1", "NCBI:taxid", "NCBI taxID Type", "NCBI taxID rank",
          "NCBI term"]]
@@ -201,7 +201,7 @@ def analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail, 
     # set_labels = ('Marine', 'Terrestrial'))
     # plt.title("ENA marine and terrestrial water taxon counts")
     # plt.show()
-    # plotfile=plot_dir + 'ENA_marine_terristrial_water_tax_counts.pdf'
+    # plotfile=plot_dir + 'ENA_marine_terrestrial_water_tax_counts.pdf'
     # ic(plotfile)
     # plt.savefig(plotfile)
 
@@ -356,8 +356,7 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     ic(df3.head())
 
     stats_dict["metag_tax_and_GPS_location_sample_count"] = df_mega.shape[0]
-    stats_dict["metag_tax_andnot_GPS_location_sample_count"] = stats_dict['metag_tax_in_ena_sample_count'] - stats_dict[
-        "metag_tax_and_GPS_location_sample_count"]
+    stats_dict["metag_tax_and_not_GPS_location_sample_count"] = stats_dict['metag_tax_in_ena_sample_count'] - stats_dict["metag_tax_and_GPS_location_sample_count"]
 
     ic(out_file)
     df3.to_csv(out_file, sep = '\t')
@@ -366,7 +365,7 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     # only commented out plotting whilst debugging
     # plotting_metag(plot_dir,df_tax_metag_sample_land_sea_counts )
 
-    # """ tax2env get counts of sample rows by NCBI taxid"""
+    # """ tax 2 env get counts of sample rows by NCBI taxid"""
     # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
     # df2 = df_merged_ena_tax2env[["NCBI:taxid", "accession", "NCBI term"]]
     # df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
@@ -556,7 +555,7 @@ def taxonomic_environment_assignment(df_mega):
          ((df_mega["marine (ocean connected)"] is False) & (df_mega["freshwater (land enclosed)"] is False))
     ]
 
-    values =["marine and freshwater", "marine (ocean connected)", "freshwater (land enclosed)", "undetermined"]
+    values = ["marine and freshwater", "marine (ocean connected)", "freshwater (land enclosed)", "undetermined"]
     df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined")
     ic(df_mega['taxonomic_environment'].value_counts())
 
@@ -577,39 +576,39 @@ def investigate_gps_tax(df_mega, stats_dict):
         (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
 
     """ Want to investigate where sea from GPS but no marine species """
-    df_sea_notax = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    df_sea_no_tax = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
 
     df_ena_species = get_ena_species_info(sample_dir)
-    df_sea_notax = pd.merge(df_sea_notax, df_ena_species, how = 'inner', on = 'tax_id')
-    ic(df_sea_notax.shape[0])
-    ic(df_sea_notax.head())
+    df_sea_no_tax = pd.merge(df_sea_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
+    ic(df_sea_no_tax.shape[0])
+    ic(df_sea_no_tax.head())
 
-    df = df_sea_notax.groupby(
+    df = df_sea_no_tax.groupby(
         ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
     ic(df.head(20))
     outfile = analysis_dir + 'sea_no-marine-tax_species_sample_count.tsv'
     ic(outfile)
     df.to_csv(outfile, sep = "\t")
 
-    df_wordc = df_sea_notax["scientific_name"]
+    df_word_c = df_sea_no_tax["scientific_name"]
     title = "Species observed where: Sea (From GPS), but no-marine-tax-defined"
-    my_wordc(df_wordc, title, plot_dir + 'Sea_no-marine-tax-defined-World_Cloud.png')
+    my_word_c(df_word_c, title, plot_dir + 'Sea_no-marine-tax-defined-World_Cloud.png')
 
     return stats_dict
 
-def my_wordc(df_wordc,title,outfile):
-    """my_wordc
+def my_word_c(df_word_c, title, outfile):
+    """my_word_c
     providing a dataframe with just one column, it automatically generates counts.
     """
     plt.subplots(figsize = (8, 8))
     warnings.simplefilter('ignore')
-    wordcloud = WordCloud(
+    word_cloud = WordCloud(
         background_color = 'white',
         width = 512,
         height = 384
-    ).generate(' '.join(df_wordc))
+    ).generate(' '.join(df_word_c))
     warnings.resetwarnings()
-    plt.imshow(wordcloud)  # image show
+    plt.imshow(word_cloud)  # image show
     plt.axis('off')  # to off the axis of x and y
     plt.title(title)
     ic(outfile)
@@ -637,15 +636,15 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     df = df_merged_ena_combined_tax
 
     stats_dict["_global_total_samples_with_gps"] = df["lat"].count()
-    stats_dict["_global_total_samples_with_watertax"] = df["NCBI:taxid"].count()
-    stats_dict["_global_total_samples_with_watertax_and_gps"] = 0
+    stats_dict["_global_total_samples_with_water_tax"] = df["NCBI:taxid"].count()
+    stats_dict["_global_total_samples_with_water_tax_and_gps"] = 0
     """ comparing a column to itself gets rid of NaN"""
     df["NCBI_taxid"] = df["NCBI:taxid"]
     df_tmp = df.query('lat == lat')
     ic(df_tmp.shape[0])
     df_tmp = df_tmp.query('NCBI_taxid == NCBI_taxid')
     ic(df_tmp.shape[0])
-    stats_dict["_global_total_samples_with_watertax_and_gps"] = df_tmp.shape[0]
+    stats_dict["_global_total_samples_with_water_tax_and_gps"] = df_tmp.shape[0]
 
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
@@ -671,17 +670,18 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     df_mega.to_csv(out_file, sep = '\t')
 
     stats_dict = plot_combined_analysis(plot_dir, df_mega, stats_dict)
-    investigate_gps_tax(df_mega,stats_dict)
+    investigate_gps_tax(df_mega, stats_dict)
 
     return stats_dict, df_mega
 
-def plot_combined_analysis(plot_dir,df_mega, stats_dict):
+def plot_combined_analysis(plot_dir, df_mega, stats_dict):
     """plot_combined_analysis
 
     """
     """rm the rows where no_gps AND taxonomic_environment is no undetermined - reduce clutter"""
-    #df_mega = df_mega[(df_mega["location_designation"] != "no_gps")]
-    df_mega = df_mega[(df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
+    # df_mega = df_mega[(df_mega["location_designation"] != "no_gps")]
+    df_mega = df_mega[(df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] 
+                                                                       != "undetermined")]
 
     df3 = df_mega.groupby(
         ["NCBI:taxid", "NCBI term", 'location_designation',
@@ -718,7 +718,6 @@ def investigate_a_tax():
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
-
     infile = analysis_dir + 'all_ena_gps_tax_combined.tsv'
     # df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
     df_mega = pd.read_csv(infile, sep = "\t")
@@ -727,7 +726,7 @@ def investigate_a_tax():
     ic(df_sea_undetermined.shape[0])
     title = 'World view env_undetermined in GPS "sea" for all taxa'
     fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", title = title)
-    outfile = plot_dir + title.replace(" ","_") + '.png'
+    outfile = plot_dir + title.replace(" ", "_") + '.png'
     outfile = outfile.replace('"', '')
     ic(outfile)
     fig.write_image(outfile)
@@ -745,9 +744,9 @@ def investigate_a_tax():
     ic(df_sea_undetermined.shape[0])
     ic(df_sea_undetermined.head(2))
     taxa = '410658'
-    invfields = ["environment_biome", "environment_feature", "environment_material"]
+    inv_fields = ["environment_biome", "environment_feature", "environment_material"]
 
-    for field in invfields:
+    for field in inv_fields:
         # ic(df_sea_undetermined[field].value_counts())
         df_count = df_sea_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
         # ic(df_count.head(2))
@@ -759,8 +758,8 @@ def investigate_a_tax():
         fig.write_image(outfile)
     title = 'World view env_undetermined in GPS "sea" for specific taxa:' + taxa
     fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", color = "environment_biome", title = title)
-    outfile = plot_dir + title.replace(" ","_") + '.png'
-    outfile = outfile.replace('"','')
+    outfile = plot_dir + title.replace(" ", "_") + '.png'
+    outfile = outfile.replace('"', '')
     ic(outfile)
     fig.write_image(outfile)
     fig.show()
@@ -807,8 +806,6 @@ def main():
                                                                df_tax2env)
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
-
-
     ic(stats_dict)
     return ()
 

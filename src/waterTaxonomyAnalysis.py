@@ -732,7 +732,6 @@ def investigate_a_tax():
     fig.write_image(outfile)
     fig.show()
 
-    quit()
     infile = "/Users/woollard/projects/bluecloud/analysis/410658.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t")
@@ -740,20 +739,20 @@ def investigate_a_tax():
 
     ic(df["location_designation"].value_counts())
     ic(df["taxonomic_environment"].value_counts())
-    df_marine_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    df_marine_undetermined = df.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
     ic(df_marine_undetermined.shape[0])
     ic(df_marine_undetermined.head(2))
     taxa = '410658'
     inv_fields = ["environment_biome", "environment_feature", "environment_material"]
 
     for field in inv_fields:
-        # ic(df_sea_undetermined[field].value_counts())
+        # ic(df_marine_undetermined[field].value_counts())
         df_count = df_marine_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
         # ic(df_count.head(2))
         title = field + ' Top 10 Counts for env_undetermined in GPS "marine" for specific taxa:' + taxa
         fig = px.pie(df_count, values = 'count', names = field, title = title)
         # fig.show()
-        outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_sea_for_taxa" + taxa + ".png"
+        outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_marine_for_taxa" + taxa + ".png"
         ic(outfile)
         fig.write_image(outfile)
     title = 'World view env_undetermined in GPS "marine" for specific taxa:' + taxa
@@ -796,17 +795,13 @@ def main():
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
-
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
 
-
-
     investigate_a_tax()
 
-    quit()
     ic(stats_dict)
 
     return ()

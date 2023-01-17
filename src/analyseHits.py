@@ -10,9 +10,6 @@ __docformat___ = 'reStructuredText'
 # /opt/homebrew/bin/pydoc3 getGeoLocationCategorisation   #interactive
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
-import os
-
-import pandas as pd
 from icecream import ic
 from functools import reduce
 
@@ -382,9 +379,9 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
     ic(df_merged_all_categories["eez_category"].value_counts())
     ic(df_merged_all_categories["location_designation"].value_counts())
     stats_dict = {}
-    stats_dict["terrestrial"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'terrestrial'].shape[0]
-    stats_dict["marine_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'marine'].shape[0]
-    stats_dict["other_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'neither land nor sea'].shape[0]
+    stats_dict["terrestrial"] = df_merged_all_categories["location_designation_terrestrial"].count()
+    stats_dict["marine_total"] = df_merged_all_categories["location_designation_marine"].count()
+    stats_dict["other_total"] = df_merged_all_categories["location_designation_other"].count()
     stats_dict["total_uniq_GPS_coords"] = ena_uniq_lat_lon_total
     ic(stats_dict)
 
@@ -423,10 +420,21 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
 
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] > 0),
-        'location_designation'] = 'marine'
+        'location_designation_marine'] = 'marine'
     df_merged_all_categories.loc[
-        (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] > 0),
+        (df_merged_all_categories['land_total'] > 0),
+        'location_designation_terrestrial'] = 'terrestrial'
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
+        'location_designation_other'] = 'neither marine nor terrestrial'
+
+   # preferentially choosing marine
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['land_total'] > 0),
         'location_designation'] = 'terrestrial'
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['sea_total'] > 0),
+        'location_designation'] = 'marine'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
@@ -437,6 +445,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
     df_merged_all_categories.to_csv(out_file, sep = '\t')
 
     ic("========================================================")
+
     return out_file
 
 
@@ -775,10 +784,7 @@ def main():
                                          df_hydrosheds, df_intersect_eez_iho, hit_dir)
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
 
-    ic("Do the plotting")
-    ''' these are the plotting sections , can comment out all above once they have all they all been run.
-        Done so that can save the time etc. of re-running the merging
-     '''
+
 
     df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
     df_merged_all = clean_merge_all(df_merged_all)
@@ -790,6 +796,11 @@ def main():
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)
+
+    ic("Do the plotting")
+    ''' these are the plotting sections , can comment out all above once they have all they all been run.
+        Done so that can save the time etc. of re-running the merging
+     '''
 
     extra_plots(df_merged_all, plot_dir, shape_dir)
     plot_merge_all(df_merged_all, plot_dir)

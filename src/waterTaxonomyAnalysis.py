@@ -719,8 +719,8 @@ def investigate_a_tax():
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     infile = analysis_dir + 'all_ena_gps_tax_combined.tsv'
-    # df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
-    df_mega = pd.read_csv(infile, sep = "\t")
+    df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
+    # df_mega = pd.read_csv(infile, sep = "\t")
     ic(df_mega.head(3))
     df_sea_undetermined = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
     ic(df_sea_undetermined.shape[0])
@@ -769,11 +769,8 @@ def main():
         __params__:
                passed_args
     """
-    stats_dict = {}
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-    ic(analysis_dir)
-    ic(plot_dir)
 
+    stats_dict = {}
     """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 
     re-running everything"""
     # infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
@@ -782,12 +779,13 @@ def main():
     #
     # quit()
 
-    """ The section above can be deleted, plotting called else"""
 
+
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    ic(analysis_dir)
+    ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
-    investigate_a_tax()
 
-    quit()
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
@@ -798,15 +796,24 @@ def main():
     stats_dict["_input_total_tax_id_count"] = stats_dict["_input_metag_tax_id_count"] + stats_dict[
         "_input_env_tax_id_count"]
 
+    quit()
+
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
-    quit()
+
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
+
+
+
+    investigate_a_tax()
+
+    quit()
     ic(stats_dict)
+
     return ()
 
 

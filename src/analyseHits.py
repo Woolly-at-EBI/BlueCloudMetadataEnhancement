@@ -81,7 +81,7 @@ def plot_merge_all(df_merged_all, plot_dir):
         __params__:
                passed_args df_merged_all, plot_dir)
     """
-    width = width
+    width = 300
     out_graph_file = plot_dir + 'IHO_ocean_by_lon.pdf'
     ic(out_graph_file)
     fig = px.scatter(df_merged_all, title = "IHO, lats and longhurst", x = "IHO_category", y = "lat", width = width,
@@ -382,11 +382,9 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
     ic(df_merged_all_categories["eez_category"].value_counts())
     ic(df_merged_all_categories["location_designation"].value_counts())
     stats_dict = {}
-    stats_dict["land_only_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'land'].shape[0]
-    stats_dict["sea_only_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'sea'].shape[0]
-    stats_dict["sea_land_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'sea and land'].shape[0]
+    stats_dict["terrestrial"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'terrestrial'].shape[0]
+    stats_dict["marine_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'marine'].shape[0]
     stats_dict["other_total"] = df_merged_all_categories[df_merged_all_categories["location_designation"] == 'neither land nor sea'].shape[0]
-    stats_dict["any_sea_total"] = stats_dict["sea_only_total"] + stats_dict["sea_land_total"]
     stats_dict["total_uniq_GPS_coords"] = ena_uniq_lat_lon_total
     ic(stats_dict)
 
@@ -424,17 +422,14 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
     df_merged_all_categories = createTotal(df_merged_all_categories, land_categories, 'land_total')
 
     df_merged_all_categories.loc[
-        (df_merged_all_categories['sea_total'] > 0) & (df_merged_all_categories['land_total'] > 0),
-        'location_designation'] = 'sea and land'
-    df_merged_all_categories.loc[
-        (df_merged_all_categories['sea_total'] > 0) & (df_merged_all_categories['land_total'] == 0),
-        'location_designation'] = 'sea'
+        (df_merged_all_categories['sea_total'] > 0),
+        'location_designation'] = 'marine'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] > 0),
-        'location_designation'] = 'land'
+        'location_designation'] = 'terrestrial'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
-        'location_designation'] = 'neither land nor sea'
+        'location_designation'] = 'neither marine nor terrestrial'
 
     ic(df_merged_all_categories.head(15))
     out_file = analysis_dir + 'merged_all_categories.tsv'
@@ -764,19 +759,21 @@ def main():
         __params__:
                passed_args
     """
+    full_rerun = False
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     ena_total_sample_count = get_ena_total_sample_count(sample_dir)
     ic(ena_total_sample_count)
 
-    # df_ena = get_all_ena_lat_lon(sample_dir)
-    #
-    # (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho) \
-    #     = processHitFiles(hit_dir)
-    # df_merged_all = mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin,
-    #                                  df_hydrosheds, df_intersect_eez_iho, hit_dir)
-    # merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
+    # get all the files processed
+    if full_rerun:
+        df_ena = get_all_ena_lat_lon(sample_dir)
+        (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho) \
+            = processHitFiles(hit_dir)
+        df_merged_all = mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin,
+                                         df_hydrosheds, df_intersect_eez_iho, hit_dir)
+        merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
 
     ic("Do the plotting")
     ''' these are the plotting sections , can comment out all above once they have all they all been run.
@@ -790,8 +787,6 @@ def main():
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
 
     get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
-
-    quit()
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)

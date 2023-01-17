@@ -575,24 +575,24 @@ def investigate_gps_tax(df_mega, stats_dict):
     df_mega = df_mega[
         (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
 
-    """ Want to investigate where sea from GPS but no marine species """
-    df_sea_no_tax = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    """ Want to investigate where marine from GPS but no marine species """
+    df_marine_no_tax = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
 
     df_ena_species = get_ena_species_info(sample_dir)
-    df_sea_no_tax = pd.merge(df_sea_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
-    ic(df_sea_no_tax.shape[0])
-    ic(df_sea_no_tax.head())
+    df_marine_no_tax = pd.merge(df_marine_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
+    ic(df_marine_no_tax.shape[0])
+    ic(df_marine_no_tax.head())
 
-    df = df_sea_no_tax.groupby(
+    df = df_marine_no_tax.groupby(
         ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
     ic(df.head(20))
-    outfile = analysis_dir + 'sea_no-marine-tax_species_sample_count.tsv'
+    outfile = analysis_dir + 'marine_no-marine-tax_species_sample_count.tsv'
     ic(outfile)
     df.to_csv(outfile, sep = "\t")
 
-    df_word_c = df_sea_no_tax["scientific_name"]
-    title = "Species observed where: Sea (From GPS), but no-marine-tax-defined"
-    my_word_c(df_word_c, title, plot_dir + 'Sea_no-marine-tax-defined-World_Cloud.png')
+    df_word_c = df_marine_no_tax["scientific_name"]
+    title = "Species observed where: marine (From GPS), but no-marine-tax-defined"
+    my_word_c(df_word_c, title, plot_dir + 'marine_no-marine-tax-defined-World_Cloud.png')
 
     return stats_dict
 
@@ -722,10 +722,10 @@ def investigate_a_tax():
     df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
     # df_mega = pd.read_csv(infile, sep = "\t")
     ic(df_mega.head(3))
-    df_sea_undetermined = df_mega.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
-    ic(df_sea_undetermined.shape[0])
+    df_marine_undetermined = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
+    ic(df_marine_undetermined.shape[0])
     title = 'World view env_undetermined in GPS "sea" for all taxa'
-    fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", title = title)
+    fig = px.scatter_geo(df_marine_undetermined, lat = "lat", lon = "lon", title = title)
     outfile = plot_dir + title.replace(" ", "_") + '.png'
     outfile = outfile.replace('"', '')
     ic(outfile)
@@ -740,24 +740,24 @@ def investigate_a_tax():
 
     ic(df["location_designation"].value_counts())
     ic(df["taxonomic_environment"].value_counts())
-    df_sea_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
-    ic(df_sea_undetermined.shape[0])
-    ic(df_sea_undetermined.head(2))
+    df_marine_undetermined = df.query("location_designation == 'sea' and taxonomic_environment == 'undetermined'")
+    ic(df_marine_undetermined.shape[0])
+    ic(df_marine_undetermined.head(2))
     taxa = '410658'
     inv_fields = ["environment_biome", "environment_feature", "environment_material"]
 
     for field in inv_fields:
         # ic(df_sea_undetermined[field].value_counts())
-        df_count = df_sea_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
+        df_count = df_marine_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
         # ic(df_count.head(2))
-        title = field + ' Top 10 Counts for env_undetermined in GPS "sea" for specific taxa:' + taxa
+        title = field + ' Top 10 Counts for env_undetermined in GPS "marine" for specific taxa:' + taxa
         fig = px.pie(df_count, values = 'count', names = field, title = title)
         # fig.show()
         outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_sea_for_taxa" + taxa + ".png"
         ic(outfile)
         fig.write_image(outfile)
-    title = 'World view env_undetermined in GPS "sea" for specific taxa:' + taxa
-    fig = px.scatter_geo(df_sea_undetermined, lat = "lat", lon = "lon", color = "environment_biome", title = title)
+    title = 'World view env_undetermined in GPS "marine" for specific taxa:' + taxa
+    fig = px.scatter_geo(df_marine_undetermined, lat = "lat", lon = "lon", color = "environment_biome", title = title)
     outfile = plot_dir + title.replace(" ", "_") + '.png'
     outfile = outfile.replace('"', '')
     ic(outfile)
@@ -779,13 +779,10 @@ def main():
     #
     # quit()
 
-
-
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     ic(analysis_dir)
     ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
-
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
@@ -795,8 +792,6 @@ def main():
     stats_dict["_input_env_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
     stats_dict["_input_total_tax_id_count"] = stats_dict["_input_metag_tax_id_count"] + stats_dict[
         "_input_env_tax_id_count"]
-
-    quit()
 
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,

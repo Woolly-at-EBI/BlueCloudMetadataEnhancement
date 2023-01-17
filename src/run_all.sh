@@ -58,7 +58,7 @@ shape_file=$shapefile_dir/world-administrative-boundaries/world-administrative-b
 out_file=$outdir/world-administrative-boundaries_hits.tsv
 run_geolocation $shape_file  $out_file
 
-#terrestrial/freshwater: feow_hydrosheds : if in hydroshed -
+#terrestrial/freshwater: feow_hydrosheds : if in hydroshed
 shape_file=$shapefile_dir/GIS_hs_snapped/feow_hydrosheds.shp
 out_file=$outdir/feow_hydrosheds_hits.tsv
 run_geolocation $shape_file  $out_file

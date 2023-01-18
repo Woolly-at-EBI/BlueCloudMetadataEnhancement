@@ -23,8 +23,8 @@ from wordcloud import WordCloud
 
 # from matplotlib_venn import venn2
 
-pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_columns', 500)
+pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
 
 
@@ -222,7 +222,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-    # df = pd.read_csv(infile, sep = "\t")
+    #df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
     return df
@@ -277,10 +277,42 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
 
     return
 
+def print_df_mega(prefix, df_mega):
+    """
+
+    :param prefix:
+    :param df_mega:
+    :return:
+    """
+
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    out_file = analysis_dir + prefix + '_lat_lon_marine_or_terrestrial.tsv'
+    df_mega['NCBI:taxid'] = df_mega['NCBI:taxid'].astype('Int64')
+    df_mega_filtered = df_mega.query(
+        '(location_designation_marine == "marine") or (location_designation_terrestrial == "terrestrial") or  (~lat.isnull())',
+        engine = 'python')
+    ic(df_mega_filtered.shape[0])
+    ic(out_file, df_mega_filtered.shape[0])
+    df_mega_filtered = df_mega_filtered.drop(
+        ['coords', 'sea_total', 'land_total', 'location_designation', 'Unnamed: 0'], axis = 1)
+    ic(df_mega_filtered.columns)
+    df_mega_filtered.to_csv(out_file, sep = '\t', index = False)
+
+    df_just_marine = df_mega_filtered.query('location_designation_marine == "marine"')
+    out_file = analysis_dir + prefix + '_lat_lon_marine.tsv'
+    ic(out_file, df_just_marine.shape[0])
+    df_just_marine.to_csv(out_file, sep = '\t', index = False)
+
+    df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
+    out_file = analysis_dir + prefix + '_lat_lon_terrestrial.tsv'
+    ic(out_file, df_just_terrestrial.shape[0])
+    df_just_terrestrial.to_csv(out_file, sep = '\t', index = False)
+
+    return
 
 def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, analysis_dir):
     """ taxa_with_ena_coords
-    NCBI Taxa from samples that have at least 1 coordinate at ENA.
+    NCBI Taxa from samples that have at least 1 coordinate at ENA or marine org( via metagenome)
     Only implemented with metagenomes!
 
     For each taxon, please inform the following fields:
@@ -289,25 +321,32 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     #samples in sea, sea & land, land
     #of associated runs in sea, sea & land, land (if possible, to assess relevance/importance)
 
+    Strategy:
+        get all samples in ENA.
+             annotate the metag samples - joining on taxa id
+             annotate the marine/terrestrial and other categorical data from the shapefiles - join on lat and lon
+
         __params__:
-               passed_args
-               stats_dict
-               df_ena_sample_detail,
-                df_metag_tax,
+               passed_args:
+               stats_dict - dictionary that gets past is gradually being populated
+               df_ena_sample_detail - all of ENA from web services
+                df_metag_tax, - this is just that taxa from Stephane's list
         __return__:
           stats_dict, df_merged_ena_metag_tax
     """
     ic()
-    ic(analysis_dir)
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-
-    # ic(df_metag_tax.head())
-    # ic(df_ena_sample_detail.head())
-    # ic(df_ena_sample_detail.shape[0])
-    df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'inner', left_on = ['tax_id'],
+    ic(df_metag_tax.head(2))
+    ic(df_ena_sample_detail.head(2))
+    ic(df_ena_sample_detail.shape[0])
+    #get all samples that have a metagenome tax id
+    # df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'inner', left_on = ['tax_id'],
+    #                                    right_on = ['NCBI:taxid'])
+    df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'left', left_on = ['tax_id'],
                                        right_on = ['NCBI:taxid'])
-    # ic(df_merged_ena_metag_tax.head(5))
-    # ic(df_merged_ena_metag_tax.shape[0])
+
+    ic(df_merged_ena_metag_tax.head(2))
+    ic(df_merged_ena_metag_tax.shape[0])
 
     # how many taxonomies did we and did not find? (in all not just GPS)
     stats_dict["metag_tax_ids_in_ena_count"] = df_merged_ena_metag_tax["NCBI:taxid"].nunique()
@@ -328,12 +367,21 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     df3.to_csv(out_file, sep = '\t')
     ic(df3.head())
 
+    out_file = analysis_dir + 'tax_metag_all_ENA_counts.tsv'
+    df2 = df_merged_ena_metag_tax.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
+    ic(out_file, df2.shape[0])
+    df2.to_csv(out_file, sep = '\t')
+
     out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
     df2 = df_merged_ena_metag_tax[["NCBI:taxid", "NCBI term", 'lat', 'lon']].drop_duplicates()
+    ic('["NCBI:taxid", "NCBI term", "lat", "lon"].drop_dups', df2.shape[0])
+    df2 = df2[df2['lat'].notna()]
+    ic('after_rm_lat_nan', df2.shape[0])
     ic(df2.head(2))
+
     df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
     ic(df3.head(2))
-    ic(out_file)
+    ic(out_file, df3.shape[0])
     df3.to_csv(out_file, sep = '\t')
 
     """ want to get samples in sea, sea & land, land"""
@@ -343,23 +391,31 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
 
     ic(df_merged_all_categories.head(2))
-    df_mega = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'inner', left_on = ['lat', 'lon'],
+    # was inner when wanted just
+    df_mega = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'left', left_on = ['lat', 'lon'],
                        right_on = ['lat', 'lon'])
     ic(df_mega.head(2))
     ic(df_mega.columns)
     ic(df_mega.shape[0])
-    out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
-    df3 = df_mega.groupby(
-        ["NCBI:taxid", "NCBI term", 'location_designation', "NCBI metagenome category", "marine (ocean connected)",
-         "freshwater (land enclosed)"]).size().to_frame('count').reset_index()
 
-    ic(df3.head())
+    fileprex = "merge_tax_metag"
+    print_df_mega(fileprex, df_mega)
 
-    stats_dict["metag_tax_and_GPS_location_sample_count"] = df_mega.shape[0]
-    stats_dict["metag_tax_and_not_GPS_location_sample_count"] = stats_dict['metag_tax_in_ena_sample_count'] - stats_dict["metag_tax_and_GPS_location_sample_count"]
 
-    ic(out_file)
-    df3.to_csv(out_file, sep = '\t')
+    # quit()
+    #
+    # out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
+    # df3 = df_mega.groupby(
+    #     ["NCBI:taxid", "NCBI term", 'location_designation', "NCBI metagenome category", "marine (ocean connected)",
+    #      "freshwater (land enclosed)"]).size().to_frame('count').reset_index()
+    #
+    # ic(df3.head())
+    #
+    # stats_dict["metag_tax_and_GPS_location_sample_count"] = df_mega.shape[0]
+    # stats_dict["metag_tax_and_not_GPS_location_sample_count"] = stats_dict['metag_tax_in_ena_sample_count'] - stats_dict["metag_tax_and_GPS_location_sample_count"]
+    # ic(out_file, df3.shape[0])
+    # df3.to_csv(out_file, sep = '\t')
+
     # df_tax_metag_sample_land_sea_counts = df3
 
     # only commented out plotting whilst debugging
@@ -381,7 +437,7 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     # ic(out_file)
     # df3.to_csv(out_file, sep = '\t')
 
-    return stats_dict, df_merged_ena_metag_tax
+    return stats_dict, df_mega
 
 
 def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
@@ -526,7 +582,7 @@ def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sa
     """ analyse_all_ena_just_metag
         __params__: plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax
                passed_args
-               stats_dict, df_merged_all_categories
+               stats_dict, df_merged_all_metag
     """
     ic()
     ic(plot_dir)
@@ -538,6 +594,9 @@ def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sa
     stats_dict, df_merged_all_categories = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax,
                                                                       analysis_dir)
     # taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
+    ic(df_merged_all_categories.head())
+    ic(df_merged_all_categories.shape[0])
+
 
     return stats_dict, df_merged_all_categories
 
@@ -719,8 +778,8 @@ def investigate_a_tax():
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     infile = analysis_dir + 'all_ena_gps_tax_combined.tsv'
-    df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
-    # df_mega = pd.read_csv(infile, sep = "\t")
+    #df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
+    df_mega = pd.read_csv(infile, sep = "\t")
     ic(df_mega.head(3))
     df_marine_undetermined = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
     ic(df_marine_undetermined.shape[0])
@@ -763,6 +822,32 @@ def investigate_a_tax():
     fig.write_image(outfile)
     fig.show()
 
+def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
+    """ merge_in_env_taxa
+    :param stats_dict: merge_in_env_taxa
+    :param df_merge_metag: 
+    :param df_tax2env: 
+    :return: stats_dict, df_merge_combined_tax
+  
+    merge_in_env_taxa(stats_dict, df_merge_metag)
+    """
+    ic()
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    ic(df_merge_metag.shape[0])
+    ic(df_merge_metag.head(2))
+    ic(df_tax2env.head(2))
+    df_merge_ena_combined_tax = pd.merge(df_merge_metag, df_tax2env, how = 'left', left_on = ['tax_id'],
+                                          right_on = ['NCBI:taxid'])
+    ic(df_merge_ena_combined_tax.shape[0])
+
+
+    outfile = analysis_dir + "merge_tax_combined_lat_lon_marine_or_terrestrial.tsv"
+    ic(outfile, df_merge_ena_combined_tax.shape[0])
+    quit()
+
+    return stats_dict,  df_merge_ena_combined_tax
+
+
 def main():
     """ main
         __params__:
@@ -783,6 +868,12 @@ def main():
     ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
 
+
+    # merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
+    # df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
+    # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
+    # ic(df_outliers)
+
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
 
@@ -792,13 +883,24 @@ def main():
     stats_dict["_input_total_tax_id_count"] = stats_dict["_input_metag_tax_id_count"] + stats_dict[
         "_input_env_tax_id_count"]
 
+    stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
+                                                            df_all_ena_sample_detail, df_metag_tax)
+    ic(df_merge_metag.head())
+    stats_dict, df_merge_combined_tax = merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env)
+    ic("about to quit")
+    quit()
+
+
+    stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
+                                                            df_all_ena_sample_detail, df_metag_tax)
+    quit()
+
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)
-    stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
-                                                            df_all_ena_sample_detail, df_metag_tax)
+
 
     investigate_a_tax()
 

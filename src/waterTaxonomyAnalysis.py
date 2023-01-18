@@ -222,7 +222,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
     df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-    #df = pd.read_csv(infile, sep = "\t")
+    df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
     return df
@@ -278,8 +278,8 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
     return
 
 def print_df_mega(prefix, df_mega):
-    """
-
+    """print_df_mega
+       (This is reused several times, hence the prefix.)
     :param prefix:
     :param df_mega:
     :return:
@@ -303,10 +303,65 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df_just_marine.shape[0])
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
 
+    # Have coordinates and are classified as part of the marine domain
+    out_file = analysis_dir + prefix + '_lat_lon_marine_counts.tsv'
+    #want all those where lat is not NaN
+    # df = df_just_marine.query('lat == lat')
+    df = df_just_marine
+    ic(df.head(2))
+    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df.shape[0])
+    ic(df.head())
+    df.to_csv(out_file, sep = '\t')
+
     df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
     out_file = analysis_dir + prefix + '_lat_lon_terrestrial.tsv'
     ic(out_file, df_just_terrestrial.shape[0])
     df_just_terrestrial.to_csv(out_file, sep = '\t', index = False)
+
+    # Have coordinates and are classified as part of the terrestrial domain
+    out_file = analysis_dir + prefix + '_lat_lon_terrestrial_counts.tsv'
+    #want all those where lat is not NaN
+    # df = df_just_terrestrial.query('lat == lat')
+    df = df_just_terrestrial
+    ic(df.head(2))
+    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df.shape[0])
+    ic(df.head())
+    df.to_csv(out_file, sep = '\t')
+
+    # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
+    out_file = analysis_dir + prefix + '_lat_lon_marine_and_terrestrial_counts.tsv'
+    df_both_mar_ter = df_mega_filtered.query('(location_designation_terrestrial == "terrestrial") and (location_designation_marine == "marine")')
+    # df = df_both_mar_ter.query('lat == lat')
+    df = df_both_mar_ter
+    ic(df.head(2))
+    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df.shape[0])
+    ic(df.head())
+    df.to_csv(out_file, sep = '\t')
+
+    # Have coordinates and are not classified as marine or terrestrial
+    out_file = analysis_dir + prefix + '_lat_lon_not_marine_or_terrestrial_counts.tsv'
+    df_both_mar_ter = df_mega_filtered.query(
+        '(location_designation_terrestrial != "terrestrial") and (location_designation_marine != "marine")')
+    # df = df_both_mar_ter.query('lat == lat')
+    ic(df.head(2))
+    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df.shape[0])
+    ic(df.head())
+    df.to_csv(out_file, sep = '\t')
+
+
+    #Do not have coordinates
+    out_file = analysis_dir + prefix + '_not_lat_lon_counts.tsv'
+    df = df_mega[df_mega['lat'].isnull()]
+    ic(df.head(2))
+    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df.shape[0])
+    ic(df.head())
+    df.to_csv(out_file, sep = '\t')
+
 
     return
 
@@ -336,6 +391,7 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     """
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    df_metag_tax['taxonomy_type'] = 'metagenome'
     ic(df_metag_tax.head(2))
     ic(df_ena_sample_detail.head(2))
     ic(df_ena_sample_detail.shape[0])
@@ -836,13 +892,26 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     ic(df_merge_metag.shape[0])
     ic(df_merge_metag.head(2))
     ic(df_tax2env.head(2))
+
+    df_tax2env['taxonomy_type'] = 'env_taxa'
+    ic(df_tax2env.head(2))
     df_merge_ena_combined_tax = pd.merge(df_merge_metag, df_tax2env, how = 'left', left_on = ['tax_id'],
-                                          right_on = ['NCBI:taxid'])
+                                          right_on = ['NCBI:taxid'], suffixes=('', '_y'), copy=True)
+    ic(df_merge_ena_combined_tax.columns)
+    #df_merge_ena_combined_tax['NCBI:taxid'] = df_merge_ena_combined_tax['NCBI:taxid'].astype('Int64')
     ic(df_merge_ena_combined_tax.shape[0])
+    ic(df_merge_ena_combined_tax.head(10))
 
+    columns_to_delete = []
+    for field in ['NCBI:taxid', 'NCBI term', 'marine (ocean connected)', 'freshwater (land enclosed)',
+                  'taxonomic_source', 'taxonomy_type']:
+        df_merge_ena_combined_tax[field] = df_merge_ena_combined_tax[field].fillna(df_merge_ena_combined_tax[field +'_y'])
+        columns_to_delete.append(field +'_y')
 
-    outfile = analysis_dir + "merge_tax_combined_lat_lon_marine_or_terrestrial.tsv"
-    ic(outfile, df_merge_ena_combined_tax.shape[0])
+    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
+
+    print_df_mega('merge_tax_combined', df_merge_ena_combined_tax)
+
     quit()
 
     return stats_dict,  df_merge_ena_combined_tax

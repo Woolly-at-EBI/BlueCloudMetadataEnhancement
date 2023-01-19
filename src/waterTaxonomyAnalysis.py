@@ -69,6 +69,24 @@ def get_ena_detailed_sample_info(sample_dir):
     return df_ena_sample_detail
 
 
+def get_ena_species_count(sample_dir):
+    """ get_ena_species_count
+           returns a df indexed by tax_id, scientific name and count
+        __params__:
+               passed_args:
+                  sample_dir
+        __return__:
+            df_all_ena_species_count
+    """
+    infile = sample_dir + "ena_tax.tsv"
+    df_ena_species = pd.read_csv(infile, sep = "\t")
+    ic(df_ena_species.head())
+    df_ena_all_species_count = df_ena_species.groupby(["tax_id", "scientific_name"]).size().to_frame('count')
+    ic(df_ena_all_species_count.head())
+    ic(df_ena_all_species_count.shape[0])
+    return df_ena_all_species_count
+
+
 def get_ena_species_info(sample_dir):
     """ get_ena_species_info
           just the species tax_id and scientific name
@@ -221,7 +239,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
     infile = sample_dir + "sample_much_raw.tsv"
     ic(infile)
-    # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
+    #df = pd.read_csv(infile, sep = "\t", nrows = 100000)
     df = pd.read_csv(infile, sep = "\t")
     ic(df.head())
 
@@ -327,6 +345,24 @@ def print_df_mega(prefix, df_mega):
 
         return df_mega_combined_counts
 
+    def combine_count_allspecies(df_mega_combined_counts, df_right, title):
+        ic()
+        ic(df_mega_combined_counts.head())
+        df_mega_combined_counts = df_mega_combined_counts.reset_index()
+        ic(df_mega_combined_counts.head())
+        ic(df_right.head())
+        df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how='outer',
+                                           on=['tax_id'], suffixes = ('', '_y'))
+        df_mega_combined_counts["taxonomy_type"] = df_mega_combined_counts["taxonomy_type"].fillna(df_mega_combined_counts["taxonomy_type_y"])
+        df_mega_combined_counts["NCBI term"] = df_mega_combined_counts["NCBI term"].fillna(
+            df_mega_combined_counts["scientific_name"])
+        ic(df_mega_combined_counts.head())
+        df_mega_combined_counts = df_mega_combined_counts.drop(["taxonomy_type_y", "scientific_name"], axis=1)
+        df_mega_combined_counts = df_mega_combined_counts.rename(columns = {'count': title})
+        df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
+        ic(df_mega_combined_counts.head(2))
+        return df_mega_combined_counts
+
     title = 'lat_lon_terrestrial'
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
@@ -377,13 +413,23 @@ def print_df_mega(prefix, df_mega):
     df.to_csv(out_file, sep = '\t')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
 
+
     #all species for all samples
     title = "all_ena_counts"
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = df_mega.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+
+    df_ena_all_species_count = get_ena_species_count(sample_dir)
+    df = df_ena_all_species_count
+    # df = df.reindex(columns=['tax_id'])
+    df = df.reset_index()
+
+    df["taxonomy_type"] = "ena_unclassified"
+    df = df.rename(columns={'scientific_term': 'NCBI term'})
+    ic(df.head())
     ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    df.to_csv(out_file, sep = '\t', index=False)
+    df_mega_combined_counts = combine_count_allspecies(df_mega_combined_counts, df, title)
+    ic(df_mega_combined_counts.head(10))
 
     """clean up """
     title = 'lat_lon_marine_counts'
@@ -392,7 +438,7 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = df_mega_combined_counts.fillna(0)
     ic(df_mega_combined_counts.head(5))
     ic(out_file, df_mega_combined_counts.shape[0])
-    df_mega_combined_counts.to_csv(out_file, sep = '\t')
+    df_mega_combined_counts.to_csv(out_file, sep = '\t', index=False)
 
     return
 
@@ -968,6 +1014,7 @@ def main():
     ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
 
+    #df_ena_all_species_count = get_ena_species_count(sample_dir)
 
     # merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
     # df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")

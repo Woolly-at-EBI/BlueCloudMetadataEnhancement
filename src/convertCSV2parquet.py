@@ -1,3 +1,8 @@
+"""
+script to convert tab separated files to parquet format
+e.g. python3 convertCSV2parquet.py -i ../data/samples/sample_much_raw.tsv -o ../data/samples/sample_much_raw.pa
+"""
+
 import pyarrow as pa
 from pyarrow import csv
 from pyarrow import parquet
@@ -5,7 +10,6 @@ from pyarrow.parquet import ParquetFile
 
 import pandas as pd
 from icecream import ic
-
 
 import argparse
 

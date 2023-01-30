@@ -31,6 +31,7 @@ pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
 
+MyDataStuctures = {}
 
 def get_taxonomy_info(taxonomy_dir):
     """ get_taxonomy_info
@@ -42,7 +43,6 @@ def get_taxonomy_info(taxonomy_dir):
                 df_metag_tax, df_tax2env
     """
     ic()
-
     metagenomes_file: str = taxonomy_dir + "NCBI-metagenomes-to-environment.csv"
     df_metag_tax = pd.read_csv(metagenomes_file)
     df_metag_tax = clean_up_df_metag_tax(df_metag_tax)
@@ -76,15 +76,21 @@ def get_ena_detailed_sample_info(sample_dir):
 def get_ena_species_count(sample_dir):
     """ get_ena_species_count
            returns a df indexed by tax_id, scientific name and count
+           refactored to reuse the master ena_all
         __params__:
                passed_args:
                   sample_dir
         __return__:
             df_all_ena_species_count
     """
-    infile = sample_dir + "ena_tax.tsv"
-    df_ena_species = pd.read_csv(infile, sep = "\t")
-    ic(df_ena_species.head())
+    # infile = sample_dir + "ena_tax.tsv"
+    # df_ena_species = pd.read_csv(infile, sep = "\t")
+    # ic(df_ena_species.head())
+    # df_ena_all_species_count = df_ena_species.groupby(["tax_id", "scientific_name"]).size().to_frame('count')
+
+    df = get_all_ena_detailed_sample_info(sample_dir)
+    df_ena_species = df[["tax_id", "scientific_name"]]
+
     df_ena_all_species_count = df_ena_species.groupby(["tax_id", "scientific_name"]).size().to_frame('count')
     ic(df_ena_all_species_count.head())
     ic(df_ena_all_species_count.shape[0])
@@ -230,6 +236,7 @@ def analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail, 
     return stats_dict, df
 
 
+
 def get_all_ena_detailed_sample_info(sample_dir):
     """ get_all_ena_detailed_sample_info
          This is using ALL ENA samples whether they have GPS coordinates (lat lons) or not.
@@ -241,15 +248,22 @@ def get_all_ena_detailed_sample_info(sample_dir):
             df_all_ena_sample_detail
     """
 
-    infile = sample_dir + "sample_much_raw.pa"
-    ic(infile)
-    # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-    # df = pd.read_csv(infile, sep = "\t")
+    key_name = 'df_all_ena_detailed_sample_info'
+    if key_name in MyDataStuctures:
+        df = MyDataStuctures[key_name]
+        ic("yes! can reuse")
+    else:
+        ic("have to generate")
+        infile = sample_dir + "sample_much_raw.pa"
+        ic(infile)
+        # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
+        # df = pd.read_csv(infile, sep = "\t")
 
-    pf = ParquetFile(infile)
-    nrows = 100000
-    first_nrows = next(pf.iter_batches(batch_size = nrows))
-    df = pa.Table.from_batches([first_nrows]).to_pandas()
+        pf = ParquetFile(infile)
+        nrows = 10000
+        first_nrows = next(pf.iter_batches(batch_size = nrows))
+        df = pa.Table.from_batches([first_nrows]).to_pandas()
+        MyDataStuctures[key_name] = df
 
     ic(df.head())
     ic(len(df))
@@ -378,18 +392,15 @@ def print_df_mega(prefix, df_mega):
         ic(df_mega_combined_counts.head(2))
         return df_mega_combined_counts
 
-    title = 'lat_lon_terrestrial'
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
-    ic(out_file, df_just_terrestrial.shape[0])
-
     # Have coordinates and are classified as part of the terrestrial domain
     title = 'lat_lon_terrestrial_counts'
+    df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     #want all those where lat is not NaN
     # df = df_just_terrestrial.query('lat == lat')
     df = df_just_terrestrial
     df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    ic(out_file, df_just_terrestrial.shape[0])
     ic(out_file, df.shape[0])
     df.to_csv(out_file, sep = '\t')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
@@ -1036,6 +1047,7 @@ def main():
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
+    ic(df_all_ena_sample_detail.head())
     ic('-' * 100)
 
     stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]

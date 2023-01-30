@@ -9,6 +9,10 @@ __docformat___ = 'reStructuredText'
 """
 from get_directory_paths import get_directory_paths
 import pandas as pd
+import pyarrow as pa
+from pyarrow import csv
+from pyarrow import parquet
+from pyarrow.parquet import ParquetFile
 from icecream import ic
 
 import plotly.express as px
@@ -237,11 +241,18 @@ def get_all_ena_detailed_sample_info(sample_dir):
             df_all_ena_sample_detail
     """
 
-    infile = sample_dir + "sample_much_raw.tsv"
+    infile = sample_dir + "sample_much_raw.pa"
     ic(infile)
-    #df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-    df = pd.read_csv(infile, sep = "\t")
+    # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
+    # df = pd.read_csv(infile, sep = "\t")
+
+    pf = ParquetFile(infile)
+    nrows = 100000
+    first_nrows = next(pf.iter_batches(batch_size = nrows))
+    df = pa.Table.from_batches([first_nrows]).to_pandas()
+
     ic(df.head())
+    ic(len(df))
 
     return df
 
@@ -298,7 +309,11 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
 def print_df_mega(prefix, df_mega):
     """print_df_mega
        (This is reused several times, hence the prefix.)
-    :param prefix:
+       Does lots of taxonomy_id specific group_by's to generate counts by different criteria
+        The counts are renamed with a relevant column name
+        so it generates a df with a row per tax and many column counts for different criteria
+       Intermediate files are printed too,
+    :param prefix: this is used for the column and file naming
     :param df_mega:
     :return:
     """
@@ -368,7 +383,6 @@ def print_df_mega(prefix, df_mega):
     df_just_terrestrial = df_mega_filtered.query('location_designation_terrestrial == "terrestrial"')
     ic(out_file, df_just_terrestrial.shape[0])
 
-
     # Have coordinates and are classified as part of the terrestrial domain
     title = 'lat_lon_terrestrial_counts'
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
@@ -380,7 +394,6 @@ def print_df_mega(prefix, df_mega):
     df.to_csv(out_file, sep = '\t')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
     ic(df_mega_combined_counts.head(2))
-
 
     # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
     title = 'lat_lon_marine_and_terrestrial_counts'
@@ -730,7 +743,6 @@ def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sa
     ic(df_merged_all_categories.head())
     ic(df_merged_all_categories.shape[0])
 
-
     return stats_dict, df_merged_all_categories
 
 
@@ -748,7 +760,7 @@ def taxonomic_environment_assignment(df_mega):
     ]
 
     values = ["marine and freshwater", "marine (ocean connected)", "freshwater (land enclosed)", "undetermined"]
-    df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined")
+    df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined", dtype='S')
     ic(df_mega['taxonomic_environment'].value_counts())
 
     return df_mega
@@ -957,6 +969,8 @@ def investigate_a_tax():
 
 def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     """ merge_in_env_taxa
+       merge the metagenome and env taxa rows and remove duplicate columns (after checking if values needed)
+
     :param stats_dict: merge_in_env_taxa
     :param df_merge_metag: 
     :param df_tax2env: 
@@ -979,17 +993,16 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     ic(df_merge_ena_combined_tax.shape[0])
     ic(df_merge_ena_combined_tax.head(10))
 
+    # remove duplicate columns (after checking if values needed)
     columns_to_delete = []
     for field in ['NCBI:taxid', 'NCBI term', 'marine (ocean connected)', 'freshwater (land enclosed)',
                   'taxonomic_source', 'taxonomy_type']:
         df_merge_ena_combined_tax[field] = df_merge_ena_combined_tax[field].fillna(df_merge_ena_combined_tax[field +'_y'])
         columns_to_delete.append(field +'_y')
-
     df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
     ic(df_merge_ena_combined_tax.shape[0])
-    print_df_mega('merge_tax_combined', df_merge_ena_combined_tax)
 
-    quit()
+    print_df_mega('merge_tax_combined', df_merge_ena_combined_tax)
 
     return stats_dict,  df_merge_ena_combined_tax
 
@@ -1023,6 +1036,7 @@ def main():
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
+    ic('-' * 100)
 
     stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
     stats_dict["_input_metag_tax_id_count"] = df_metag_tax["NCBI:taxid"].nunique()
@@ -1033,21 +1047,25 @@ def main():
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
     ic(df_merge_metag.head())
-    stats_dict, df_merge_combined_tax = merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env)
-    ic("about to quit")
     quit()
+    ic('-' * 100)
+    stats_dict, df_merge_combined_tax = merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env)
+    ic('-' * 100)
+    ic("about to quit")
+    ic(stats_dict)
+    quit()
+
+    # the rest of the below was used mainly when exploring the data
 
 
     stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
                                                             df_all_ena_sample_detail, df_metag_tax)
-    quit()
 
     stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
                                                                       df_all_ena_sample_detail, df_metag_tax,
                                                                       df_tax2env)
     stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
                                                                df_tax2env)
-
 
     investigate_a_tax()
 

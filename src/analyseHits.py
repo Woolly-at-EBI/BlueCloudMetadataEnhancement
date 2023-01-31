@@ -420,15 +420,15 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
 
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] > 0),
-        'location_designation_marine'] = 'marine'
+        'location_designation_marine'] = True
     df_merged_all_categories.loc[
         (df_merged_all_categories['land_total'] > 0),
-        'location_designation_terrestrial'] = 'terrestrial'
+        'location_designation_terrestrial'] = True
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation_other'] = 'neither marine nor terrestrial'
 
-   # preferentially choosing marine
+   # NOT preferentially choosing marine
     df_merged_all_categories.loc[
         (df_merged_all_categories['land_total'] > 0),
         'location_designation'] = 'terrestrial'
@@ -437,11 +437,18 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
         'location_designation'] = 'marine'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
+        'location_designation_other'] = 'neither marine nor terrestrial'
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['sea_total'] > 0) & (df_merged_all_categories['land_total'] > 0),
+        'location_designation'] = 'marine and terrestrial'
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
 
     ic(df_merged_all_categories.head(15))
     out_file = analysis_dir + 'merged_all_categories.tsv'
     ic(out_file)
+    ic(df_merged_all_categories["location_designation"].value_counts())
     df_merged_all_categories.to_csv(out_file, sep = '\t')
 
     ic("========================================================")
@@ -768,7 +775,7 @@ def main():
         __params__:
                passed_args
     """
-    full_rerun = False
+    full_rerun = True
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 

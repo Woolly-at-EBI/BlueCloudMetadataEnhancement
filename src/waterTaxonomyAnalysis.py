@@ -56,21 +56,21 @@ def get_taxonomy_info(taxonomy_dir):
     return df_metag_tax, df_tax2env
 
 
-def get_ena_detailed_sample_info(sample_dir):
-    """ get_ena_detailed_sample_info
-        This is filtered for just those with lat and lons
-        __params__:
-               passed_args:
-                  sample_dir
-        __return__:
-            df_ena_sample_detail
-    """
-    ic()
-    infile = sample_dir + "sample_much_lat_filtered.tsv"
-    df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows = 1000000000)
-    ic(df_ena_sample_detail.head())
-
-    return df_ena_sample_detail
+# def get_ena_detailed_sample_info(sample_dir):
+#     """ get_ena_detailed_sample_info
+#         This is filtered for just those with lat and lons
+#         __params__:
+#                passed_args:
+#                   sample_dir
+#         __return__:
+#             df_ena_sample_detail
+#     """
+#     ic()
+#     infile = sample_dir + "sample_much_lat_filtered.tsv"
+#     df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows = 1000000000)
+#     ic(df_ena_sample_detail.head())
+#
+#     return df_ena_sample_detail
 
 
 def get_ena_species_count(sample_dir):
@@ -97,19 +97,19 @@ def get_ena_species_count(sample_dir):
     return df_ena_all_species_count
 
 
-def get_ena_species_info(sample_dir):
-    """ get_ena_species_info
-          just the species tax_id and scientific name
-        __params__:
-               passed_args:
-                  sample_dir
-        __return__:
-            df_ena_species
-    """
-    infile = sample_dir + "ena_sample_species.txt"
-    df_ena_species = pd.read_csv(infile, sep = "\t")
-    ic(df_ena_species.head())
-    return df_ena_species
+# def get_ena_species_info(sample_dir):
+#     """ get_ena_species_info
+#           just the species tax_id and scientific name
+#         __params__:
+#                passed_args:
+#                   sample_dir
+#         __return__:
+#             df_ena_species
+#     """
+#     infile = sample_dir + "ena_sample_species.txt"
+#     df_ena_species = pd.read_csv(infile, sep = "\t")
+#     ic(df_ena_species.head())
+#     return df_ena_species
 
 
 def clean_up_df_metag_tax(df):
@@ -261,7 +261,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
         # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
         # df = pd.read_csv(infile, sep = "\t")
 
-        test = False
+        test = True
         pf = ParquetFile(infile)
         if test:
             nrows = 100000
@@ -269,8 +269,10 @@ def get_all_ena_detailed_sample_info(sample_dir):
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
         else:
-            table = pq.read_table(infile)
+            table = pq.read_table(infile, columns=["accession", "description", "tax_id", "scientific_name", "lat", "lon"])
             df = table.to_pandas()
+            # head -1 sample_much_raw.tsv | tr '\t' '\n' | sed 's/^/"/;s/$/",/' | tr '\n' ' '
+            # "accession", "secondary_sample_accession", "description", "checklist", "collection_date", "collection_date_submitted", "tax_id", "scientific_name", "taxonomic_classification", "lat", "lon", "country", "depth", "altitude", "elevation", "salinity", "environment_biome", "environment_feature", "environment_material",
 
         MyDataStuctures[key_name] = df
 
@@ -373,11 +375,12 @@ def print_df_mega(prefix, df_mega):
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     # ~lat.isnull()
     df_mega_filtered = df_mega.query(
-        '(location_designation_marine == "marine") or (location_designation_terrestrial == "terrestrial")',
+        '(location_designation_marine == True) or (location_designation_terrestrial == True)',
         engine = 'python')
     ic(df_mega_filtered.shape[0])
     ic(out_file, df_mega_filtered.shape[0])
     df_mega_filtered.to_csv(out_file, sep = '\t', index = False)
+    ic(df_mega_filtered.head(2))
 
     # Have coordinates and are classified as part of the marine domain
     title = 'lat_lon_marine'
@@ -386,6 +389,7 @@ def print_df_mega(prefix, df_mega):
                                             , engine = 'python')
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     ic(out_file, df_just_marine.shape[0])
+    ic(df_just_marine.head(2))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
 
     title = 'lat_lon_marine_counts'
@@ -401,6 +405,22 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = df.rename(columns={'count': title})
     df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
     ic(df_mega_combined_counts.head(2))
+
+    def add_in_extra_cols(df_mega_combined_counts,df_mega):
+        """ add_in_extra_cols
+
+        :param df_mega_combined_counts:
+        :return: df_mega_combined_counts
+        """
+        #    'marine (ocean connected)', 'freshwater (land enclosed)'
+        df = pd.merge(df_mega_combined_counts, df_mega[['tax_id', 'marine (ocean connected)', 'freshwater (land enclosed)']], on = 'tax_id', how = 'inner')
+        #don't understand why this merge duplicates
+        df = df.drop_duplicates()
+        df = df.fillna(False)
+
+        ic(df.head(1000))
+        return(df)
+
 
     def combine_count(df_mega_combined_counts, df_right, title):
         """ combine_count function to merge the counts column of df_right with the combined counts
@@ -432,60 +452,60 @@ def print_df_mega(prefix, df_mega):
         df_mega_combined_counts = df_mega_combined_counts.fillna(0)
 
         return df_mega_combined_counts
-
-    # Have coordinates and are classified as part of the terrestrial domain
-    title = 'lat_lon_terrestrial_counts'
-    glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from tax and GPS'
-    ic('###', title)
-    df_just_terrestrial = df_mega_filtered.query('(location_designation_terrestrial == True) and \
-    (`freshwater (land enclosed)` == True)', engine = 'python')
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = df_just_terrestrial
-    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
-    ic(out_file, df_just_terrestrial.shape[0])
-    ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-
-    # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
-    title = 'lat_lon_marine_and_terrestrial_counts'
-    glossary[title] = 'count of all ENA samples for a tax_id where there is both marine and terrestrial location ' \
-                      'designation from tax and have GPS coordinates '
-    ic('###', title)
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_both_mar_ter = df_mega_filtered.query('(location_designation_terrestrial == "marine and terrestrial") and \
-                  ((`marine (ocean connected)` == True) or (`freshwater (land enclosed)` == True))', engine = 'python')
-    # df = df_both_mar_ter.query('lat == lat')
-    df = df_both_mar_ter
-    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
-    ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-
-    # Have coordinates and are not classified as marine or terrestrial
-    title = 'lat_lon_not_marine_or_terrestrial_counts'
-    glossary[title] = 'count of all ENA samples for a tax_id where there is NO location designation from GPS coordinates'
-    ic('###', title)
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_both_mar_ter = df_mega.query('(location_designation == "neither marine nor terrestrial")', engine = 'python')
-
-    #and (`marine (ocean connected)` == False) and (`freshwater (land enclosed)` == False))
-    df = df_both_mar_ter.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
-    ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-
-    #Do not have coordinates
-    title = "not_lat_lon_counts"
-    glossary[title] = 'count of all ENA samples for a tax_id where there are NO GPS coordinates'
-    ic('###', title)
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = df_mega[df_mega['lat'].isnull()]
-    df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
-    ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-
+    #
+    # # Have coordinates and are classified as part of the terrestrial domain
+    # title = 'lat_lon_terrestrial_counts'
+    # glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from tax and GPS'
+    # ic('###', title)
+    # df_just_terrestrial = df_mega_filtered.query('(location_designation_terrestrial == True) and \
+    # (`freshwater (land enclosed)` == True)', engine = 'python')
+    # out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    # df = df_just_terrestrial
+    # df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    # ic(out_file, df_just_terrestrial.shape[0])
+    # ic(out_file, df.shape[0])
+    # df.to_csv(out_file, sep = '\t')
+    # df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    #
+    # # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
+    # title = 'lat_lon_marine_and_terrestrial_counts'
+    # glossary[title] = 'count of all ENA samples for a tax_id where there is both marine and terrestrial location ' \
+    #                   'designation from tax and have GPS coordinates '
+    # ic('###', title)
+    # out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    # df_both_mar_ter = df_mega_filtered.query('(location_designation_terrestrial == "marine and terrestrial") and \
+    #               ((`marine (ocean connected)` == True) or (`freshwater (land enclosed)` == True))', engine = 'python')
+    # # df = df_both_mar_ter.query('lat == lat')
+    # df = df_both_mar_ter
+    # df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    # ic(out_file, df.shape[0])
+    # df.to_csv(out_file, sep = '\t')
+    # df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    #
+    # # Have coordinates and are not classified as marine or terrestrial
+    # title = 'lat_lon_not_marine_or_terrestrial_counts'
+    # glossary[title] = 'count of all ENA samples for a tax_id where there is NO location designation from GPS coordinates'
+    # ic('###', title)
+    # out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    # df_both_mar_ter = df_mega.query('(location_designation == "neither marine nor terrestrial")', engine = 'python')
+    #
+    # #and (`marine (ocean connected)` == False) and (`freshwater (land enclosed)` == False))
+    # df = df_both_mar_ter.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    # ic(out_file, df.shape[0])
+    # df.to_csv(out_file, sep = '\t')
+    # df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    #
+    # #Do not have coordinates
+    # title = "not_lat_lon_counts"
+    # glossary[title] = 'count of all ENA samples for a tax_id where there are NO GPS coordinates'
+    # ic('###', title)
+    # out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    # df = df_mega[df_mega['lat'].isnull()]
+    # df = df.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
+    # ic(out_file, df.shape[0])
+    # df.to_csv(out_file, sep = '\t')
+    # df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    #
     #all species for all samples
     title = "all_ena_counts"
     glossary[title] = 'count of all ENA samples for a tax_id'
@@ -500,13 +520,24 @@ def print_df_mega(prefix, df_mega):
     df.to_csv(out_file, sep = '\t', index=False)
 
     """and finally to print out the combined counts"""
+
     df_mega_combined_counts = combine_count_allspecies(df_mega_combined_counts, df, title)
+    df_mega_combined_counts = add_in_extra_cols(df_mega_combined_counts, df_mega)
     title = 'all_sample_counts'
     ic('### The final combined counts file: ', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
+
+    #change the order, the tax_id slipped down the lists
+    # df_mega_combined_counts = df_mega_combined_counts[["tax_id", "NCBI term", "taxonomy_type",
+    #     "marine (ocean connected)", "freshwater (land enclosed)", "lat_lon_marine_counts",
+    #     "lat_lon_terrestrial_counts", "lat_lon_marine_and_terrestrial_counts",
+    #     "lat_lon_not_marine_or_terrestrial_counts", "not_lat_lon_counts",  "all_ena_counts"]]
     ic(df_mega_combined_counts.head(5))
     ic(out_file, df_mega_combined_counts.shape[0])
     df_mega_combined_counts.to_csv(out_file, sep = '\t', index=False)
+    df_mega_combined_counts = df_mega_combined_counts.query('(`NCBI term` == "marine metagenome") or (`NCBI term` == "Saccharomyces cerevisiae")')
+    ic(df_mega_combined_counts.head(10))
+    quit()
     ic(glossary)
     quit()
 
@@ -801,7 +832,7 @@ def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
     fig.write_html(out_graph_file)
 
 
-def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax):
+def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_ena_sample_detail, df_metag_tax):
     """ analyse_all_ena_just_metag
         __params__: plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax
                passed_args
@@ -809,10 +840,10 @@ def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_all_ena_sa
     """
     ic()
     ic(plot_dir)
-    df_ena_sample_detail = df_all_ena_sample_detail.drop(
-        columns = ['altitude', 'elevation', 'checklist', 'collection_date',
-                   'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
-                   'environment_biome', 'environment_feature'])
+    # df_ena_sample_detail = df_all_ena_sample_detail.drop(
+    #     columns = ['altitude', 'elevation', 'checklist', 'collection_date',
+    #                'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
+    #                'environment_biome', 'environment_feature'])
 
     stats_dict, df_merged_all_categories = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax,
                                                                       analysis_dir)

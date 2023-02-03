@@ -28,8 +28,6 @@ else
     exit;
 fi
 
-exit;
-
 function run_geolocation () {
     shape_file=$1
     out_file=$2

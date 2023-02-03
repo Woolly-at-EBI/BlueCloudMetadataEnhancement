@@ -3,11 +3,32 @@
 # it returns a file one row per coordinate. Additionally annotation from the shapefile is only added if a hit else nowt (NaN).
 # Peter Woollard, ENA, EMBL-EBI, December 2022
 
-prog='/Users/woollard/projects/bluecloud/src/getGeoLocationCategorisation.py'
-coordinates_file=/Users/woollard/projects/bluecloud/data/tests/test_lat_lon.tsv
-coordinates_file=/Users/woollard/projects/bluecloud/data/samples/all_sample_lat_longs_present_uniq.tsv
-outdir=/Users/woollard/projects/bluecloud/data/hits
-shapefile_dir=/Users/woollard/projects/bluecloud/data/shapefiles
+#usage:   ./run_all.sh [-b basedir]
+#if not argument will use the default basedir as below
+basedir='/Users/woollard/projects/bluecloud'
+
+while getopts b: flag
+do
+    case "${flag}" in
+        b) basedir=${OPTARG};;
+    esac
+done
+
+prog=$basedir/src/getGeoLocationCategorisation.py
+coordinates_file=$basedir/data/tests/test_lat_lon.tsv
+coordinates_file=$basedir/data/samples/all_sample_lat_longs_present_uniq.tsv
+outdir=$basedir/bluecloud/data/hits
+shapefile_dir=$basedir/bluecloud/data/shapefiles
+
+if [ -f $prog ]
+then
+    echo "Path of $prog is found."
+else
+    echo "Error: Path to $prog does not exist"
+    exit;
+fi
+
+exit;
 
 function run_geolocation () {
     shape_file=$1
@@ -21,7 +42,6 @@ function run_geolocation () {
 shape_file=$shapefile_dir/Intersect_EEZ_IHO_v4_2020/Intersect_EEZ_IHO_v4_2020.shp
 out_file=$outdir/intersect_eez_iho_hits.tsv
 run_geolocation $shape_file  $out_file
-exit;
 
 #terrestrial: oprvs_watercourse : freshwater use cases ( have hits, but not currently using)
 shape_file=$shapefile_dir/shape_file/oprvrs_essh_gb/data/WatercourseLink.shp

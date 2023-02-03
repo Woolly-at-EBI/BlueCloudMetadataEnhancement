@@ -1,5 +1,5 @@
-"""Script of analysis_count_stats.py is to
-
+"""Script of analysis_count_stats.py is to analsis the combined output count file from the waterTaxonomyAnalyis.py
+ It is doing some basic stats and comparisions.
 
 ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2023-02-02
@@ -16,7 +16,7 @@ pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
 
 def combinations(df):
-    """
+    """ combinations of some pairs of columns
 
     :param df:
     :return:
@@ -42,7 +42,7 @@ def combinations(df):
 
 
 def basic(df):
-    """
+    """ basic statistics of the columns.
 
     :param df:
     :return:
@@ -56,7 +56,7 @@ def basic(df):
     ic(df.describe(include =[np.number]))
 
 def analysis_count(analysis_count_file):
-    """analysisCountFile
+    """analysis_count routine that controls
 
     :param analysis_count_file:
     :return:

@@ -483,7 +483,7 @@ def print_df_mega(prefix, df_mega):
                       'designation from tax and the GPS coordinates '
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_both_mar_ter = df_mega_filtered.query('(location_designation_terrestrial == "marine and terrestrial") and \
+    df_both_mar_ter = df_mega_filtered.query('(location_designation == "marine and terrestrial") and \
                   ((`marine (ocean connected)` == True) or (`freshwater (land enclosed)` == True))', engine = 'python')
     # df = df_both_mar_ter.query('lat == lat')
     df = df_both_mar_ter

@@ -9,11 +9,40 @@ __docformat___ = 'reStructuredText'
 
 
 from icecream import ic
+#from IPython.display import display
+from tabulate import tabulate
 import numpy as np
 import pandas as pd
+import plotly
+import plotly.express as px
+import plotly.io as pio
+pio.renderers.default = "browser"
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
+
+
+def focus(df):
+    """ focus
+
+    :param df:
+    :return:
+    """
+    # df['tax_id'] = df['tax_id'].to_string()
+    df_filtered = df.query('(`NCBI term` == "marine metagenome") or (`NCBI term` == "Saccharomyces cerevisiae") or (`NCBI term` == "Piscirickettsia salmonis")')
+    #display(df_filtered.head())
+    ic(df_filtered.columns)
+    ic(df_filtered)
+    df_filtered = df.query('`marine (ocean connected)` == True')
+    df_tmp = df_filtered.loc[:, ~df_filtered.columns.isin(['tax_id', 'NCBI term taxonomy_type', 'marine (ocean connected)',  'freshwater (land enclosed)'])]
+
+    corr_matrix = df_tmp.corr()
+    fig = px.imshow(corr_matrix)
+    fig.show()
+
+
+    fig.show()
+
 
 def combinations(df):
     """ combinations of some pairs of columns
@@ -64,11 +93,14 @@ def analysis_count(analysis_count_file):
     ic()
     ic(analysis_count_file)
     df = pd.read_csv(analysis_count_file, sep = "\t", index_col=None)
+    df['tax_id_index'] = df['tax_id']
+    df = df.set_index('tax_id_index')
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     ic(df.head(10))
-    df['tax_id'] = df['tax_id'].to_string()
-    basic(df)
-    combinations(df)
+
+    #basic(df)
+    #combinations(df)
+    focus(df)
 
 def main():
     analysis_count_file = "/Users/woollard/projects/bluecloud/analysis/merge_tax_combined_all_sample_counts.tsv"

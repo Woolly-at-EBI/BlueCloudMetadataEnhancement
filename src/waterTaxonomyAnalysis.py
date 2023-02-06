@@ -10,10 +10,11 @@ __docformat___ = 'reStructuredText'
 from get_directory_paths import get_directory_paths
 import pandas as pd
 import pyarrow as pa
-from pyarrow import csv
 from pyarrow import parquet as pq
 from pyarrow.parquet import ParquetFile
 from icecream import ic
+import sys  #system specific parameters and names
+import gc   #garbage collector interface
 
 import plotly.express as px
 import plotly
@@ -33,6 +34,23 @@ pd.set_option('display.width', 1000)
 
 MyDataStuctures = {}
 
+def obj_size_fmt(num):
+    if num < 10**3:
+        return "{:.2f}{}".format(num, "B")
+    elif ((num>=10**3)&(num<10**6)):
+        return "{:.2f}{}".format(num/(1.024*10**3), "KB")
+    elif ((num>=10**6)&(num<10**9)):
+        return "{:.2f}{}".format(num/(1.024*10**6), "MB")
+    else:
+        return "{:.2f}{}".format(num/(1.024*10**9), "GB")
+def memory_usage():
+    memory_usage_by_variable= pd.DataFrame({k:sys.getsizeof(v)\
+    for (k,v) in globals().items()}, index=['Size'])
+    memory_usage_by_variable = memory_usage_by_variable.T
+    memory_usage_by_variable = memory_usage_by_variable.sort_values(by='Size', ascending=False).head(10)
+    memory_usage_by_variable['Size'] = memory_usage_by_variable['Size'].apply(lambda x: obj_size_fmt(x))
+    return memory_usage_by_variable
+
 def get_taxonomy_info(taxonomy_dir):
     """ get_taxonomy_info
      read in the relevant marine taxonomic terms.
@@ -45,11 +63,15 @@ def get_taxonomy_info(taxonomy_dir):
     ic()
     metagenomes_file: str = taxonomy_dir + "NCBI-metagenomes-to-environment.csv"
     df_metag_tax = pd.read_csv(metagenomes_file, index_col=None)
+    ic(df_metag_tax.columns)
+    df_metag_tax["NCBI:taxid"] = df_metag_tax["NCBI:taxid"].astype(np.int16)
     df_metag_tax = clean_up_df_metag_tax(df_metag_tax)
     ic(df_metag_tax.head(10))
 
     taxa_env_file = taxonomy_dir + "NCBI-taxa-to-environment.csv"
     df_tax2env = pd.read_csv(taxa_env_file, index_col=None)
+    ic(df_tax2env.columns)
+    df_tax2env["NCBI taxID"] = df_tax2env["NCBI taxID"].astype(np.int16)
     df_tax2env = clean_up_df_tax2env(df_tax2env)
     ic(df_tax2env.head(10))
 
@@ -83,6 +105,7 @@ def get_ena_species_count(sample_dir):
         __return__:
             df_all_ena_species_count
     """
+    ic()
     # infile = sample_dir + "ena_tax.tsv"
     # df_ena_species = pd.read_csv(infile, sep = "\t")
     # ic(df_ena_species.head())
@@ -107,11 +130,14 @@ def get_ena_species_info(sample_dir):
         __return__:
             df_ena_species
     """
+    ic()
     # infile = sample_dir + "ena_sample_species.txt"
     # df_ena_species = pd.read_csv(infile, sep = "\t")
     # ic(df_ena_species.head())
-    df = get_all_ena_detailed_sample_info(sample_dir)
-    df_ena_species = df[["tax_id", "scientific_name"]]
+    df_ena_species = get_all_ena_detailed_sample_info(sample_dir)
+    ic(df_ena_species.columns)
+    df_ena_species = df_ena_species[["tax_id", "scientific_name"]]
+    ic()
     return df_ena_species
 
 
@@ -251,6 +277,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
         __return__:
             df_all_ena_sample_detail
     """
+    ic()
     key_name = 'df_all_ena_detailed_sample_info'
     if key_name in MyDataStuctures:
         df = MyDataStuctures[key_name]
@@ -264,24 +291,36 @@ def get_all_ena_detailed_sample_info(sample_dir):
 
         test = False
         pf = ParquetFile(infile)
+        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon"]
+        # was useful to limit number of rows, and alternatively focus on specific species
         if test:
             nrows = 100000
             # nrows = 100000000000
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
+            ic(df.head())
+            df = df[specific_columns_needed]
+            del first_nrows
         else:
-            table = pq.read_table(infile, columns=["accession", "description", "tax_id", "scientific_name", "lat", "lon"])
+            table = pq.read_table(infile, columns=specific_columns_needed)
             df = table.to_pandas()
             # df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')
             # df = df.query('(scientific_name == "Piscirickettsia salmonis")')
             # head -1 sample_much_raw.tsv | tr '\t' '\n' | sed 's/^/"/;s/$/",/' | tr '\n' ' '
             # "accession", "secondary_sample_accession", "description", "checklist", "collection_date", "collection_date_submitted", "tax_id", "scientific_name", "taxonomic_classification", "lat", "lon", "country", "depth", "altitude", "elevation", "salinity", "environment_biome", "environment_feature", "environment_material",
             ic(df.shape[0])
+            del table
+
+        #reduce memory
+        df["tax_id"] = df["tax_id"].astype(np.int16)
+        df["lat"] = df["lat"].astype(np.float32)
+        df["lon"] = df["lon"].astype(np.float32)
+
         MyDataStuctures[key_name] = df
 
     ic(df.head())
-    ic(len(df))
-
+    ic(df.shape[0])
+    ic()
     return df
 
 
@@ -304,7 +343,7 @@ def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analys
     ic(len(df_ena_sample_detail))
     ic(df_tax2env.head(1))
     df_metag_not_in_ena_latlon = df_metag_tax[~df_metag_tax['NCBI:taxid'].isin(df_ena_sample_detail['tax_id'])]
-    ic(df_metag_not_in_ena_latlon.head(10))
+    ic(df_metag_not_in_ena_latlon.head(5))
     ic(len(df_metag_tax))
     ic(len(df_metag_not_in_ena_latlon))
     out_file = analysis_dir + 'tax_metag_notin_ena_latlon.tsv'
@@ -340,13 +379,16 @@ def clean_df_mega(df_mega):
     """
     # ic(df_mega.head(10))
     # ic(df_mega.columns)
-    df_mega = df_mega.drop(columns = ["description", "ena_country", "ena_region", "eez_category",
-                                      "longhurst_category", "IHO_category", "sea_category", "eez_iho_intersect_category",
-                                      "land_category", "worldAdmin_category", "feow_category", "ena_category",
-                                      "sea_total",  "land_total", 'coords'])
-    df_mega = df_mega.drop(columns = ['rule set description', 'taxID rank offset: NCBI rank [relation] WoRMS rank',
-                                      'NCBI-to-marine', 'NCBI-to-marine.1', 'NCBI-to-terrestrial',
-                                      'NCBI-to-terrestrial.1', 'NCBI taxID Type'])
+
+    drop_columns = ["ena_country", "ena_region", "eez_category",
+                                    "longhurst_category", "IHO_category", "sea_category", "eez_iho_intersect_category",
+                                    "land_category", "worldAdmin_category", "feow_category", "ena_category",
+                                    "sea_total",  "land_total", 'coords', 'rule set description',
+                                    'taxID rank offset: NCBI rank [relation] WoRMS rank',
+                                    'NCBI-to-marine', 'NCBI-to-marine.1', 'NCBI-to-terrestrial',
+                                    'NCBI-to-terrestrial.1', 'NCBI taxID Type']
+
+    df_mega.drop(columns = drop_columns, inplace=True)
     df_mega['NCBI:taxid'] = df_mega['NCBI:taxid'].astype('Int64')
     ic(df_mega.shape[0])
     ic(df_mega.head(2))
@@ -381,24 +423,24 @@ def print_df_mega(prefix, df_mega):
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     # ~lat.isnull()
-    ic(df_mega["NCBI term"].value_counts())
+    # ic(df_mega["NCBI term"].value_counts())
     df_mega_filtered = df_mega.query(
         '(location_designation_marine == True) or (location_designation_terrestrial == True)',
         engine = 'python')
-    ic(df_mega_filtered.shape[0])
     ic(out_file, df_mega_filtered.shape[0])
     df_mega_filtered.to_csv(out_file, sep = '\t', index = False)
     ic(df_mega_filtered.head(2))
+    del df_mega_filtered   #memory expensive slice!
+    gc.collect()
 
     # Have coordinates and are classified as part of the marine domain
     title = 'lat_lon_marine'
     ic('###', title)
-    ic(df_mega_filtered["NCBI term"].value_counts())
-    df_just_marine = df_mega_filtered.query('(location_designation_marine == True) and (`marine (ocean connected)` == True)'
+    df_just_marine = df_mega.query('(location_designation_marine == True) and (`marine (ocean connected)` == True)'
                                             , engine = 'python')
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     ic(out_file, df_just_marine.shape[0])
-    ic(df_just_marine.head(10))
+    ic(df_just_marine.head(5))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
     ic(df_just_marine["NCBI term"].value_counts())
 
@@ -408,13 +450,14 @@ def print_df_mega(prefix, df_mega):
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     df = df_just_marine.groupby(["tax_id", "NCBI term", "taxonomy_type"]).size().to_frame('count')
     ic(out_file, df.shape[0])
-    ic(df.head(10))
+    ic(df.head(5))
     df.to_csv(out_file, sep = '\t')
+    del df_just_marine
 
     # This is the base of the combined counts dataframe
     df_mega_combined_counts = df.rename(columns={'count': title})
     df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
-    ic(df_mega_combined_counts.head(10))
+    ic(df_mega_combined_counts.head(5))
 
     def add_in_extra_cols(df_mega_combined_counts,df_mega):
         """ add_in_extra_cols
@@ -428,7 +471,7 @@ def print_df_mega(prefix, df_mega):
         df = df.drop_duplicates()
         df = df.fillna(False)
 
-        ic(df.head(10))
+        ic(df.head(5))
         return(df)
 
 
@@ -438,7 +481,7 @@ def print_df_mega(prefix, df_mega):
         """
         df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how='outer',
                                            on=['tax_id', 'NCBI term', 'taxonomy_type'])
-        df_mega_combined_counts = df_mega_combined_counts.rename(columns = {'count': title})
+        df_mega_combined_counts.rename(columns = {'count': title}, inplace=True)
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
 
@@ -450,16 +493,16 @@ def print_df_mega(prefix, df_mega):
             the difference from the combine_count function is that it copes with species specific aspects.
             currently it is only used once
         """
-        df_mega_combined_counts = df_mega_combined_counts.reset_index()
+        df_mega_combined_counts.reset_index(inplace=True)
         df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how='outer',
                                            on=['tax_id'], suffixes = ('', '_y'))
-        df_mega_combined_counts["taxonomy_type"] = df_mega_combined_counts["taxonomy_type"].fillna(df_mega_combined_counts["taxonomy_type_y"])
+        df_mega_combined_counts["taxonomy_type"] = df_mega_combined_counts["taxonomy_type"].fillna(df_mega_combined_counts["taxonomy_type_y"], inplace=True)
         df_mega_combined_counts["NCBI term"] = df_mega_combined_counts["NCBI term"].fillna(
-            df_mega_combined_counts["scientific_name"])
-        df_mega_combined_counts = df_mega_combined_counts.drop(["taxonomy_type_y", "scientific_name"], axis=1)
-        df_mega_combined_counts = df_mega_combined_counts.rename(columns = {'count': title})
+            df_mega_combined_counts["scientific_name"], inplace=True)
+        df_mega_combined_counts.drop(["taxonomy_type_y", "scientific_name"], axis=1, inplace=True)
+        df_mega_combined_counts.rename(columns = {'count': title}, inplace=True)
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
-        df_mega_combined_counts = df_mega_combined_counts.fillna(0)
+        df_mega_combined_counts.fillna(0, inplace=True)
 
         return df_mega_combined_counts
 
@@ -467,7 +510,7 @@ def print_df_mega(prefix, df_mega):
     title = 'lat_lon_terrestrial_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from tax and GPS'
     ic('###', title)
-    df_just_terrestrial = df_mega_filtered.query('(location_designation_terrestrial == True) and \
+    df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) and \
     (`freshwater (land enclosed)` == True)', engine = 'python')
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     df = df_just_terrestrial
@@ -483,7 +526,7 @@ def print_df_mega(prefix, df_mega):
                       'designation from tax and the GPS coordinates '
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_both_mar_ter = df_mega_filtered.query('(location_designation == "marine and terrestrial") and \
+    df_both_mar_ter = df_mega.query('(location_designation == "marine and terrestrial") and \
                   ((`marine (ocean connected)` == True) or (`freshwater (land enclosed)` == True))', engine = 'python')
     # df = df_both_mar_ter.query('lat == lat')
     df = df_both_mar_ter
@@ -504,6 +547,7 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df.shape[0])
     df.to_csv(out_file, sep = '\t')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    del df_both_mar_ter
 
     #Do not have coordinates
     ic()
@@ -557,10 +601,9 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df_mega_combined_counts.shape[0])
     df_mega_combined_counts.to_csv(out_file, sep = '\t')
     # df_mega_combined_counts = df_mega_combined_counts.query('(`NCBI term` == "marine metagenome") or (`NCBI term` == "Saccharomyces cerevisiae") or (`NCBI term` == "Piscirickettsia salmonis")')
-    ic(df_mega_combined_counts.head(10))
+    ic(df_mega_combined_counts.head(5))
 
     ic(glossary)
-    quit()
 
     return
 
@@ -578,7 +621,20 @@ def get_merged_all_categories_file(analysis_dir):
         ic("generating from fresh: ", key_name)
         merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
         df = pd.read_csv(merged_all_categories_file, sep = "\t", index_col=None)
+        df["lat"] = df["lat"].astype(np.float32)
+        df["lon"] = df["lon"].astype(np.float32)
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+        ic(df.columns)
+
+        # attempting to reduce the memory footprint
+        most_cats = [ 'ena_country', 'ena_region', 'eez_category', 'longhurst_category', 'IHO_category',
+             'sea_category', 'eez_iho_intersect_category', 'land_category', 'worldAdmin_category', 'feow_category',
+             'ena_category', 'location_designation_marine',
+             'location_designation_terrestrial', 'location_designation_other', 'location_designation']
+        # ic(df.memory_usage())
+        for my_cat in most_cats:
+            df[my_cat] = df[my_cat].astype("category")
+        # ic(df.memory_usage())
         MyDataStuctures[key_name] = df
 
     return df
@@ -618,17 +674,20 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     #                                    right_on = ['NCBI:taxid'])
     df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'left', left_on = ['tax_id'],
                                        right_on = ['NCBI:taxid'])
-    df = df_merged_ena_metag_tax
-    df['accession_index'] = df['accession']
-    df_merged_ena_metag_tax = df.set_index('accession_index').drop_duplicates()
+
+    df_merged_ena_metag_tax['accession_index'] = df_merged_ena_metag_tax['accession']
+    df_merged_ena_metag_tax.set_index('accession_index', inplace=True)
+    df_merged_ena_metag_tax.drop_duplicates(inplace=True)
     ic(df_merged_ena_metag_tax.head(2))
     ic(df_merged_ena_metag_tax.shape[0])
+    df_just_metag = df_merged_ena_metag_tax.query('taxonomy_type == "metagenome"')
 
     # how many taxonomies did we and did not find? (in all not just GPS)
-    stats_dict["metag_tax_ids_in_ena_count"] = df_merged_ena_metag_tax["NCBI:taxid"].nunique()
-    stats_dict["metag_tax_in_ena_sample_count"] = df_merged_ena_metag_tax.shape[0]
+    stats_dict["metag_tax_ids_in_ena_count"] = df_just_metag["NCBI:taxid"].nunique()
+    stats_dict["metag_tax_in_ena_sample_count"] = df_just_metag.shape[0]
     stats_dict["metag_tax_not_in_ena_count"] = stats_dict["_input_metag_tax_id_count"] - stats_dict[
         "metag_tax_ids_in_ena_count"]
+    ic(stats_dict)
 
     """ metag get counts of sample rows by NCBI taxid" for simple plotting """
     ic(" metag get counts of sample rows by NCBI taxid")
@@ -894,7 +953,7 @@ def taxonomic_environment_assignment(df_mega):
     ]
 
     values = ["marine and freshwater", "marine (ocean connected)", "freshwater (land enclosed)", "undetermined"]
-    df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined", dtype='S')
+    df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined")
     ic(df_mega['taxonomic_environment'].value_counts())
 
     return df_mega
@@ -910,27 +969,31 @@ def investigate_gps_tax(df_mega, stats_dict):
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
-    df_mega = df_mega[
-        (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
-
-    """ Want to investigate where marine from GPS but no marine species """
-    df_marine_no_tax = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
-
-    df_ena_species = get_ena_species_info(sample_dir)
-    df_marine_no_tax = pd.merge(df_marine_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
-    ic(df_marine_no_tax.shape[0])
-    ic(df_marine_no_tax.head())
-
-    df = df_marine_no_tax.groupby(
-        ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
-    ic(df.head(20))
-    outfile = analysis_dir + 'marine_no-marine-tax_species_sample_count.tsv'
-    ic(outfile)
-    df.to_csv(outfile, sep = "\t")
-
-    df_word_c = df_marine_no_tax["scientific_name"]
-    title = "Species observed where: marine (From GPS), but no-marine-tax-defined"
-    my_word_c(df_word_c, title, plot_dir + 'marine_no-marine-tax-defined-World_Cloud.png')
+    """commented all below out as causing run of memory"""
+    # df_mega = df_mega[
+    #     (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
+    #
+    # """ Want to investigate where marine from GPS but no marine species """
+    # df_marine_no_tax = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
+    # ic()
+    # df_ena_species = get_ena_species_info(sample_dir)
+    # ic()
+    # df_marine_no_tax = pd.merge(df_marine_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
+    # ic()
+    # ic(df_marine_no_tax.shape[0])
+    # ic(df_marine_no_tax.head())
+    #
+    # df = df_marine_no_tax.groupby(
+    #     ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
+    # ic()
+    # ic(df.head(20))
+    # outfile = analysis_dir + 'marine_no-marine-tax_species_sample_count.tsv'
+    # ic(outfile)
+    # df.to_csv(outfile, sep = "\t")
+    #
+    # df_word_c = df_marine_no_tax["scientific_name"]
+    # title = "Species observed where: marine (From GPS), but no-marine-tax-defined"
+    # my_word_c(df_word_c, title, plot_dir + 'marine_no-marine-tax-defined-World_Cloud.png')
 
     return stats_dict
 
@@ -969,7 +1032,8 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     # doing a left join, so all ENA samples represented.
     df_merged_ena_combined_tax = pd.merge(df_all_ena_sample_detail, df, how = 'left', left_on = ['tax_id'],
                                           right_on = ['NCBI:taxid'])
-    df_merged_ena_combined_tax = df_merged_ena_combined_tax.drop(columns = ["Unnamed: 0"]).drop_duplicates()
+    df = df_merged_ena_combined_tax.drop_duplicates()
+    df_merged_ena_combined_tax = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     ic(df_merged_ena_combined_tax.head(5))
     ic(df_merged_ena_combined_tax.shape[0])
     df = df_merged_ena_combined_tax
@@ -1138,6 +1202,12 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
     ic(df_merge_ena_combined_tax.shape[0])
 
+    df_just_tax_env = df_merge_ena_combined_tax.query('taxonomy_type == "env_taxa"')
+    stats_dict["env_tax_ids_in_ena_count"] = df_just_tax_env["NCBI:taxid"].nunique()
+    stats_dict["env_tax_not_in_ena_count"] = stats_dict["_input_env_tax_id_count"] - stats_dict[
+        "env_tax_ids_in_ena_count"]
+    stats_dict["env_tax_in_ena_sample_count"] = df_just_tax_env.shape[0]
+
     return stats_dict,  df_merge_ena_combined_tax
 
 
@@ -1166,13 +1236,12 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     # ic(df_merge_combined_tax.columns)
     my_cols_y = [match for match in df_merge_combined_tax.columns if "_y" in match]
     # ic(my_cols_y)
-    df = df_merge_combined_tax
     for my_y_col in my_cols_y:
         my_x_col = my_y_col[:-2]
         # ic(my_x_col, my_y_col)
-        df[my_x_col] = df[my_x_col].fillna(df[my_y_col])
-    df_merge_combined_tax = df.drop(columns = my_cols_y)
-    ic(df_merge_combined_tax.head(10))
+        df_merge_combined_tax[my_x_col].fillna(df_merge_combined_tax[my_y_col], inplace=True)
+    df_merge_combined_tax.drop(columns = my_cols_y, inplace=True)
+    ic(df_merge_combined_tax.head(5))
 
     return df_merge_combined_tax
 
@@ -1204,7 +1273,9 @@ def main():
     # ic(df_outliers)
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
+    ic()
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(sample_dir)
+    ic()
     ic(df_all_ena_sample_detail.head())
     ic(df_all_ena_sample_detail.shape[0])
     ic('-' * 100)
@@ -1222,31 +1293,43 @@ def main():
 
     ic('-' * 100)
     stats_dict, df_merge_combined_tax = merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env)
+
     ic('-' * 100)
     df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories)
     # ic(df_merge_combined_tax["NCBI term"].value_counts())
-    df_merge_combined_tax = df_merge_combined_tax.drop_duplicates()
+    df_merge_combined_tax.drop_duplicates(inplace=True)
     # ic(df_merge_combined_tax["NCBI term"].value_counts())
     # ic(df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"').shape[0])
 
+    #save save some memory and get rid of some stored structures
+    ic(memory_usage())
+    global MyDataStuctures
+    # del MyDataStuctures['df_all_ena_detailed_sample_info']  #need to reuse this!
+    global WordCloud
+    del WordCloud
+    gc.collect()
+    ic(memory_usage())
+
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
+    ic(memory_usage())
     ic("about to quit")
     ic(stats_dict)
-    quit()
+    ic('-' * 80)
+    ic()
 
-    # the rest of the below was used mainly when exploring the data
+    # the rest of the below was used mainly when exploring the data, hence now commented.
 
-
-    stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
-                                                            df_all_ena_sample_detail, df_metag_tax)
-
-    stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
-                                                                      df_all_ena_sample_detail, df_metag_tax,
-                                                                      df_tax2env)
-    stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
-                                                               df_tax2env)
-
-    investigate_a_tax()
+    #
+    # stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
+    #                                                         df_all_ena_sample_detail, df_metag_tax)
+    #
+    # stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
+    #                                                                   df_all_ena_sample_detail, df_metag_tax,
+    #                                                                   df_tax2env)
+    # stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
+    #                                                            df_tax2env)
+    #
+    # investigate_a_tax()
 
     ic(stats_dict)
 

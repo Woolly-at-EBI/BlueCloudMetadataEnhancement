@@ -468,8 +468,8 @@ def print_df_mega(prefix, df_mega):
         #    'marine (ocean connected)', 'freshwater (land enclosed)'
         df = pd.merge(df_mega_combined_counts, df_mega[['tax_id', 'marine (ocean connected)', 'freshwater (land enclosed)']], on = 'tax_id', how = 'inner')
         #don't understand why this merge duplicates
-        df = df.drop_duplicates()
-        df = df.fillna(False)
+        df.drop_duplicates(inplace=True)
+        df.fillna(False, inplace=True)
 
         ic(df.head(5))
         return(df)
@@ -484,6 +484,7 @@ def print_df_mega(prefix, df_mega):
         df_mega_combined_counts.rename(columns = {'count': title}, inplace=True)
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
+        df_mega_combined_counts.drop_duplicates(inplace=True)
 
         return df_mega_combined_counts
 
@@ -496,6 +497,7 @@ def print_df_mega(prefix, df_mega):
         df_mega_combined_counts.reset_index(inplace=True)
         df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how='outer',
                                            on=['tax_id'], suffixes = ('', '_y'))
+        df_mega_combined_counts.drop_duplicates(inplace=True)
         df_mega_combined_counts["taxonomy_type"] = df_mega_combined_counts["taxonomy_type"].fillna(df_mega_combined_counts["taxonomy_type_y"], inplace=True)
         df_mega_combined_counts["NCBI term"] = df_mega_combined_counts["NCBI term"].fillna(
             df_mega_combined_counts["scientific_name"], inplace=True)
@@ -1056,7 +1058,7 @@ def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_samp
     ic(df_merged_ena_combined_tax.shape[0])
     df_mega = pd.merge(df_merged_ena_combined_tax, df_merged_all_categories, how = 'left', left_on = ['lat', 'lon'],
                        right_on = ['lat', 'lon'])
-
+    df_mega.drop_duplicates(inplace=True)
     df_mega["location_designation"] = df_mega["location_designation"].fillna("no_gps")
     df_mega["NCBI:taxid"] = df_mega["NCBI:taxid"].fillna("undetermined")
     df_mega["NCBI term"] = df_mega["NCBI term"].fillna("undetermined")
@@ -1199,7 +1201,7 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
                   'taxonomic_source', 'taxonomy_type']:
         df_merge_ena_combined_tax[field] = df_merge_ena_combined_tax[field].fillna(df_merge_ena_combined_tax[field +'_y'])
         columns_to_delete.append(field +'_y')
-    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
+    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1).drop_duplicates()
     ic(df_merge_ena_combined_tax.shape[0])
 
     df_just_tax_env = df_merge_ena_combined_tax.query('taxonomy_type == "env_taxa"')

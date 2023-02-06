@@ -1187,9 +1187,10 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     df_tax2env['taxonomy_type'] = 'env_taxa'
     ic(df_tax2env.head(2))
     df_merge_ena_combined_tax = pd.merge(df_merge_metag, df_tax2env, how = 'left', left_on = ['tax_id'],
-                                          right_on = ['NCBI:taxid'], suffixes=('', '_y'), copy=True)
+                                          right_on = ['NCBI:taxid'], suffixes=('', '_y'))
     df_merge_ena_combined_tax['accession_index'] = df_merge_ena_combined_tax['accession']
-    df_merge_ena_combined_tax = df_merge_ena_combined_tax.set_index('accession_index').drop_duplicates()
+    df_merge_ena_combined_tax = df_merge_ena_combined_tax.set_index('accession_index')
+    df_merge_ena_combined_tax.drop_duplicates(inplace=True)
     ic(df_merge_ena_combined_tax.columns)
 
     ic(df_merge_ena_combined_tax.shape[0])
@@ -1201,8 +1202,10 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
                   'taxonomic_source', 'taxonomy_type']:
         df_merge_ena_combined_tax[field] = df_merge_ena_combined_tax[field].fillna(df_merge_ena_combined_tax[field +'_y'])
         columns_to_delete.append(field +'_y')
-    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1).drop_duplicates()
+    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
+    df_merge_ena_combined_tax.drop_duplicates(inplace=True)
     ic(df_merge_ena_combined_tax.shape[0])
+    ic(df_merge_ena_combined_tax.head(5))
 
     df_just_tax_env = df_merge_ena_combined_tax.query('taxonomy_type == "env_taxa"')
     stats_dict["env_tax_ids_in_ena_count"] = df_just_tax_env["NCBI:taxid"].nunique()
@@ -1216,6 +1219,7 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
 def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     """merge_in_all_categories
         Doing this as only included for metag and tax env. by default
+        N.B. this massively consumes memory.
     :param df_merge_combined_tax:
     :param df_merged_all_categories:
     :return: df_merge_combined_tax
@@ -1227,9 +1231,9 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     df_merge_combined_tax = pd.merge(df_merge_combined_tax, df_merged_all_categories, how = 'left',
                                      on = ['lat', 'lon'], suffixes = ('', '_y'))
     df_merge_combined_tax['accession_index'] = df_merge_combined_tax['accession']
-    df = df_merge_combined_tax.set_index('accession_index')
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    df_merge_combined_tax = df.drop_duplicates()
+    df_merge_combined_tax.set_index('accession_index', inplace=True)
+    df_merge_combined_tax = df_merge_combined_tax.loc[:, ~df_merge_combined_tax.columns.str.contains('^Unnamed')]
+    df_merge_combined_tax.drop_duplicates(inplace=True)
     ic(df_merge_combined_tax.shape[0])
     ic(df_merge_combined_tax.head())
 
@@ -1244,7 +1248,7 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
         df_merge_combined_tax[my_x_col].fillna(df_merge_combined_tax[my_y_col], inplace=True)
     df_merge_combined_tax.drop(columns = my_cols_y, inplace=True)
     ic(df_merge_combined_tax.head(5))
-
+    ic()
     return df_merge_combined_tax
 
 
@@ -1313,6 +1317,7 @@ def main():
     ic(memory_usage())
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
+    ic()
     ic(memory_usage())
     ic("about to quit")
     ic(stats_dict)

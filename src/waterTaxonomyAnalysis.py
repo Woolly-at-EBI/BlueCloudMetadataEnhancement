@@ -64,14 +64,14 @@ def get_taxonomy_info(taxonomy_dir):
     metagenomes_file: str = taxonomy_dir + "NCBI-metagenomes-to-environment.csv"
     df_metag_tax = pd.read_csv(metagenomes_file, index_col=None)
     ic(df_metag_tax.columns)
-    df_metag_tax["NCBI:taxid"] = df_metag_tax["NCBI:taxid"].astype(np.int16)
+    df_metag_tax["NCBI:taxid"] = df_metag_tax["NCBI:taxid"].astype(np.int16).abs()
     df_metag_tax = clean_up_df_metag_tax(df_metag_tax)
     ic(df_metag_tax.head(10))
 
     taxa_env_file = taxonomy_dir + "NCBI-taxa-to-environment.csv"
     df_tax2env = pd.read_csv(taxa_env_file, index_col=None)
     ic(df_tax2env.columns)
-    df_tax2env["NCBI taxID"] = df_tax2env["NCBI taxID"].astype(np.int16)
+    df_tax2env["NCBI taxID"] = df_tax2env["NCBI taxID"].astype(np.int16).abs()
     df_tax2env = clean_up_df_tax2env(df_tax2env)
     ic(df_tax2env.head(10))
 
@@ -289,7 +289,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
         # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
         # df = pd.read_csv(infile, sep = "\t")
 
-        test = False
+        test = True
         pf = ParquetFile(infile)
         specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon"]
         # was useful to limit number of rows, and alternatively focus on specific species
@@ -304,7 +304,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
         else:
             table = pq.read_table(infile, columns=specific_columns_needed)
             df = table.to_pandas()
-            # df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')
+            df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')
             # df = df.query('(scientific_name == "Piscirickettsia salmonis")')
             # head -1 sample_much_raw.tsv | tr '\t' '\n' | sed 's/^/"/;s/$/",/' | tr '\n' ' '
             # "accession", "secondary_sample_accession", "description", "checklist", "collection_date", "collection_date_submitted", "tax_id", "scientific_name", "taxonomic_classification", "lat", "lon", "country", "depth", "altitude", "elevation", "salinity", "environment_biome", "environment_feature", "environment_material",
@@ -312,7 +312,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
             del table
 
         #reduce memory
-        df["tax_id"] = df["tax_id"].astype(np.int16)
+        df["tax_id"] = df["tax_id"].astype(np.int16).abs()
         df["lat"] = df["lat"].astype(np.float32)
         df["lon"] = df["lon"].astype(np.float32)
 
@@ -398,7 +398,7 @@ def clean_df_mega(df_mega):
 
 def print_df_mega(prefix, df_mega):
     """print_df_mega
-       (This is reused several times, hence the prefix.)
+       (This is reused several times, hence the prefix. Such a bad subroutine name!)
        Does lots of taxonomy_id specific group_by's to generate counts by different criteria
         The counts are renamed with a relevant column name
         - it generates a df with a row per tax and many column counts for different criteria
@@ -1251,6 +1251,51 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     ic()
     return df_merge_combined_tax
 
+def addConfidence(df_merge_combined_tax):
+    """addConfidence
+        adding confidence in for metadata assignments
+    :param df_merge_combined_tax:
+    :return:
+    """
+    ic()
+    ic(df_merge_combined_tax.columns)
+    # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
+    df = df_merge_combined_tax.query('location_designation_marine == True')
+    ic()
+    # for a sample, if GPS assignment:
+    # high if , GPS and tax agreement for sample
+    # low if , GPS and tax disagreement tax for sample
+    ic(df.columns)
+    df_tmp = df[["tax_id", "location_designation_marine", "location_designation_terrestrial"]]
+    ic(df_tmp.head())
+    df_species_marine = df_tmp.groupby(["tax_id", "location_designation_marine"]).\
+        size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
+    ic(df_species_marine.head(5))
+    ic(df_species_marine["location_designation_marine"].value_counts())
+    df_species_marine = df_species_marine.rename(columns={"location_designation_marine": "some_samples_marine_coords"}).drop(columns=["count"])
+    #ic(df_species_marine["location_designation_terrestrial"].value_counts())
+
+    df = pd.merge(df, df_species_marine, on="tax_id")
+    ic(df.head())
+
+    conf_field = "sample_confidence_marine"
+    df[conf_field] = "zero"
+    df.loc[(df["location_designation_marine"] == True), conf_field] = "medium"
+    df.loc[(df["marine (ocean connected)"] == True), conf_field] = "medium"
+    df.loc[(df["location_designation_marine"] == True) & (df["marine (ocean connected)"] == True), conf_field] = "high"
+    df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == True), conf_field] = "high"
+    df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), conf_field] = "low"
+    df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), conf_field] = "low"
+
+
+    #
+    # # what if other samples have GPS but particular ones don't?
+    df.loc[(df[conf_field] == "zero") & (df["some_samples_marine_coords"] == True), conf_field] = "low"
+
+
+    ic(df.head(50))
+    ic(df["sample_confidence_marine"].value_counts())
+
 
 def main():
     """ main
@@ -1308,21 +1353,23 @@ def main():
     # ic(df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"').shape[0])
 
     #save save some memory and get rid of some stored structures
-    ic(memory_usage())
+    # ic(memory_usage())
     global MyDataStuctures
     # del MyDataStuctures['df_all_ena_detailed_sample_info']  #need to reuse this!
     global WordCloud
     del WordCloud
     gc.collect()
-    ic(memory_usage())
+    # ic(memory_usage())
 
-    print_df_mega('merge_tax_combined', df_merge_combined_tax)
-    ic()
-    ic(memory_usage())
-    ic("about to quit")
-    ic(stats_dict)
+    addConfidence(df_merge_combined_tax)
+
+    # print_df_mega('merge_tax_combined', df_merge_combined_tax)
+    #ic()
+    # ic(memory_usage())
+    #ic("about to quit")
+    #ic(stats_dict)
     ic('-' * 80)
-    ic()
+    #ic()
 
     # the rest of the below was used mainly when exploring the data, hence now commented.
 
@@ -1338,7 +1385,7 @@ def main():
     #
     # investigate_a_tax()
 
-    ic(stats_dict)
+    # ic(stats_dict)
 
     return ()
 

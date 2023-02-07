@@ -1253,7 +1253,7 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
 
 def addConfidence(df_merge_combined_tax):
     """addConfidence
-        adding confidence in for metadata assignments
+        adding confidence for metadata assignments
     :param df_merge_combined_tax:
     :return:
     """
@@ -1272,7 +1272,7 @@ def addConfidence(df_merge_combined_tax):
         size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
     ic(df_species_marine.head(5))
     ic(df_species_marine["location_designation_marine"].value_counts())
-    df_species_marine = df_species_marine.rename(columns={"location_designation_marine": "some_samples_marine_coords"}).drop(columns=["count"])
+    df_species_marine = df_species_marine.rename(columns={"location_designation_marine": "some_samples_have_marine_coords"}).drop(columns=["count"])
     #ic(df_species_marine["location_designation_terrestrial"].value_counts())
 
     df = pd.merge(df, df_species_marine, on="tax_id")
@@ -1287,10 +1287,16 @@ def addConfidence(df_merge_combined_tax):
     df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), conf_field] = "low"
     df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), conf_field] = "low"
 
+    # do a confidence:  conflict matrix, first. and the share with Josie and Stephane
+    # do as numeric, + or - for pieces of evidence and then use threshold for the H/M/L/Zero   - look for missing rules
+    # give more weight to conflict or missing?  Should missing be False?   Have a field for missing coordinates and similar taxonomy marine/freshwater assignment?
+    # use the environmental_biome + coastal
+    # N.B. do the GPS coordinates granularity, as another column? -
+    # what if low granularity, do polygon searching?
+    # first off, do a search of the relative amount of granularity
 
-    #
     # # what if other samples have GPS but particular ones don't?
-    df.loc[(df[conf_field] == "zero") & (df["some_samples_marine_coords"] == True), conf_field] = "low"
+    df.loc[(df[conf_field] == "zero") & (df["some_samples_have_marine_coords"] == True), conf_field] = "low"
 
 
     ic(df.head(50))

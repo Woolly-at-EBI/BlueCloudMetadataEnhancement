@@ -26,6 +26,8 @@ from get_directory_paths import get_directory_paths
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
+import decimal
+import math
 
 
 def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
@@ -759,6 +761,37 @@ def clean_merge_all(df_merged_all):
 
     return df_merged_all
 
+def analysis_lat_lon(sample_dir):
+    """ analysis_lat_lon
+        __params__:
+               passed_args: sample_dir
+        rtn: df
+    """
+    sample_file = sample_dir + 'sample_much_raw.tsv'
+    cols = ["accession", "lat", "lon"]
+    df = pd.read_csv(sample_file, sep = "\t", index_col=None, usecols=cols, nrows=100000)
+    df_filtered = df.loc[df['lat'].notnull()]
+    # df_filtered['lat_decimal_len'] = str(df_filtered['lat'])[::-1].find('.')
+    # df_filtered['lat_decimal_len'] = len(str(df_filtered['lat']).split(".")[1])
+    df_filtered['lat_decimal'] = df_filtered['lat'].astype(str).str.split(".").str[1]
+    df_filtered['lat_len'] = df_filtered['lat_decimal'].str.len()
+
+    df_filtered['lon_decimal'] = df_filtered['lon'].astype(str).str.split(".").str[1]
+    df_filtered['lon_len'] = df_filtered['lon_decimal'].str.len()
+
+    ic(df_filtered.head(100))
+
+    ic(df_filtered['lat_len'].value_counts())
+    df_tmp = df_filtered.drop(columns=['lat', 'lon']).groupby('lat_len').size().to_frame('count').reset_index()
+    ic(df_tmp)
+
+    df_tmp = df_filtered.drop(columns=['lat', 'lon']).groupby('lon_len').size().to_frame('count').reset_index()
+    ic(df_tmp)
+
+
+    return df
+
+
 def get_ena_total_sample_count(sample_dir):
     """ get_ena_total_sample_count
         __params__:
@@ -770,6 +803,7 @@ def get_ena_total_sample_count(sample_dir):
 
     return num_lines
 
+
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
         __params__:
@@ -778,9 +812,14 @@ def main():
     full_rerun = True
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    analysis_lat_lon(sample_dir)
+
+    quit(1)
 
     ena_total_sample_count = get_ena_total_sample_count(sample_dir)
     ic(ena_total_sample_count)
+
+
 
     # get all the files processed
     if full_rerun:

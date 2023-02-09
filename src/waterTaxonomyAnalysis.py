@@ -301,7 +301,7 @@ def get_all_ena_detailed_sample_info(sample_dir):
         specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon"]
         # was useful to limit number of rows, and alternatively focus on specific species
         if test:
-            nrows = 100000
+            nrows = 10000
             # nrows = 100000000000
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
@@ -387,10 +387,7 @@ def clean_df_mega(df_mega):
     # ic(df_mega.head(10))
     # ic(df_mega.columns)
 
-    drop_columns = ["ena_country", "ena_region", "eez_category",
-                                    "longhurst_category", "IHO_category", "sea_category", "eez_iho_intersect_category",
-                                    "land_category", "worldAdmin_category", "feow_category", "ena_category",
-                                    "sea_total",  "land_total", 'coords']
+    drop_columns = ["ena_country", "ena_region","sea_total",  "land_total", 'coords']
 
     df_mega.drop(columns = drop_columns, inplace=True)
     df_mega['NCBI:taxid'] = df_mega['NCBI:taxid'].astype('Int64')
@@ -416,7 +413,13 @@ def print_df_mega(prefix, df_mega):
     ic('=' * 100)
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+    ic()
+    ic(df_mega["taxonomy_type"].value_counts())
     df_mega["taxonomy_type"] = df_mega["taxonomy_type"].fillna('unclassified')
+    df_scientific_name_zero = df_mega.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
 
     def add_in_extra_cols(df_mega_combined_counts, df_mega):
         """ add_in_extra_cols
@@ -439,7 +442,7 @@ def print_df_mega(prefix, df_mega):
         """ combine_count function to merge the counts column of df_right with the combined counts
             the title is used to give the counts column a meaningful name
         """
-        df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how = 'outer',
+        df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how = 'left',
                                            on = 'tax_id')
         df_mega_combined_counts.rename(columns = {'count': title}, inplace = True)
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
@@ -454,17 +457,50 @@ def print_df_mega(prefix, df_mega):
             the difference from the combine_count function is that it copes with species specific aspects.
             currently it is only used once
         """
+
+        ic()
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+        ic(df_mega_combined_counts.shape)
+        ic(df_mega_combined_counts['tax_id'].dtype)
+        ic(df_right.sort_values('tax_id').head(3))
+        ic(df_right.shape)
+        ic(df_right['tax_id'].dtype)
+        #df_right.drop(columns = ["level_0", "index"])
+        ic(df_right.query('scientific_name == 0').shape)
+        ic(df_mega_combined_counts.query('scientific_name == 0').shape)
         df_mega_combined_counts.reset_index(inplace = True)
-        df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how = 'outer',
+        df_mega_combined_counts = pd.merge(df_right, df_mega_combined_counts, how = 'left',
                                            on = ['tax_id'], suffixes = ('', '_y'))
+        ic('after merge',df_mega_combined_counts.shape)
+        ic(df_mega_combined_counts.sort_values('tax_id').head(20))
+
+        #df_mega_combined_counts.reset_index(inplace = True)
         df_mega_combined_counts.drop_duplicates(inplace = True)
-        # df_mega_combined_counts["taxonomy_type"] = df_mega_combined_counts["taxonomy_type"].fillna(df_mega_combined_counts["taxonomy_type_y"], inplace=True)
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+
+        my_cols_y = [match for match in df_mega_combined_counts.columns if "_y" in match]
+        for my_y_col in my_cols_y:
+            my_x_col = my_y_col[:-2]
+            ic(my_x_col, my_y_col)
+            df_mega_combined_counts[my_x_col] = df_mega_combined_counts[my_x_col].fillna(
+                df_mega_combined_counts[my_y_col])
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+        df_mega_combined_counts.drop(columns=my_cols_y, inplace=True)
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+        df_mega_combined_counts["taxonomy_type"].fillna("unclassified", inplace=True)
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
         df_mega_combined_counts["NCBI term"] = df_mega_combined_counts["NCBI term"].fillna(
             df_mega_combined_counts["scientific_name"], inplace = True)
-        # df_mega_combined_counts.drop(["taxonomy_type_y", "scientific_name"], axis=1, inplace=True)
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+        df_mega_combined_counts["scientific_name"] = df_mega_combined_counts["scientific_name"].fillna(
+            df_mega_combined_counts["NCBI term"])
+        ic(df_mega_combined_counts.sort_values('tax_id').head(3))
+
+        ic(df_mega_combined_counts.sort_values('tax_id').head(20))
         df_mega_combined_counts.rename(columns = {'count': title}, inplace = True)
-        df_mega_combined_counts[title] = df_mega_combined_counts[title]
         df_mega_combined_counts.fillna(0, inplace = True)
+
+        ic(df_mega_combined_counts.query('scientific_name == 0').shape)
 
         return df_mega_combined_counts
 
@@ -478,6 +514,11 @@ def print_df_mega(prefix, df_mega):
 
     df_mega = clean_df_mega(df_mega)
     ic(df_mega.head(10))
+    df_scientific_name_zero = df_mega.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
+    ic()
+    ic(df_mega["taxonomy_type"].value_counts())
 
     ic(df_mega["location_designation"].value_counts())
     glossary = {}
@@ -487,6 +528,9 @@ def print_df_mega(prefix, df_mega):
     ic('###', title)
     df_just_marine = df_mega.query('(location_designation_marine == True) or (`marine (ocean connected)` == True)'
                                             , engine = 'python')
+    ic()
+    ic(df_just_marine["taxonomy_type"].value_counts())
+
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     ic(out_file, df_just_marine.shape[0])
     ic(df_just_marine.head(5))
@@ -497,17 +541,23 @@ def print_df_mega(prefix, df_mega):
     glossary[title] = 'count of all ENA samples for a tax_id where there is a marine location designation from at least one of tax and GPS(lower confidence)'
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = df_just_marine.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
+    df = df_just_marine.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count').reset_index()
     ic(out_file, df.shape[0])
     ic(df.head(5))
     df.to_csv(out_file, sep = '\t')
-    del df_just_marine
-    gc.collect()
+    #del df_just_marine
+    #gc.collect()
 
     # This is the base of the combined counts dataframe
     df_mega_combined_counts = df.rename(columns={'count': title})
     df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
     ic(df_mega_combined_counts.head(5))
+
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are classified as part of the marine domain as high confidence
     title = 'lat_lon_marine_hc'
@@ -532,6 +582,8 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
     del df_just_marine
     gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are classified as part of the terrestrial domain
     title = 'lat_lon_terrestrial_hc_counts'
@@ -549,6 +601,8 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
     del df_just_terrestrial
     gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are classified as part of the terrestrial domain (lower confidences
     title = 'lat_lon_terrestrial_counts'
@@ -569,6 +623,8 @@ def print_df_mega(prefix, df_mega):
     del df_just_terrestrial
     gc.collect()
     ic(df.query('`scientific_name` == "Homo sapiens"').head(5))
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     #lat_lon_marine_or_terrestrial
     title = 'lat_lon_marine_or_terrestrial'
@@ -586,9 +642,10 @@ def print_df_mega(prefix, df_mega):
     ic(df_mega_filtered.query('`scientific_name` == "Homo sapiens"'))
     df = df_mega_filtered.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-
     del df_mega_filtered   #memory expensive slice!
     gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
     title = 'lat_lon_marine_and_terrestrial_counts'
@@ -604,6 +661,8 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df.shape[0])
     df.to_csv(out_file, sep = '\t')
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are not classified as marine or terrestrial
     title = 'lat_lon_not_marine_or_terrestrial_counts'
@@ -619,6 +678,8 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
     del df_both_mar_ter
     gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     #Do not have coordinates
     ic()
@@ -636,7 +697,16 @@ def print_df_mega(prefix, df_mega):
     df = df.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
     ic(out_file, df.shape[0])
     df.to_csv(out_file, sep = '\t')
+    ic('before combine_count', df_mega_combined_counts.sort_values('tax_id').head(3))
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    ic('after combine_count', df_mega_combined_counts.sort_values('tax_id').head(3))
+
+    df_mega_combined_counts["taxonomy_type"].fillna("unclassified_9999")
+    df_mega_combined_counts.loc[df_mega_combined_counts['taxonomy_type'] == 0, 'taxonomy_type'] = "unclassified_8888"
+
+    ic(df_mega_combined_counts["taxonomy_type"].value_counts())
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     #all species for all samples
     title = "all_ena_counts"
@@ -645,7 +715,6 @@ def print_df_mega(prefix, df_mega):
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     df = get_ena_species_count(sample_dir)
     df = df.reset_index()
-    df["taxonomy_type"] = "ena_unclassified"
     ic(df.columns)
     df = df.rename(columns={'scientific_term': 'NCBI term'})
     df['NCBI term'] = df['scientific_name']
@@ -654,9 +723,15 @@ def print_df_mega(prefix, df_mega):
     ic(df.head(5))
     ic(out_file, df.shape[0])
     df.to_csv(out_file, sep = '\t')
+    ic('before combine_count_allspecies', df_mega_combined_counts.sort_values('tax_id').head(3))
     df_mega_combined_counts = combine_count_allspecies(df_mega_combined_counts, df, title)
+    ic('after combine_count_allspecies', df_mega_combined_counts.sort_values('tax_id').head(3))
+
     del df
     gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
 
     """and finally to print out the combined counts"""
     df_mega_combined_counts = add_in_extra_cols(df_mega_combined_counts, df_mega)
@@ -666,6 +741,16 @@ def print_df_mega(prefix, df_mega):
 
     # change the order, the tax_id slipped down the lists
     ic(df_mega_combined_counts.columns)
+
+    df_mega_combined_counts = df_mega_combined_counts.loc[:, ~df_mega_combined_counts.columns.str.contains('^level')]
+    df_mega_combined_counts["tax_id_index"] = df_mega_combined_counts["tax_id"]
+    df_mega_combined_counts.set_index("tax_id_index", inplace = True)
+    df_mega_combined_counts.drop_duplicates()
+    # not sure why get a huge number of rows missing scientific_name etc. - too investigate! Think it is just when limited row selection in testing
+    # df_mega_combined_counts = df_mega_combined_counts.drop(df_mega_combined_counts[df_mega_combined_counts.scientific_name == 0].index)
+
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
 
     df_mega_combined_counts = df_mega_combined_counts[["tax_id", "scientific_name", "taxonomy_type",
         "marine (ocean connected)", "freshwater (land enclosed)", "lat_lon_marine_counts", "lat_lon_marine_hc_counts",
@@ -707,6 +792,9 @@ def get_merged_all_categories_file(analysis_dir):
         # ic(df.memory_usage())
         for my_cat in most_cats:
             df[my_cat] = df[my_cat].astype("category")
+        #and even more, reduction of memory
+        my_cols = [match for match in df.columns if "_category" in match]
+        df= df.drop(columns=my_cols)
         # ic(df.memory_usage())
         MyDataStuctures[key_name] = df
 
@@ -758,6 +846,7 @@ def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, a
     ic(df_merged_ena_metag_tax.head(2))
     ic(df_merged_ena_metag_tax.shape[0])
     df_just_metag = df_merged_ena_metag_tax.query('taxonomy_type == "metagenome"')
+    ic(df_just_metag.head(3))
 
     # how many taxonomies did we and did not find? (in all not just GPS)
     stats_dict["metag_tax_ids_in_ena_count"] = df_just_metag["NCBI:taxid"].nunique()
@@ -1012,7 +1101,10 @@ def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_ena_sample
     #                'environment_biome', 'environment_feature'])
 
     stats_dict, df_merged_all_categories = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax,
-                                                                      analysis_dir)
+                                                           analysis_dir)
+    ic()
+    ic(df_merged_all_categories["taxonomy_type"].value_counts())
+
     # taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
     ic()
     ic(df_merged_all_categories.head())
@@ -1266,7 +1358,6 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     ic(df_tax2env.head(2))
 
     df_tax2env['taxonomy_type'] = 'env_taxa'
-    df_tax2env['taxonomy_type'] = df_tax2env['taxonomy_type']
     ic(df_merge_metag.query('scientific_name == "Corynebacterium suranareeae"'))
     ic(df_merge_metag.query('tax_id == 16084'))
     ic(df_tax2env.query('`NCBI:taxid` == 16084'))
@@ -1277,10 +1368,18 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     df_merge_ena_combined_tax['accession_index'] = df_merge_ena_combined_tax['accession']
     df_merge_ena_combined_tax = df_merge_ena_combined_tax.reset_index().set_index('accession_index')
     ic(df_merge_ena_combined_tax.columns)
-
     ic(df_merge_ena_combined_tax.shape[0])
-    ic(df_merge_ena_combined_tax.head(5))
 
+
+    if 'taxonomy_type_y' in df_merge_ena_combined_tax:
+        df = df_merge_ena_combined_tax
+        df["taxonomy_type"].fillna(df["taxonomy_type_y"], inplace = True)
+        #df.loc[df.loc['taxonomy_type'] == 'ena_classified', 'taxonomy_type'] = df["taxonomy_type_y"]
+        #df.loc[df['c1'] == 'Value', 'c1'] = 10
+        ic("taxonomy_type_y is found!")
+        df_merge_ena_combined_tax = df
+
+    ic(df_merge_ena_combined_tax.head(5))
     ic(df_merge_ena_combined_tax.query('scientific_name == "Corynebacterium suranareeae"'))
 
     # remove duplicate columns (after checking if values needed)
@@ -1290,7 +1389,6 @@ def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
     r = re.compile(".*_y$")
     filtered_cols = list(filter(r.match, all_cols))
     rem_ycol = list(map(lambda st: str.replace(st, "_y", ""), filtered_cols))
-
 
     for field in rem_ycol:
         ic(field)
@@ -1331,15 +1429,14 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     ic(df_merge_combined_tax.shape[0])
     ic(df_merge_combined_tax.head())
 
-    # ic(df_merge_combined_tax.head())
-    # ic(df_merge_combined_tax.shape[0])
-    # ic(df_merge_combined_tax.columns)
     my_cols_y = [match for match in df_merge_combined_tax.columns if "_y" in match]
     # ic(my_cols_y)
     for my_y_col in my_cols_y:
         my_x_col = my_y_col[:-2]
         # ic(my_x_col, my_y_col)
         df_merge_combined_tax[my_x_col].fillna(df_merge_combined_tax[my_y_col], inplace=True)
+    if 'taxonomy_type_y' in df_merge_combined_tax:
+        df_merge_combined_tax["taxonomy_type"].fillna(df_merge_combined_tax["taxonomy_type_y"], inplace = True)
     df_merge_combined_tax.drop(columns = my_cols_y, inplace=True)
     ic(df_merge_combined_tax.head(5))
     ic()

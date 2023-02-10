@@ -296,12 +296,12 @@ def get_all_ena_detailed_sample_info(sample_dir):
         # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
         # df = pd.read_csv(infile, sep = "\t")
 
-        test = False
+        test = True
         pf = ParquetFile(infile)
         specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon"]
         # was useful to limit number of rows, and alternatively focus on specific species
         if test:
-            nrows = 10000
+            nrows = 1000000
             # nrows = 100000000000
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
@@ -443,11 +443,13 @@ def print_df_mega(prefix, df_mega):
             the title is used to give the counts column a meaningful name
         """
         df_mega_combined_counts = pd.merge(df_mega_combined_counts, df_right, how = 'left',
-                                           on = 'tax_id')
+                                           on = 'tax_id', suffixes = ('', '_y'))
         df_mega_combined_counts.rename(columns = {'count': title}, inplace = True)
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
         df_mega_combined_counts[title] = df_mega_combined_counts[title].astype('Int64')
         df_mega_combined_counts.drop_duplicates(inplace = True)
+        my_cols_y = [match for match in df_mega_combined_counts.columns if "_y" in match]
+        df_mega_combined_counts.drop(columns=my_cols_y, inplace=True)
 
         return df_mega_combined_counts
 
@@ -523,8 +525,8 @@ def print_df_mega(prefix, df_mega):
     ic(df_mega["location_designation"].value_counts())
     glossary = {}
 
-    # Have coordinates and are classified as part of the marine domain
-    title = 'lat_lon_marine'
+    # Have coordinates and are classified as part of the marine domain (any)
+    title = 'any_marine'
     ic('###', title)
     df_just_marine = df_mega.query('(location_designation_marine == True) or (`marine (ocean connected)` == True)'
                                             , engine = 'python')
@@ -537,7 +539,7 @@ def print_df_mega(prefix, df_mega):
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
     ic(df_just_marine["scientific_name"].value_counts())
 
-    title = 'lat_lon_marine_counts'
+    title = 'any_marine_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is a marine location designation from at least one of tax and GPS(lower confidence)'
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
@@ -559,8 +561,37 @@ def print_df_mega(prefix, df_mega):
     df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
     ic(df_scientific_name_zero.shape)
 
+    # Have coordinates and are classified as part of the marine domain (and not (location_designation_terrestrial ==
+    # True) or not occurring: ((`marine (ocean connected)` == True) and (`freshwater (land enclosed)` == True)))
+    title = 'marine'
+    ic('###', title)
+    df_just_marine = df_mega.query('(location_designation_marine == True) or (`marine (ocean connected)` == True)'
+                                            , engine = 'python')
+    ic(df_just_marine.head(2))
+    df_just_marine = df_just_marine.query('(location_designation != "marine and terrestrial") and \
+                             ( (`marine (ocean connected)` == False) or (`freshwater (land enclosed)` == False) )' \
+                                   , engine = 'python')
+    ic()
+    ic(df_just_marine["taxonomy_type"].value_counts())
+
+    out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    ic(out_file, df_just_marine.shape[0])
+    ic(df_just_marine.head(5))
+    df_just_marine.to_csv(out_file, sep = '\t', index = False)
+    ic(df_just_marine["scientific_name"].value_counts())
+
+    title = 'marine_counts'
+    glossary[title] = 'count of all ENA samples for a tax_id where there is a marine location designation from at least one of tax and GPS(lower confidence)'
+    ic('###', title)
+    out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    df = df_just_marine.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count').reset_index()
+    ic(out_file, df.shape[0])
+    ic(df.head(5))
+    df.to_csv(out_file, sep = '\t')
+    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+
     # Have coordinates and are classified as part of the marine domain as high confidence
-    title = 'lat_lon_marine_hc'
+    title = 'marine_hc'
     ic('###', title)
     df_just_marine = df_mega.query('(location_designation_marine == True) and (`marine (ocean connected)` == True)'
                                    , engine = 'python')
@@ -570,7 +601,7 @@ def print_df_mega(prefix, df_mega):
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
     ic(df_just_marine["scientific_name"].value_counts())
 
-    title = 'lat_lon_marine_hc_counts'
+    title = 'marine_hc_counts'
     glossary[
         title] = 'count of all ENA samples for a tax_id where there is a marine location designation from both tax and GPS(high confidence)'
     ic('###', title)
@@ -582,30 +613,12 @@ def print_df_mega(prefix, df_mega):
     df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
     del df_just_marine
     gc.collect()
+    ic(df_mega_combined_counts.head(2))
     df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
     ic(df_scientific_name_zero.shape)
 
-    # Have coordinates and are classified as part of the terrestrial domain
-    title = 'lat_lon_terrestrial_hc_counts'
-    glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from both tax and GPS(high confidence)'
-    ic('###', title)
-    df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) and \
-    (`freshwater (land enclosed)` == True)', engine = 'python')
-    ic(df.query('`scientific_name` == "Homo sapiens"'))
-    out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = df_just_terrestrial.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
-    ic(df.query('`scientific_name` == "Homo sapiens"').head(2))
-    ic(out_file, df_just_terrestrial.shape[0])
-    ic(out_file, df.shape[0])
-    df.to_csv(out_file, sep = '\t')
-    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
-    del df_just_terrestrial
-    gc.collect()
-    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
-    ic(df_scientific_name_zero.shape)
-
-    # Have coordinates and are classified as part of the terrestrial domain (lower confidences
-    title = 'lat_lon_terrestrial_counts'
+    # Have coordinates and are classified as part of the terrestrial domain (lower confidence)
+    title = 'any_terrestrial_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from either tax and GPS(lower confidence)'
     ic('###', title)
     ic(df_mega.query('`scientific_name` == "Homo sapiens"').head(5))
@@ -626,8 +639,53 @@ def print_df_mega(prefix, df_mega):
     df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
     ic(df_scientific_name_zero.shape)
 
+    # Have coordinates and are classified as part of the terrestrial domain (lower confidence) and not both
+    title = 'terrestrial_counts'
+    glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from '\
+      + 'either tax and GPS(lower confidence), but not where no indications of both marine and terrestrial'
+    ic('###', title)
+    ic(df_mega.query('`scientific_name` == "Homo sapiens"').head(5))
+    df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) or \
+    (`freshwater (land enclosed)` == True)', engine = 'python')
+    df_just_terrestrial = df_just_terrestrial.query('(location_designation != "marine and terrestrial") and \
+                             ( (`marine (ocean connected)` == False) or (`freshwater (land enclosed)` == False) )'\
+                                   , engine = 'python')
+    ic(df_just_terrestrial.query('`scientific_name` == "Homo sapiens"'))
+    out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    df = df_just_terrestrial.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
+    ic(df.head())
+    ic(df.query('`scientific_name` == "Homo sapiens"').head(2))
+    ic(out_file, df_just_terrestrial.shape[0])
+    ic(out_file, df.shape[0])
+    df.to_csv(out_file, sep = '\t')
+    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    del df_just_terrestrial
+    gc.collect()
+    ic(df.query('`scientific_name` == "Homo sapiens"').head(5))
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
+    # Have coordinates and are classified as part of the terrestrial domain
+    title = 'terrestrial_hc_counts'
+    glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from both tax and GPS(high confidence)'
+    ic('###', title)
+    df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) and \
+    (`freshwater (land enclosed)` == True)', engine = 'python')
+    ic(df.query('`scientific_name` == "Homo sapiens"'))
+    out_file = analysis_dir + prefix + '_' + title + '.tsv'
+    df = df_just_terrestrial.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
+    ic(df.query('`scientific_name` == "Homo sapiens"').head(2))
+    ic(out_file, df_just_terrestrial.shape[0])
+    ic(out_file, df.shape[0])
+    df.to_csv(out_file, sep = '\t')
+    df_mega_combined_counts = combine_count(df_mega_combined_counts, df, title)
+    del df_just_terrestrial
+    gc.collect()
+    df_scientific_name_zero = df_mega_combined_counts.query('scientific_name == 0')
+    ic(df_scientific_name_zero.shape)
+
     #lat_lon_marine_or_terrestrial
-    title = 'lat_lon_marine_or_terrestrial'
+    title = 'marine_or_terrestrial'
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     # ~lat.isnull()
@@ -648,13 +706,13 @@ def print_df_mega(prefix, df_mega):
     ic(df_scientific_name_zero.shape)
 
     # Have coordinates and are classified as part of both marine & terrestrial domains > to document the overlap
-    title = 'lat_lon_marine_and_terrestrial_counts'
+    title = 'marine_and_terrestrial_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is "both" marine and terrestrial location ' \
                       'designation from tax and the GPS coordinates '
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df_both_mar_ter = df_mega.query('(location_designation == "marine and terrestrial") and \
-                  ((`marine (ocean connected)` == True) or (`freshwater (land enclosed)` == True))', engine = 'python')
+    df_both_mar_ter = df_mega.query('(location_designation == "marine and terrestrial") or \
+                  ((`marine (ocean connected)` == True) and (`freshwater (land enclosed)` == True))', engine = 'python')
     # df = df_both_mar_ter.query('lat == lat')
     df = df_both_mar_ter
     df = df.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
@@ -753,9 +811,11 @@ def print_df_mega(prefix, df_mega):
     ic(df_scientific_name_zero.shape)
 
     df_mega_combined_counts = df_mega_combined_counts[["tax_id", "scientific_name", "taxonomy_type",
-        "marine (ocean connected)", "freshwater (land enclosed)", "lat_lon_marine_counts", "lat_lon_marine_hc_counts",
-        "lat_lon_terrestrial_counts", "lat_lon_terrestrial_hc_counts", "lat_lon_marine_and_terrestrial_counts",
-        "lat_lon_not_marine_or_terrestrial_counts", "not_lat_lon_counts",  "all_ena_counts"]]
+        "marine (ocean connected)", "freshwater (land enclosed)",
+        "any_marine_counts", "marine_counts", "marine_hc_counts",
+        "any_terrestrial_counts", "terrestrial_counts", "terrestrial_hc_counts",
+        "marine_and_terrestrial_counts", "lat_lon_not_marine_or_terrestrial_counts",
+        "not_lat_lon_counts",  "all_ena_counts"]]
     ic(df_mega_combined_counts.head(5))
     ic(out_file, df_mega_combined_counts.shape[0])
     df_mega_combined_counts.to_csv(out_file, sep = '\t', index=False)

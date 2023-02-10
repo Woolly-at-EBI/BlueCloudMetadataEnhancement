@@ -29,7 +29,7 @@ def focus(df):
     :return:
     """
     # df['tax_id'] = df['tax_id'].to_string()
-    df_filtered = df.query('(`NCBI term` == "marine metagenome") or (`NCBI term` == "Saccharomyces cerevisiae") or (`NCBI term` == "Piscirickettsia salmonis")')
+    df_filtered = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')
     #display(df_filtered.head())
     ic(df_filtered.columns)
     ic(df_filtered)
@@ -38,10 +38,40 @@ def focus(df):
 
     corr_matrix = df_tmp.corr()
     fig = px.imshow(corr_matrix)
+    #fig.show()
+
+    conditions = [
+        (df['marine (ocean connected)'] == True) & (df['freshwater (land enclosed)'] == True),
+        (df['marine (ocean connected)'] == True) & (df['freshwater (land enclosed)'] == False),
+        (df['marine (ocean connected)'] == False) & (df['freshwater (land enclosed)'] == True),
+         (df['marine (ocean connected)'] == False) & (df['freshwater (land enclosed)'] == False)
+    ]
+    choices = ["marine_and_freshwater_taxa", "marine_taxa", "freshwater_taxa", "unknown"]
+    df['taxa_env'] = np.select(conditions, choices, default = 0)
+    #-----------------------------------------------------------------------------------------
+
+    conditions = [
+        (df['marine_any_counts'] > 0) & (df['terrestrial_any_counts'] == 0),
+        (df['marine_any_counts'] == 0) & (df['terrestrial_any_counts'] > 0),
+        (df['marine_any_counts'] == 0) & (df['terrestrial_any_counts'] == 0),
+        (df['marine_any_counts'] > 0) & (df['terrestrial_any_counts'] > 0)
+    ]
+    choices = ["marine_any", "terrestrial_any", "no evidence", "marine_and_terrestrial_any"]
+    df['evidence_any'] = np.select(conditions, choices, default = 0)
+
+
+
+    title = "Sunburst plot of taxa count summary"
+    fig = px.sunburst(
+       df, path=['evidence_any', 'taxonomy_type', 'taxa_env'],
+        values =  'all_ena_counts',
+        title = title
+    )
+    ic("sunburst")
     fig.show()
 
 
-    fig.show()
+
 
 
 def combinations(df):
@@ -51,7 +81,7 @@ def combinations(df):
     :return:
     """
     pairs = {}
-    count_fields = ['lat_lon_marine_counts', 'lat_lon_terrestrial_counts', 'lat_lon_terrestrial_counts', 'lat_lon_marine_and_terrestrial_counts', 'lat_lon_not_marine_or_terrestrial_counts', 'not_lat_lon_counts', 'all_ena_counts']
+    count_fields = [match for match in df.columns if "_counts" in match]
     pairs["marine (ocean connected)"] = count_fields
     pairs['freshwater (land enclosed)'] = count_fields
 

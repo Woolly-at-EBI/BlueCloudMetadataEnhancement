@@ -298,13 +298,14 @@ def get_all_ena_detailed_sample_info(sample_dir):
         # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
         # df = pd.read_csv(infile, sep = "\t")
 
-        test = False
+        test = True
         pf = ParquetFile(infile)
-        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon"]
+        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "environment_biome"]
+
         # was useful to limit number of rows, and alternatively focus on specific species
         if test:
-            nrows = 10000
-            # nrows = 10000000
+            #nrows = 100000
+            nrows = 100000
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
             ic(df.head())
@@ -1492,26 +1493,139 @@ def addConfidence(df_merge_combined_tax):
     # high if , GPS and tax agreement for sample
     # low if , GPS and tax disagreement tax for sample
     ic(df.columns)
-    df_tmp = df[["tax_id", "location_designation_marine", "location_designation_terrestrial"]]
+    df_tmp = df[["tax_id", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
     ic(df_tmp.head())
-    df_species_marine = df_tmp.groupby(["tax_id", "location_designation_marine"]).\
-        size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-    ic(df_species_marine.head(5))
-    ic(df_species_marine["location_designation_marine"].value_counts())
-    df_species_marine = df_species_marine.rename(columns={"location_designation_marine": "some_samples_have_marine_coords"}).drop(columns=["count"])
-    #ic(df_species_marine["location_designation_terrestrial"].value_counts())
 
-    df = pd.merge(df, df_species_marine, on="tax_id")
-    ic(df.head())
+    def process_environment_biome(df):
+        """ process_environment_biome(df):
+            creates a high level param
 
-    conf_field = "sample_confidence_marine"
-    df[conf_field] = "zero"
-    df.loc[(df["location_designation_marine"] == True), conf_field] = "medium"
-    df.loc[(df["marine (ocean connected)"] == True), conf_field] = "medium"
-    df.loc[(df["location_designation_marine"] == True) & (df["marine (ocean connected)"] == True), conf_field] = "high"
-    df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == True), conf_field] = "high"
-    df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), conf_field] = "low"
-    df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), conf_field] = "low"
+        :param df:
+        :return:
+        """
+        df["environment_biome_hl"] = df.environment_biome
+        df_tmp = df
+        ic('unclassified **********************************************************************************')
+        pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|water|^ENVO|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
+
+        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "unclassified", flags = re.I)
+        ic(df_tmp.head())
+
+
+        ic('marine **********************************************************************************')
+
+        # pattern = r'(\bsea\b), (seawater),(ocean),(Ocean), (plankton),(marine[ -]water),(salt[ -]water),(coastal[ -]*water),(artic water/), (marine biome)'
+        # mask = df.environment_biome.str.contains('|'.join(regex_list))
+        # ic(df[mask].head(50))
+        # pattern = r'(marine biome|ocean)'
+        pattern = r'(.*(anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|^sea$|fjord|lichen|sea[ -]| sea|seawater|sea biome|ocean|plankton|marine[ -]water|salt[ -]water|woastal[ -]*water|Artic water|marine biome|reef|coral|marine|dolphin|gulf).*)'
+
+        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "marine", flags = re.I)
+
+
+        ic("terrestrial **************************************")
+        # cat sample_env_biome.txt | sed
+        # 's/^ *//;s/ /\t/' | cut - f2 | awk - F$'\t' '{ OFS = FS } { if (!/[Ss]ea[ -]| [Ss]ea|seawater|[Oo]cean|[Pp]lankton|marine[ -]water|salt[ -]water|[Cc]oastal[ -]*[Ww]ater|Artic water/) { print $1} }' | grep - iv
+        # 'sea level' | awk - F$'\t' '{ OFS = FS } { if (!/wood|wetland|forest|grassland|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|beach|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak/) { print $1} }' | egrep - Ev
+        # '(waste|wild accession|reactor)'
+
+        #pattern = r'(.*(woodland|deciduous|river|land|forest|hot spring|sea level).*)'
+        pattern = r'(.*(^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|^Fresh water|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|poultry|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|^hot spring|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak).*)'
+        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "terrestrial", flags = re.I)
+        ic(df_tmp.head())
+        ic(df_tmp["environment_biome_hl"].value_counts())
+
+        ic('terrestrial_probable **********************************************************************************')
+
+        pattern = r'(.*(continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|wastewater|shower hose|mine|aquifer|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory).*)'
+        df_tmp = df
+        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "terrestrial_probable",
+                                                                                 flags = re.I)
+        # ic(df_tmp.head())
+
+        # ic(df_tmp["environment_biome_hl"].query('df.environment_biome_hl == "terrestrial_probable"').value_counts())
+        ah = df_tmp.query('environment_biome_hl == "terrestrial_probable"')
+        # ic(ah.value_counts())
+
+        ic("marine_and_terrestrial **************************************")
+        pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach).*)'
+        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
+                                                                                 flags = re.I)
+        ic(df_tmp.head())
+        ic(df_tmp["environment_biome_hl"].value_counts())
+
+        return df_tmp
+
+    def dom_confidence(df_merge_combined_tax, conf_field):
+        """marine_confidence
+            method to add the marine evidence
+        :param df_merge_combined_tax:
+        :return:
+        """
+        ic()
+        conf_score = conf_field + '_score'
+        ic(df_merge_combined_tax.head())
+
+        if(conf_field == "sample_confidence_marine"):
+            df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_marine", "sea_total", "marine (ocean connected)"]]
+            df_tmp.loc[(df_tmp["sea_total"] > 1), ["location_designation_marine_conf"]] = True
+            df_species = df_tmp.groupby(["tax_id", "location_designation_marine_conf"]).\
+                size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
+            df_species = df_species.rename(columns={"count": "count_of_samples_having_marine_coords"})
+
+        ic(df_species.head())
+        df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
+        ic(df.head())
+
+        ic(df.environment_biome.value_counts())
+
+        #set the defaults
+        df[conf_score] = 0
+
+        if (conf_field == "sample_confidence_marine"):
+            df.loc[df["location_designation_marine"] == True, [conf_score]] = 1
+            df.loc[df["marine (ocean connected)"] == True, [conf_score]] = 1
+
+            #rules
+            df.loc[(df["count_of_samples_having_marine_coords"] >= 2) & (df["location_designation_marine"] == True), [conf_score]] = 2
+            df.loc[(df["sea_total"] > 1) & (df["marine (ocean connected)"] == True), [conf_score]] = 3
+            df.loc[(df["sea_total"] > 1) & (df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == True), [conf_score]] = 3
+            df.loc[(df["sea_total"] <= 1) & (df["location_designation"] == 'marine and terrestrial') & (
+                        df["marine (ocean connected)"] == True), [conf_score]] = 2
+            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), [conf_score]] = 1
+            df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), [conf_score]] = 1
+            df.loc[(df["count_of_samples_having_marine_coords"] >= 2) & (df[conf_score] == 0), [conf_score]] = 1
+
+
+
+            quit(1)
+
+        condlist = [
+            df[conf_score] <= 0,
+            df[conf_score] <= 1,
+            df[conf_score] <= 2,
+            df[conf_score] <= 3
+        ]
+        choicelist = ["zero", "low", "medium", "high"]
+        df[conf_field] = np.select(condlist, choicelist, default = "zero")
+
+        ic(df.head())
+        ic(conf_field)
+        if (conf_field == "sample_confidence_marine"):
+            ic(df['sample_confidence_marine'].head())
+            ic(df.query('sample_confidence_marine == "high"').head(5))
+            ic(df.query('sample_confidence_marine == "medium"').head(5))
+            ic(df.query('sample_confidence_marine == "low"').head(5))
+            ic(df.query('sample_confidence_marine ==  "zero"').head(5))
+
+        ic(df["sample_confidence_marine"].value_counts())
+        return df
+
+    df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
+    quit(1)
+    df = dom_confidence(df_merge_combined_tax, "sample_confidence_marine")
+
+
 
     # do a confidence:  conflict matrix, first. and the share with Josie and Stephane
     # do as numeric, + or - for pieces of evidence and then use threshold for the H/M/L/Zero   - look for missing rules
@@ -1522,11 +1636,10 @@ def addConfidence(df_merge_combined_tax):
     # first off, do a search of the relative amount of granularity
 
     # # what if other samples have GPS but particular ones don't?
-    df.loc[(df[conf_field] == "zero") & (df["some_samples_have_marine_coords"] == True), conf_field] = "low"
 
 
-    ic(df.head(50))
-    ic(df["sample_confidence_marine"].value_counts())
+
+    quit(1)
 
 
 def main():
@@ -1602,7 +1715,8 @@ def main():
     gc.collect()
     # ic(memory_usage())
 
-    # addConfidence(df_merge_combined_tax)
+    addConfidence(df_merge_combined_tax)
+    quit(1)
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
     #ic()

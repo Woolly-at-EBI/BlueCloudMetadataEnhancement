@@ -4,6 +4,8 @@ def get_directory_paths():
     """ get_directory_paths
              takes a base directory, checks this exists
              also sets the directory paths for analysis and plots etc. and checks that these all exist
+             - putting as a dictionary will make sense during a refactor
+        __usage__: (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir) = get_directory_paths()
         __params__:
                passed_args:
         __returns__:

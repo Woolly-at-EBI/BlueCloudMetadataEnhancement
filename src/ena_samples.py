@@ -52,8 +52,7 @@ def get_all_ena_detailed_sample_info(test_bool):
 
         # was useful to limit number of rows, and alternatively focus on specific species
         if test_bool:
-            #nrows = 100000
-            nrows = 1000
+            nrows = 100000
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
             ic(df.head())

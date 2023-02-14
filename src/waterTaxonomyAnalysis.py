@@ -8,6 +8,8 @@ __docformat___ = 'reStructuredText'
 
 """
 from get_directory_paths import get_directory_paths
+from ena_samples import *
+
 import pandas as pd
 import pyarrow as pa
 from pyarrow import parquet as pq
@@ -231,7 +233,6 @@ def clean_up_df_tax2env(df):
 #     return stats_dict, df
 # #
 
-from ena_samples import *
 def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
     """ taxa_notin_ena_coords  - DEPRECATED
     NCBI Taxa from samples that have at least 1 coordinate at ENA.
@@ -1394,65 +1395,7 @@ def addConfidence(df_merge_combined_tax):
     df_tmp = df[["tax_id", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
     ic(df_tmp.head())
 
-    def process_environment_biome(df):
-        """ process_environment_biome(df):
-            creates a high level param
 
-        :param df:
-        :return:
-        """
-        df["environment_biome_hl"] = df.environment_biome
-        df_tmp = df
-        ic('unclassified **********************************************************************************')
-        pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|water|^ENVO|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
-
-        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "unclassified", flags = re.I)
-        ic(df_tmp.head())
-
-
-        ic('marine **********************************************************************************')
-
-        # pattern = r'(\bsea\b), (seawater),(ocean),(Ocean), (plankton),(marine[ -]water),(salt[ -]water),(coastal[ -]*water),(artic water/), (marine biome)'
-        # mask = df.environment_biome.str.contains('|'.join(regex_list))
-        # ic(df[mask].head(50))
-        # pattern = r'(marine biome|ocean)'
-        pattern = r'(.*(anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|^sea$|fjord|lichen|sea[ -]| sea|seawater|sea biome|ocean|plankton|marine[ -]water|salt[ -]water|woastal[ -]*water|Artic water|marine biome|reef|coral|marine|dolphin|gulf).*)'
-
-        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "marine", flags = re.I)
-
-
-        ic("terrestrial **************************************")
-        # cat sample_env_biome.txt | sed
-        # 's/^ *//;s/ /\t/' | cut - f2 | awk - F$'\t' '{ OFS = FS } { if (!/[Ss]ea[ -]| [Ss]ea|seawater|[Oo]cean|[Pp]lankton|marine[ -]water|salt[ -]water|[Cc]oastal[ -]*[Ww]ater|Artic water/) { print $1} }' | grep - iv
-        # 'sea level' | awk - F$'\t' '{ OFS = FS } { if (!/wood|wetland|forest|grassland|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|beach|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak/) { print $1} }' | egrep - Ev
-        # '(waste|wild accession|reactor)'
-
-        #pattern = r'(.*(woodland|deciduous|river|land|forest|hot spring|sea level).*)'
-        pattern = r'(.*(^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|^Fresh water|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|poultry|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|^hot spring|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak).*)'
-        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "terrestrial", flags = re.I)
-        ic(df_tmp.head())
-        ic(df_tmp["environment_biome_hl"].value_counts())
-
-        ic('terrestrial_probable **********************************************************************************')
-
-        pattern = r'(.*(continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|wastewater|shower hose|mine|aquifer|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory).*)'
-        df_tmp = df
-        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "terrestrial_probable",
-                                                                                 flags = re.I)
-        # ic(df_tmp.head())
-
-        # ic(df_tmp["environment_biome_hl"].query('df.environment_biome_hl == "terrestrial_probable"').value_counts())
-        ah = df_tmp.query('environment_biome_hl == "terrestrial_probable"')
-        # ic(ah.value_counts())
-
-        ic("marine_and_terrestrial **************************************")
-        pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach).*)'
-        df_tmp["environment_biome_hl"] = df_tmp.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
-                                                                                 flags = re.I)
-        ic(df_tmp.head())
-        ic(df_tmp["environment_biome_hl"].value_counts())
-
-        return df_tmp
 
     def dom_confidence(df_merge_combined_tax, conf_field):
         """marine_confidence

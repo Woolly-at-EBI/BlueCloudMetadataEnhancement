@@ -50,41 +50,42 @@ def _process_remaining_values(df, value_col, allowed_vals, default_val):
     return df
 
 def process_environment_biome(df):
-    """
+    """process_environment_biome
+       calculate and return a dataframe with a new field: environment_biome_hl
+       which is the high level mapping, to one of the following:
+       ["unclassified", "marine", "terrestrial", "terrestrial_probable", "marine_and_terrestrial"]
 
     :param df:
-    :param lookup_term:
-    :return:
+    :param lookup_col:
+    :param lookup_value_col:
+    :return: df
     """
-
+    ic()
     lookup_col = "environment_biome"
     lookup_value_col = lookup_col + "_hl"
 
-    (my_lookup_dict) = get_values_as_dict(df, lookup_col,lookup_value_col)
-    ic(my_lookup_dict)
-    ic(len(my_lookup_dict))
-    ic('***********************************************************************' )
-
+    (my_lookup_dict) = get_values_as_dict(df, lookup_col, lookup_value_col)
     need_to_process = False
     if(len(my_lookup_dict) == 0):
         need_to_process = True
+    else:
+        ic(len(my_lookup_dict))
 
     if need_to_process:
-        heavy_process_environment_biome(df, lookup_col, lookup_value_col)
+        df, my_lookup_dict = heavy_process_environment_biome(df, lookup_col, lookup_value_col)
     else:
-        ic("do quick look up")
-        lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_value_col)
+        df, my_lookup_dict = lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_value_col)
 
-
+    return df
 def lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_value_col):
     """ lookup_process_environment_biome
-
+         looks up the hl mapping in a dictionary
     :param df:
     :param lookup_col:
     :param lookup_term:
     :return: df_wbiome, my_lookup_dict
     """
-
+    ic()
     df[lookup_value_col] = df[lookup_col].map(my_lookup_dict)
     ic(df.head())
     ic(df[lookup_value_col].value_counts())
@@ -105,7 +106,7 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     df["environment_biome_hl"] = df["environment_biome"]
     df_wbiome = df
     ic('unclassified **********************************************************************************')
-    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|water|^ENVO|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
+    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^ENVO|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
 
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "unclassified", flags = re.I, regex=True)
     ic(df_wbiome.head())
@@ -116,25 +117,30 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     # mask = df.environment_biome.str.contains('|'.join(regex_list))
     # ic(df[mask].head(50))
     # pattern = r'(marine biome|ocean)'
-    pattern = r'(.*(anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|^sea$|fjord|lichen|sea[ -]| sea|seawater|sea biome|ocean|plankton|marine[ -]water|salt[ -]water|woastal[ -]*water|Artic water|marine biome|reef|coral|marine|dolphin|gulf).*)'
+    pattern = r'(.*(^subtidal|sound|shrimp|^see floor|anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|fjord|lichen| sea|^sea|ocean|plankton|marine|salt[ -]water|coastal[ -]*water|Artic water|reef|coral|dolphin|gulf).*)'
 
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine", flags = re.I, regex=True)
+
+    ic("marine_and_terrestrial **************************************")
+    pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach|^tidal|^tide).*)'
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
+                                                                             flags = re.I, regex=True)
 
     ic("terrestrial **************************************")
     # cat sample_env_biome.txt | sed
     # 's/^ *//;s/ /\t/' | cut - f2 | awk - F$'\t' '{ OFS = FS } { if (!/[Ss]ea[ -]| [Ss]ea|seawater|[Oo]cean|[Pp]lankton|marine[ -]water|salt[ -]water|[Cc]oastal[ -]*[Ww]ater|Artic water/) { print $1} }' | grep - iv
-    # 'sea level' | awk - F$'\t' '{ OFS = FS } { if (!/wood|wetland|forest|grassland|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|beach|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak/) { print $1} }' | egrep - Ev
+    # 'sea level' | awk - F$'\t' '{ OFS = FS } { if (!/wood|wetland|forest|grassland|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savan|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|beach|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak/) { print $1} }' | egrep - Ev
     # '(waste|wild accession|reactor)'
 
     # pattern = r'(.*(woodland|deciduous|river|land|forest|hot spring|sea level).*)'
-    pattern = r'(.*(^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|^Fresh water|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|poultry|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|^hot spring|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak).*)'
+    pattern = r'(.*(^vine|^urban|terrestial|^tea|^sugarcane|^subsahelian|highland|^stream|barley|spruce|vegetable|fairy ring|arable|crop|^shrub|^silkworm|^shelterbelt|cactus|pricklr pear|^sawdust|^salt mine|^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|^fresh water|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|poultry|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|^hot spring|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak).*)'
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "terrestrial", flags = re.I, regex=True)
     ic(df_wbiome.head())
     ic(df_wbiome["environment_biome_hl"].value_counts())
 
     ic('terrestrial_probable **********************************************************************************')
 
-    pattern = r'(.*(continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|wastewater|shower hose|mine|aquifer|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory).*)'
+    pattern = r'(.*(land|land|^sauerkraut|continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|wastewater|shower hose|mine|aquifer|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory).*)'
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "terrestrial_probable",
                                                                              flags = re.I, regex=True)
     # ic(df_wbiome.head())
@@ -143,10 +149,7 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     # ah = df_wbiome.query('environment_biome_hl == "terrestrial_probable"')
     # ic(ah.value_counts())
 
-    ic("marine_and_terrestrial **************************************")
-    pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach).*)'
-    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
-                                                                             flags = re.I, regex=True)
+
     df_wbiome = _process_remaining_values(df_wbiome, "environment_biome_hl", key_values, "unclassified")
     
     ic(df_wbiome.head())
@@ -179,21 +182,20 @@ def store_values_as_dict(df, lookup_col, value_col):
     df = df.drop_duplicates()
     ic(df.head())
     my_dict = dict(zip(df[lookup_col],df[value_col]))
-    ic(my_dict)
-
 
     pickle_file = get_pickle_file_name(lookup_col)
 
     with open(pickle_file, 'wb') as handle:
         pickle.dump(my_dict, handle, protocol = pickle.HIGHEST_PROTOCOL)
 
-
-
     return my_dict
 
 def get_values_as_dict(df, lookup_col, lookup_value_col):
     """get_values_as_dict
-         aims to use the pickled dictionary if it exists, else it creates it.
+         aims to use the pickled dictionary if it exists, else  returns empty dict.
+
+         typically this function is called from process_environment_biome, which will automatically process and
+         generate the dictionary if needed.
     :param df:
     :param lookup_col:
     :param value_col:
@@ -209,7 +211,7 @@ def get_values_as_dict(df, lookup_col, lookup_value_col):
         with open(pickle_file, 'rb') as handle:
             my_dict = pickle.load(handle)
     else:
-        ic(pickle_file + " does not exist")
+        ic("WARNING: ", pickle_file + " does not exist")
 
     return my_dict
 
@@ -219,6 +221,7 @@ def main():
     df_processed = process_environment_biome(df)
 
     get_values_as_dict(df_processed, "environment_biome", "environment_biome_hl")
+    ic("all processed  in categorise environment, bye.")
 
 if __name__ == '__main__':
     ic()

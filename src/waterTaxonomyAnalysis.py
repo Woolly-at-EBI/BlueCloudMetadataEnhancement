@@ -9,7 +9,10 @@ __docformat___ = 'reStructuredText'
 """
 from get_directory_paths import get_directory_paths
 from ena_samples import *
+from categorise_environment import process_environment_biome
 
+import os.path
+import pickle
 import pandas as pd
 import pyarrow as pa
 from pyarrow import parquet as pq
@@ -1377,6 +1380,26 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     ic()
     return df_merge_combined_tax
 
+def put_pickleObj2File(obj,pickle_file):
+    """
+
+    :param obj:
+    :param file_name:
+    :return:
+    """
+    with open(pickle_file, 'wb') as handle:
+        pickle.dump(obj, handle, protocol = pickle.HIGHEST_PROTOCOL)
+
+
+def get_pickleObj(pickle_file):
+    if os.path.isfile(pickle_file):
+        ic(pickle_file + " exists, so using it")
+        with open(pickle_file, 'rb') as handle:
+            obj = pickle.load(handle)
+    else:
+        ic(pickle_file + " does not exist")
+    return obj
+
 def addConfidence(df_merge_combined_tax):
     """addConfidence
         adding confidence for metadata assignments
@@ -1384,6 +1407,12 @@ def addConfidence(df_merge_combined_tax):
     :return:
     """
     ic()
+    pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
+    if (os.path.isfile(pickle_file) == True):
+        df_merge_combined_tax = get_pickleObj(pickle_file)
+    else:
+        put_pickleObj2File(df_merge_combined_tax, pickle_file)
+
     ic(df_merge_combined_tax.columns)
     # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
     df = df_merge_combined_tax.query('location_designation_marine == True')
@@ -1404,6 +1433,7 @@ def addConfidence(df_merge_combined_tax):
         :return:
         """
         ic()
+
         conf_score = conf_field + '_score'
         ic(df_merge_combined_tax.head())
 
@@ -1418,7 +1448,7 @@ def addConfidence(df_merge_combined_tax):
         df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
         ic(df.head())
 
-        ic(df.environment_biome.value_counts())
+        ic(df.environment_biome_hl.value_counts())
 
         #set the defaults
         df[conf_score] = 0
@@ -1436,16 +1466,15 @@ def addConfidence(df_merge_combined_tax):
             df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), [conf_score]] = 1
             df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), [conf_score]] = 1
             df.loc[(df["count_of_samples_having_marine_coords"] >= 2) & (df[conf_score] == 0), [conf_score]] = 1
+            # df.loc[(df["environment_biome_hl"] == "marine"), [conf_score]] += 1
+            # df.loc[(df["environment_biome_hl"] == "marine_and_terrestrial"), [conf_score]] += 0.5
 
-
-
-            quit(1)
 
         condlist = [
             df[conf_score] <= 0,
             df[conf_score] <= 1,
             df[conf_score] <= 2,
-            df[conf_score] <= 3
+            df[conf_score] > 2.1
         ]
         choicelist = ["zero", "low", "medium", "high"]
         df[conf_field] = np.select(condlist, choicelist, default = "zero")
@@ -1463,8 +1492,10 @@ def addConfidence(df_merge_combined_tax):
         return df
 
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
-    quit(1)
+    ic(df_merge_combined_tax.shape)
+
     df = dom_confidence(df_merge_combined_tax, "sample_confidence_marine")
+    quit(1)
 
 
 
@@ -1488,6 +1519,9 @@ def main():
         __params__:
                passed_args
     """
+    # df_merge_combined_tax = []
+    # addConfidence(df_merge_combined_tax)
+    # quit(1)
 
     stats_dict = {}
     """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 
@@ -1513,7 +1547,7 @@ def main():
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     ic()
-    test_status = True
+    test_status = False
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
     ic()
     ic(df_all_ena_sample_detail.head())

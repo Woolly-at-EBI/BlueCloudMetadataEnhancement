@@ -7,7 +7,7 @@ def get_directory_paths():
         __params__:
                passed_args:
         __returns__:
-            hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir)
+            (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir,  taxonomy_dir)
     """
     base_dir = "/Users/woollard/projects/bluecloud/"
     analysis_dir = base_dir + "analysis/"

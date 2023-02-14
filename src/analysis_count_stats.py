@@ -1,5 +1,5 @@
-"""Script of analysis_count_stats.py is to analsis the combined output count file from the waterTaxonomyAnalyis.py
- It is doing some basic stats and comparisions.
+"""Script of analysis_count_stats.py is to analysis the combined output count file from the waterTaxonomyAnalyiss.py
+ It is doing some basic stats and comparisons.
 
 ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2023-02-02

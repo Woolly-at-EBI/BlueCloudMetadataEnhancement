@@ -1,5 +1,12 @@
 """ categorise_environment.py
-    a set of funcitons
+    a set of functions to do high level mappings of the rather variable environment_biome.
+        The main one to use is:
+    - process_environment_biome(df)
+
+    Includes creating a pickled dictionary of environment_biome to some high level terms. This uses regex's across
+    the single environment_biome column, but for all rows in ena samples. It is thus time consuming!
+    so once this dictionary is created, it is pickled so that it can be fully reused. To update the high level mappings
+     delete this file:  analysis_dir/environment_biome.pickle
 
  ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2023-02-14
@@ -207,7 +214,7 @@ def get_values_as_dict(df, lookup_col, lookup_value_col):
     return my_dict
 
 def main():
-    test_status = True
+    test_status = False
     df = get_all_ena_detailed_sample_info(test_status)
     df_processed = process_environment_biome(df)
 

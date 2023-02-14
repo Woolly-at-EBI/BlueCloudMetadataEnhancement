@@ -1415,21 +1415,85 @@ def addConfidence(df_merge_combined_tax):
 
     ic(df_merge_combined_tax.columns)
     # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
-    df = df_merge_combined_tax.query('location_designation_marine == True')
-    ic()
-    # for a sample, if GPS assignment:
-    # high if , GPS and tax agreement for sample
-    # low if , GPS and tax disagreement tax for sample
-    ic(df.columns)
-    df_tmp = df[["tax_id", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
-    ic(df_tmp.head())
+    df = df_merge_combined_tax[["tax_id", "location_designation", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
+    ic(df.head())
+
+    def apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords):
+        """apply_rules
+            Applies logic to generate a numerical confidence score for this domain: marine to terrestrial
+
+        :param df:
+        :param conf_score: column name to fill out with the numerical score for this domain type
+        :param dom_type: marine or terrestrial
+        :param dom_coord_designation: from GPS coordinates/shapefile hits, if marine or terrestrial
+        :param taxa_term: from metagenome or environmental taxa for if marine or freshwater(terrestrial)
+        :param coord_dom_total: the total different shapefiles hit by GPS coordinates/shapefile hits:
+                 if marine(sea) or terrestrial(
+        :param count_of_sample_having_dom_coords: number of other samples for the same taxa with GPS coordinates/
+                 shapefile hits, if marine or terrestrial
+        :return: df
+        """
+
+        # set the defaults
+        df[conf_score] = 0
+
+        """ rules, ordered by score as subsequent rule matches will overwrite earlier
+           some rules that would not add further score are commented, but left here for completeness or later changes
+        """
+        df.loc[df[dom_coord_designation] == True, [conf_score]] = 1
+        df.loc[df[taxa_term] == True, [conf_score]] = 1
+        #This often lowers the score:
+        df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == False), [conf_score]] = 0.5
+        # df.loc[(df[dom_coord_designation] == False) & (df["marine (ocean connected)"] == True) & (
+        #             df["freshwater (land enclosed)"] == True), [conf_score]] = 1
+        #e.g. multiple samples in same domain by coordinates - not convinced on score
+        df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df["location_designation"] == 'marine and terrestrial')\
+                , [conf_score]] = 1.5
+        df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df[dom_coord_designation] == True), [conf_score]] = 1.5
+        df.loc[(df[coord_dom_total] == 1) & (df[taxa_term] == True), [conf_score]] = 2
+        df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == True), [conf_score]] = 2
+        df.loc[(df[coord_dom_total] > 1) & (df["location_designation"] == 'marine and terrestrial') & (
+                    df[taxa_term] == True), [conf_score]] = 2.5
+        #next is the highest confidence as multiple hits of relevant shapefiles and a relevant taxonomy
+        df.loc[(df[coord_dom_total] > 1) & (df[taxa_term] == True), [conf_score]] = 3
+        #Tops ups by automated regex high level mapping of the environment_biome ena field
+        df.loc[(df["environment_biome_hl"] == dom_type), [conf_score]] += 1
+        df.loc[(df["environment_biome_hl"] == "marine_and_terrestrial"), [conf_score]] += 0.5
+        if dom_type == "terrestrial":
+            df.loc[(df["environment_biome_hl"] == "terrestrial_probable"), [conf_score]] += 0.5
+        ic(df[conf_score].value_counts())
+
+        return df
 
 
+    def scores2categories(df, conf_score, conf_field):
+        """ scores2categories
+            convert the confidence scores to a categorical value
+            ["zero", "low", "medium", "high"]
+        :param df:
+        :param conf_score:
+        :param conf_field:
+        :return:
+        """
+        ic()
+        ic(df[conf_score].value_counts())
+
+        condlist = [
+            df[conf_score] <= 0,
+            df[conf_score] <= 1,
+            df[conf_score] <= 2,
+            df[conf_score] < 10
+        ]
+        choicelist = ["zero", "low", "medium", "high"]
+        df[conf_field] = np.select(condlist, choicelist, default = "zero")
+        ic(df[conf_field].value_counts())
+        return df
 
     def dom_confidence(df_merge_combined_tax, conf_field):
-        """marine_confidence
+        """dom_confidence
             method to add the marine evidence
         :param df_merge_combined_tax:
+        :param conf_field i.e. "sample_confidence_marine" or "sample_confidence_terrestrial":
         :return:
         """
         ic()
@@ -1443,61 +1507,44 @@ def addConfidence(df_merge_combined_tax):
             df_species = df_tmp.groupby(["tax_id", "location_designation_marine_conf"]).\
                 size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
             df_species = df_species.rename(columns={"count": "count_of_samples_having_marine_coords"})
+        elif(conf_field == "sample_confidence_terrestrial"):
+            df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_terrestrial", "land_total", "freshwater (land enclosed)"]]
+            df_tmp.loc[(df_tmp["land_total"] > 1), ["location_designation_terrestrial_conf"]] = True
+            df_species = df_tmp.groupby(["tax_id", "location_designation_terrestrial_conf"]).\
+                size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
+            df_species = df_species.rename(columns={"count": "count_of_samples_having_terrestrial_coords"})
+        else:
+            ic("ERROR: conf_field is unknown: " + conf_field)
+            quit(1)
 
         ic(df_species.head())
         df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
         ic(df.head())
-
         ic(df.environment_biome_hl.value_counts())
 
-        #set the defaults
-        df[conf_score] = 0
-
         if (conf_field == "sample_confidence_marine"):
-            df.loc[df["location_designation_marine"] == True, [conf_score]] = 1
-            df.loc[df["marine (ocean connected)"] == True, [conf_score]] = 1
+            dom_type = "marine"
+            dom_coord_designation = "location_designation_" + dom_type
+            taxa_term = "marine (ocean connected)"
+            coord_dom_total = "sea_total"
+            count_of_sample_having_dom_coords = "count_of_samples_having_marine_coords"
+        elif (conf_field == "sample_confidence_terrestrial"):
+            dom_type = "terrestrial"
+            dom_coord_designation = "location_designation_" + dom_type
+            taxa_term = "freshwater (land enclosed)"
+            coord_dom_total = "land_total"
+            count_of_sample_having_dom_coords = "count_of_samples_having_terrestrial_coords"
+        df = apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords)
+        df = scores2categories(df, conf_score, conf_field)
 
-            #rules
-            df.loc[(df["count_of_samples_having_marine_coords"] >= 2) & (df["location_designation_marine"] == True), [conf_score]] = 2
-            df.loc[(df["sea_total"] > 1) & (df["marine (ocean connected)"] == True), [conf_score]] = 3
-            df.loc[(df["sea_total"] > 1) & (df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == True), [conf_score]] = 3
-            df.loc[(df["sea_total"] <= 1) & (df["location_designation"] == 'marine and terrestrial') & (
-                        df["marine (ocean connected)"] == True), [conf_score]] = 2
-            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df["marine (ocean connected)"] == False), [conf_score]] = 1
-            df.loc[(df["location_designation_marine"] == False) & (df["marine (ocean connected)"] == True) & (df["freshwater (land enclosed)"] == True), [conf_score]] = 1
-            df.loc[(df["count_of_samples_having_marine_coords"] >= 2) & (df[conf_score] == 0), [conf_score]] = 1
-            # df.loc[(df["environment_biome_hl"] == "marine"), [conf_score]] += 1
-            # df.loc[(df["environment_biome_hl"] == "marine_and_terrestrial"), [conf_score]] += 0.5
-
-
-        condlist = [
-            df[conf_score] <= 0,
-            df[conf_score] <= 1,
-            df[conf_score] <= 2,
-            df[conf_score] > 2.1
-        ]
-        choicelist = ["zero", "low", "medium", "high"]
-        df[conf_field] = np.select(condlist, choicelist, default = "zero")
-
-        ic(df.head())
-        ic(conf_field)
-        if (conf_field == "sample_confidence_marine"):
-            ic(df['sample_confidence_marine'].head())
-            ic(df.query('sample_confidence_marine == "high"').head(5))
-            ic(df.query('sample_confidence_marine == "medium"').head(5))
-            ic(df.query('sample_confidence_marine == "low"').head(5))
-            ic(df.query('sample_confidence_marine ==  "zero"').head(5))
-
-        ic(df["sample_confidence_marine"].value_counts())
         return df
 
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
     ic(df_merge_combined_tax.shape)
 
+    df = dom_confidence(df_merge_combined_tax, "sample_confidence_terrestrial")
     df = dom_confidence(df_merge_combined_tax, "sample_confidence_marine")
     quit(1)
-
-
 
     # do a confidence:  conflict matrix, first. and the share with Josie and Stephane
     # do as numeric, + or - for pieces of evidence and then use threshold for the H/M/L/Zero   - look for missing rules
@@ -1519,9 +1566,9 @@ def main():
         __params__:
                passed_args
     """
-    # df_merge_combined_tax = []
-    # addConfidence(df_merge_combined_tax)
-    # quit(1)
+    df_merge_combined_tax = []
+    addConfidence(df_merge_combined_tax)
+    quit(1)
 
     stats_dict = {}
     """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 

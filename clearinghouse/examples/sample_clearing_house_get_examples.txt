@@ -1,0 +1,205 @@
+{
+  "curations": [
+    {
+      "id": "ed37d0b2-ddc6-4c95-808c-07cc80b67370",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Age",
+      "valuePost": "69.0",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.658+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.658+0000",
+      "suppressed": false
+    },
+    {
+      "id": "91ae73d8-67e4-480c-8513-e7c44ffee116",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Age group",
+      "valuePost": "Elderly",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.711+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.711+0000",
+      "suppressed": false
+    },
+    {
+      "id": "3cd7647d-4df7-431d-81bf-594f1f92a11d",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Continent",
+      "valuePost": "North America",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.762+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.762+0000",
+      "suppressed": false
+    },
+    {
+      "id": "02b184e6-2221-406f-85ca-5b844c606545",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Country",
+      "valuePost": "United States",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.816+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.816+0000",
+      "suppressed": false
+    },
+    {
+      "id": "7cffaeac-21fd-48e8-aeda-74b1caf29638",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Gender",
+      "valuePost": "Male",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.867+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.867+0000",
+      "suppressed": false
+    },
+    {
+      "id": "3841dc7a-07b0-4864-a003-bfea6fe51886",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Health state",
+      "valuePost": "Healthy",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.917+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.917+0000",
+      "suppressed": false
+    },
+    {
+      "id": "7a3dc670-2ea9-4ba1-a5de-f65d3c04a59c",
+      "recordType": "sample",
+      "recordId": "SRS2444218",
+      "attributePost": "Lifestyle",
+      "valuePost": "Urban",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:19.971+0000",
+      "updatedTimestamp": "2019-11-20T10:42:19.971+0000",
+      "suppressed": false
+    },
+    {
+      "id": "16ff9eb0-ce25-42b2-992d-e62112adf474",
+      "recordType": "sample",
+      "recordId": "SRS2440806",
+      "attributePost": "Age",
+      "valuePost": "32.0",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:20.637+0000",
+      "updatedTimestamp": "2019-11-20T10:42:20.637+0000",
+      "suppressed": false
+    },
+    {
+      "id": "a4051112-b2f2-4d92-9fa3-a5563ad0ca3e",
+      "recordType": "sample",
+      "recordId": "SRS2440806",
+      "attributePost": "Age group",
+      "valuePost": "Adult",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:20.685+0000",
+      "updatedTimestamp": "2019-11-20T10:42:20.685+0000",
+      "suppressed": false
+    },
+    {
+      "id": "fe05c9f1-2d89-4af7-aefe-33780be751be",
+      "recordType": "sample",
+      "recordId": "SRS2440806",
+      "attributePost": "Continent",
+      "valuePost": "North America",
+      "attributeDelete": false,
+      "assertionMethod": "manual assertion",
+      "assertionEvidences": [
+        {
+          "identifier": "ECO_0000204",
+          "shortForm": null,
+          "label": "author statement"
+        }
+      ],
+      "providerName": "EMG",
+      "submittedTimestamp": "2019-11-20T10:42:20.732+0000",
+      "updatedTimestamp": "2019-11-20T10:42:20.732+0000",
+      "suppressed": false
+    }
+  ],
+  "totalAttributes": 445156
+}

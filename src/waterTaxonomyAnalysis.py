@@ -1405,7 +1405,7 @@ def addConfidence(df_merge_combined_tax):
     else:
         put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
-    df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
+    # df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
 
     ic(df_merge_combined_tax.columns)
     # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
@@ -1517,7 +1517,7 @@ def addConfidence(df_merge_combined_tax):
             df[conf_score] <= 0,
             df[conf_score] <= 1,
             df[conf_score] <= 2,
-            df[conf_score] < 10
+            df[conf_score] > 2
         ]
         choicelist = ["zero", "low", "medium", "high"]
         df[conf_field] = np.select(condlist, choicelist, default = "zero")
@@ -1620,7 +1620,6 @@ def addConfidence(df_merge_combined_tax):
         '(sample_confidence_marine_inc_biome == "low") & (sample_confidence_terrestrial_inc_biome == "medium")').sample(
         n = 5, replace = True))
 
-    quit(1)
 
     # do a confidence:  conflict matrix, first. and the share with Josie and Stephane
     # do as numeric, + or - for pieces of evidence and then use threshold for the H/M/L/Zero   - look for missing rules
@@ -1632,16 +1631,13 @@ def addConfidence(df_merge_combined_tax):
 
     # # what if other samples have GPS but particular ones don't?
 
-
-
-    quit(1)
-
-
 def main():
     """ main
         __params__:
                passed_args
     """
+
+    # temporary while debugging the rules!
     df_merge_combined_tax = []
     addConfidence(df_merge_combined_tax)
     quit(1)

@@ -10,6 +10,7 @@ __docformat___ = 'reStructuredText'
 
 from ena_samples import *
 from categorise_environment import process_environment_biome
+from project_utils import *
 
 import os.path
 import pickle
@@ -33,22 +34,7 @@ pd.set_option('display.width', 1000)
 
 MyDataStuctures = {}
 
-def obj_size_fmt(num):
-    if num < 10**3:
-        return "{:.2f}{}".format(num, "B")
-    elif ((num>=10**3)&(num<10**6)):
-        return "{:.2f}{}".format(num/(1.024*10**3), "KB")
-    elif ((num>=10**6)&(num<10**9)):
-        return "{:.2f}{}".format(num/(1.024*10**6), "MB")
-    else:
-        return "{:.2f}{}".format(num/(1.024*10**9), "GB")
-def memory_usage():
-    memory_usage_by_variable= pd.DataFrame({k:sys.getsizeof(v)\
-    for (k,v) in globals().items()}, index=['Size'])
-    memory_usage_by_variable = memory_usage_by_variable.T
-    memory_usage_by_variable = memory_usage_by_variable.sort_values(by='Size', ascending=False).head(10)
-    memory_usage_by_variable['Size'] = memory_usage_by_variable['Size'].apply(lambda x: obj_size_fmt(x))
-    return memory_usage_by_variable
+
 
 def get_taxonomy_info(taxonomy_dir):
     """ get_taxonomy_info
@@ -1372,25 +1358,6 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     ic()
     return df_merge_combined_tax
 
-def put_pickleObj2File(obj,pickle_file):
-    """
-
-    :param obj:
-    :param pickle_file
-    :return:
-    """
-    with open(pickle_file, 'wb') as handle:
-        pickle.dump(obj, handle, protocol = pickle.HIGHEST_PROTOCOL)
-
-
-def get_pickleObj(pickle_file):
-    if os.path.isfile(pickle_file):
-        ic(pickle_file + " exists, so using it")
-        with open(pickle_file, 'rb') as handle:
-            obj = pickle.load(handle)
-    else:
-        ic(pickle_file + " does not exist")
-    return obj
 
 def addConfidence(df_merge_combined_tax):
     """addConfidence
@@ -1630,7 +1597,7 @@ def addConfidence(df_merge_combined_tax):
     # first off, do a search of the relative amount of granularity
 
     # # what if other samples have GPS but particular ones don't?
-    return df_merge_combined_tax
+    return df
 
 def main():
     """ main
@@ -1641,9 +1608,9 @@ def main():
     # temporary while debugging the rules!
     df_merge_combined_tax = []
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     ic(out_file)
-    df_merge_combined_tax(out_file, sep = '\t', index = False)
+    put_pickleObj2File(df_merge_combined_tax, out_file)
 
     quit(1)
 
@@ -1715,7 +1682,11 @@ def main():
     gc.collect()
     # ic(memory_usage())
 
-    addConfidence(df_merge_combined_tax)
+
+    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
+    ic(out_file)
+    put_pickleObj2File(df_merge_combined_tax, pickle_file)
     quit(1)
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)

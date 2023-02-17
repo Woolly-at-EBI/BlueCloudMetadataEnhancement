@@ -11,12 +11,12 @@ import json
 
 from icecream import ic
 import os.path
+import sys
 
 
 
-
-class Sample:
-    """ Sample
+class NewSampleCuration:
+    """ NewSampleCuration
         a class for preparing new annotation for submission to the Clearing house
         see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
       """
@@ -63,6 +63,10 @@ class Sample:
 
 
     def get_filled_dict(self):
+        """get_filled_dict
+
+        :return: a dictionary of the new curation record
+        """
         my_dict = {}
         my_dict['recordId'] = self.recordId
         my_dict['recordType'] = self.recordType
@@ -71,10 +75,20 @@ class Sample:
         my_dict['assertionSource'] = self.assertionSource
         my_dict['assertionSource'] = self.assertionMethod
         my_dict['attributePost'] = self.attributePost
+        my_dict['valuePost'] = self.valuePost
         my_dict['providerName'] = self.providerName
         my_dict['providerUrl'] = self.providerUrl
 
         return my_dict
+
+    def get_filled_json(self):
+        """  get_filled_json
+        calls converts the dictionary to JSON string
+        :return: json
+        """""
+
+        return json.dumps(self.get_filled_dict(), indent = 4)
+
 
 
 
@@ -110,7 +124,7 @@ def demo_format(test_status):
     ic(curation_template_record)
 
     curation_count = 0
-    my_record = Sample(useENAAutoCurationValues=True)
+    my_record = NewSampleCuration(useENAAutoCurationValues=True)
     ic(my_record.get_filled_dict())
     sample_id = 'SAMD'
     ic(my_record.attributeDelete)

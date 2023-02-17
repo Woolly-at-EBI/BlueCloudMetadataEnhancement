@@ -25,7 +25,7 @@ def get_all_ena_detailed_sample_info(test_bool):
     """ get_all_ena_detailed_sample_info
          This is using ALL ENA samples whether they have GPS coordinates (lat lons) or not.
          It contains many, but not all columns of sample metadata
-         refactored to both use a parquet and to check if this df has already be called and to reuse that
+         refactored to both use a parquet and to check if this df has already been called and to reuse that
         __params__:
                passed_args:
                   test_bool

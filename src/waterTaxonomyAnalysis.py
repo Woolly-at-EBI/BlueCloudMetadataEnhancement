@@ -13,7 +13,6 @@ from categorise_environment import process_environment_biome
 from project_utils import *
 
 import os.path
-import pickle
 import pandas as pd
 from icecream import ic
 import sys  #system specific parameters and names

@@ -51,10 +51,10 @@ def main():
     demo_format(test_status)
 
 
-    # pickle_file = analysis_dir + 'df_merge_combined_tax.pickle'
-    # df_merge_combined_tax = get_pickleObj(pickle_file)
-    # df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
-    # put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle")
+    pickle_file = analysis_dir + 'df_merge_combined_tax.pickle'
+    df_merge_combined_tax = get_pickleObj(pickle_file)
+    df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
+    put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle")
     df_merge_combined_tax = get_pickleObj("./tmp.pickle")
     process_confidence_fields(df_merge_combined_tax,analysis_dir)
 

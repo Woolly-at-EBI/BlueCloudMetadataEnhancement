@@ -103,7 +103,7 @@ def _get_template(template_type):
 
 def demo_format(test_status):
     sample_dict = _get_template("sample")
-    ic(sample_dict['curations'])
+    ic(sample_dict)
     curations = sample_dict['curations']
     ic(curations)
     curation_template_record = curations[0].copy()
@@ -120,8 +120,11 @@ def demo_format(test_status):
 
 
 def main():
-    test_status = False
+    test_status = True
     demo_format(test_status)
+
+    environment_biome.pickle
+
 
 
 if __name__ == '__main__':

@@ -1371,7 +1371,7 @@ def addConfidence(df_merge_combined_tax):
     else:
         put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
-    # df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
+    #df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
 
     ic(df_merge_combined_tax.columns)
     # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
@@ -1562,7 +1562,8 @@ def addConfidence(df_merge_combined_tax):
         df_grouped = df.groupby([conf_field_inc_biome, conf_field]).size().to_frame('count').reset_index()
         ic(df_grouped)
         ic("*********************************************************")
-
+        ic(df.columns)
+        ic()
         return df
 
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
@@ -1607,6 +1608,8 @@ def main():
     # temporary while debugging the rules!
     df_merge_combined_tax = []
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+    ic()
+    ic(df_merge_combined_tax.columns)
     out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     ic(out_file)
     put_pickleObj2File(df_merge_combined_tax, out_file)

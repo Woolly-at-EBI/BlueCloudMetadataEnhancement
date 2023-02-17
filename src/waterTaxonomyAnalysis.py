@@ -1630,16 +1630,21 @@ def addConfidence(df_merge_combined_tax):
     # first off, do a search of the relative amount of granularity
 
     # # what if other samples have GPS but particular ones don't?
+    return df_merge_combined_tax
 
 def main():
     """ main
         __params__:
                passed_args
     """
-
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     # temporary while debugging the rules!
     df_merge_combined_tax = []
-    addConfidence(df_merge_combined_tax)
+    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
+    ic(out_file)
+    df_merge_combined_tax(out_file, sep = '\t', index = False)
+
     quit(1)
 
     stats_dict = {}
@@ -1651,7 +1656,7 @@ def main():
     #
     # quit()
 
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
     ic(analysis_dir)
     ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)

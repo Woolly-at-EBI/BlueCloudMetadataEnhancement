@@ -1,0 +1,20 @@
+{
+        "curations": [
+            {
+                "assertionAdditionalInfo": "",
+                "assertionEvidences": [
+                    {
+                        "label": ""
+                    }
+                ],
+                "assertionSource": "",
+                "attributePost": "",
+                "attributePre": "",
+                "providerName": "",
+                "providerUrl": "",
+                "recordId": "",
+                "recordType": "sample",
+                "attributeDelete": "true"
+            }
+        ]
+}

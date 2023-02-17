@@ -1,0 +1,42 @@
+{
+  "curations": [
+    {
+      "assertionAdditionalInfo": "Curator spotted error during project review",
+      "assertionEvidences": [
+        {
+          "label": "inference based on individual clinical experience used in manual assertion"
+        }
+      ],
+      "assertionMethod": "manual assertion",
+      "assertionSource": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469391",
+      "attributeDelete": false,
+      "attributePost": "geographic location",
+      "attributePre": "geographic location",
+      "providerName": "MarRef",
+      "providerUrl": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469391",
+      "recordId": "SAMN02469391",
+      "recordType": "sample",
+      "valuePost": "Norway: Lysefjord fjord",
+      "valuePre": "Norway: Trondheim fjord"
+    },
+    {
+      "assertionAdditionalInfo": "Curator spotted error during project review",
+      "assertionEvidences": [
+        {
+          "label": "inference based on individual clinical experience used in manual assertion"
+        }
+      ],
+      "assertionMethod": "manual assertion",
+      "assertionSource": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469392",
+      "attributeDelete": false,
+      "attributePost": "geographic location",
+      "attributePre": "geographic location",
+      "providerName": "MarRef",
+      "providerUrl": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469391",
+      "recordId": "SAMN02469391",
+      "recordType": "sample",
+      "valuePost": "Norway: Lysefjord fjord",
+      "valuePre": "Norway: Trondheim fjord"
+    }
+  ]
+}

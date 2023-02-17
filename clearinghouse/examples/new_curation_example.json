@@ -1,0 +1,20 @@
+{
+  "curations": [
+    {
+      "assertionAdditionalInfo": "Curator spotted error during project review",
+      "assertionEvidences": [
+        {
+          "label": "inference based on individual clinical experience used in manual assertion"
+        }
+      ],
+      "assertionSource": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469391",
+      "attributePost": "geographic location",
+      "attributePre": "isolation source",
+      "providerName": "MarRef",
+      "providerUrl": "https:mmp.sfb.uit.nodatabasesmarref#recordsMMP02469391",
+      "recordId": "SAMN02469391",
+      "recordType": "sample",
+      "attributeDelete": "true"
+    }
+  ]
+}

@@ -102,7 +102,7 @@ def process_eez_fields(df_merge_sea_ena):
         my_record.attributePost = dom_type
         my_record.valuePost = row[field]
         my_record.assertionAdditionalInfo = assertionAdditionalInfo
-        print(my_record.get_filled_json())
+        #print(my_record.get_filled_json())
         return my_record.get_filled_json()
 
     #comparing the first value with the rest, as want to know if all values are the same
@@ -118,8 +118,9 @@ def process_eez_fields(df_merge_sea_ena):
         (dummy, field) = dom_type.split(":")
         ic(field)
 
-        if(df_specific[field].isnull().all() or is_unique(df_specific[field])):
+        if(df_specific[field].isnull().all() ):
             ic("field all values null or 0")
+            # or is_unique(df_specific[field])
             #thus do not need
         else:
             #during the below some empty "" values are created in json_col
@@ -133,15 +134,15 @@ def process_eez_fields(df_merge_sea_ena):
                 df_specific.loc[df_specific[field] > 0, 'json_col'] = ""
 
             #to do, capture valid curation, from json_col each time
-            ic(df_specific.head())
-            ic(df_specific['json_col'].head(3))
+            #ic(df_specific.head())
+            #ic(df_specific['json_col'].head(3))
             local_list = df_specific['json_col'].values.tolist()
 
             #remove empty list items
             local_list = [i for i in local_list if i]
             curation_list.extend(local_list)
             ic(len(curation_list))
-
+    ic(len(curation_list))
     return curation_list
 
 def merge_sea_ena(hit_dir):
@@ -161,15 +162,34 @@ def merge_sea_ena(hit_dir):
     return df_merge_sea_ena
 
 
-def submit_curations(full_curation_list):
-    """
+def submit_curations(full_curation_list, analysis_dir):
+    """submit_curations
 
     :param full_curation_list:
+    :param  analysis_dir:
     :return:
     """
     ic()
     ic(len(full_curation_list))
     ic("submit_curations TBD")
+    out_file = analysis_dir + "curations_submissions_json.txt"
+    ic(out_file)
+    # with open(out_file, 'w') as fp:
+    #     fp.write('\n'.join(full_curation_list))
+
+    submission_dict = {}
+    submission_dict['curations'] = []
+
+    for json_string in full_curation_list:
+        json_data = json.loads(json_string)
+        submission_dict['curations'].append(json_data)
+
+    ic(submission_dict)
+
+    with open(out_file, 'w') as fp:
+         fp.write(json.dumps(submission_dict, indent=2))
+
+    sys.exit()
 
 def main():
     test_status = True
@@ -196,7 +216,7 @@ def main():
     #local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
     #full_curation_list.extend(local_curation_list)
 
-    submit_curations(full_curation_list)
+    submit_curations(full_curation_list, analysis_dir)
 
 if __name__ == '__main__':
     ic()

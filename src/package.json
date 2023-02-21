@@ -1,0 +1,17 @@
+{
+  'assertionAdditionalInfo': 'confidence:high; GPS_evidence:False; taxa_evidence:True',
+  'assertionEvidences': [
+    {
+      'identifier': 'ECO:0000306'
+    },
+    {
+      'identifier': 'ECO:0007746'
+    }
+  ],
+  'assertionSource': 'automatic assertion',
+  'attributePost': 'marine',
+  'providerName': 'European Nucleotide Archive',
+  'providerUrl': 'https://www.ebi.ac.uk/ena/browser/home',
+  'recordId': 'SAMD00008779',
+  'recordType': 'sample'
+}

@@ -1,5 +1,5 @@
 # BlueCloud
-"""Script to merger, analyse and plot the hits from etGeoLocationCategorisation.py
+"""Script to merge, analyse and plot the hits from getGeoLocationCategorisation.py
     directories for the hits, samples, analysis, plot etc. are set in "def get_directory_paths"
     The hits and plot files are additionally manually copied to a google drive shared with Stephane and Josie.
 ___author___ = "woollard@ebi.ac.uk"

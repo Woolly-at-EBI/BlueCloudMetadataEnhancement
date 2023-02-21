@@ -1,6 +1,5 @@
 
-
-# script to get answers to questions best done with bash
+# script to get answers to questions best done with bash e.g. latitude and longitude granularity, as panda converts numbers
 #
 # Peter Woollard, ENA, EMBL-EBI, February
 

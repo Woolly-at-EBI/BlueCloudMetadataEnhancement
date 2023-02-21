@@ -1,3 +1,12 @@
+
+# BlueCloud
+"""Script to do quick search of ena data warehouse for all samples with GEO locations
+NOT USED
+___author___ = "woollard@ebi.ac.uk"
+___start_date___ = "2023-01-13"
+__docformat___ = 'reStructuredText'
+
+"""
 import requests
 
 from icecream import ic

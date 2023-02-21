@@ -1,4 +1,5 @@
 """ generate_clearinghouse_submissions.py
+    from merge of shape hit files and also from waterTaxonomyAnalysis.p
      see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
 
  ___author___ = "woollard@ebi.ac.uk"

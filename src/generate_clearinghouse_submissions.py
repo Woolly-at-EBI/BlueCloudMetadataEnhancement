@@ -26,8 +26,7 @@ from project_utils import put_pickleObj2File,get_pickleObj
 from ena_samples import get_all_ena_detailed_sample_info
 
 def demo_format(test_status):
-
-
+    ic()
     curation_count = 0
     my_record = NewSampleCuration(useENAAutoCurationValues=True)
     ic(my_record.get_filled_dict())
@@ -61,6 +60,8 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
                 my_evidence_string += "False"
             my_evidence_string += "; taxa_evidence:" + ("True" if row[tax_dom_field] else "False")
             my_record.assertionAdditionalInfo = my_evidence_string
+            my_record.emptyAssertionEvidence()
+            my_record.addAutoAssertionEvidence("combinatorial")
         #print(my_record.get_filled_json())
         return my_record.get_filled_json()
 
@@ -83,7 +84,7 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
     # remove empty list items
     local_list = [i for i in local_list if i]
 
-    out_file = analysis_dir + "curation_submissions:" + domain + '.txt'
+    out_file = analysis_dir + "curation_submissions:" + "domain.txt"
     create_submit_curations_file(local_list, out_file)
 
     return local_list
@@ -101,11 +102,14 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
     curation_list = []
 
     def createSubmissionsJson(row):
+        ic()
         my_record = NewSampleCuration(useENAAutoCurationValues = True)
         my_record.recordId = row["accession"]
         my_record.attributePost = dom_type
         my_record.valuePost = row[field]
         my_record.assertionAdditionalInfo = assertionAdditionalInfo
+        my_record.emptyAssertionEvidence()
+        my_record.addAutoAssertionEvidence("EEZ")
         #print(my_record.get_filled_json())
         return my_record.get_filled_json()
 
@@ -127,6 +131,7 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
             # or is_unique(df_specific[field])
             #thus do not need
         else:
+            ic()
             #during the below some empty "" values are created in json_col
             if field in ['GEONAME', 'TERRITORY1', 'TERRITORY2', 'SOVEREIGN1', 'SOVEREIGN2']:
                 df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis=1)
@@ -140,6 +145,7 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
                 #ic(df_specific['json_col'].value_counts())
 
+            ic()
             #to do, capture valid curation, from json_col each time
             #ic(df_specific.head())
             #ic(df_specific['json_col'].head(3))
@@ -150,10 +156,12 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
             local_list = [i for i in local_list if i]
             #ic(local_list)
             out_file = analysis_dir + "curation_submissions:" + field + '.txt'
+            ic()
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
             # ic(len(curation_list))
     # ic(len(curation_list))
+    ic()
     return curation_list
 
 def merge_sea_ena(hit_dir):
@@ -226,9 +234,9 @@ def main():
     # df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
     #put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle")
 
-    #df_merge_combined_tax = get_pickleObj("./tmp.pickle")
-    #local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
-    #full_curation_list.extend(local_curation_list)
+    df_merge_combined_tax = get_pickleObj("./tmp.pickle")
+    local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
+    full_curation_list.extend(local_curation_list)
 
     #submit_curations(full_curation_list, analysis_dir)
 

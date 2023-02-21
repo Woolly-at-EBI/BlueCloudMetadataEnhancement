@@ -1,4 +1,4 @@
-""" clearinghouse_objects.py
+""" clearinghouse_objects.py  are curation objects used by generate_clearinghouse_submissions.py
      see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
      used by generate_clearinghouse_submissions.py
 
@@ -21,7 +21,7 @@ class NewSampleCuration:
         see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
       """
     def __init__(self,useENAAutoCurationValues):
-
+        ic()
         self.assertionAdditionalInfo = ""
         #                           'assertionEvidences': [{'label': ''}],
         self.assertionEvidences = []   #optional free text
@@ -42,25 +42,50 @@ class NewSampleCuration:
             self.assertionMethod = "automatic assertion"  # mandatory child term of ECO_0000217 assertion method
             self.providerName = "European Nucleotide Archive"  # Mandatory
             self.providerUrl = "https://www.ebi.ac.uk/ena/browser/home"  # optional
-            self.addAutoAssertionEvidence()
+            self.addAutoAssertionEvidence("void")
 
 
-    def putAssertionEvidence(self, value):
+    def emptyAssertionEvidence(self):
+        self.assertionEvidences = []
+
+    def putAssertionEvidence(self, identifier_value, label_value):
+        """ putAssertionEvidence
+        https://www.ebi.ac.uk/ols/ontologies/eco
+        :param identifier_value:
+        :param label_valye:
+        :return:
+        """
         #identifier is from ECO_0006019 child
         # label is from ECO_0006019 child
         #provide id or label
         evidence = {}
-        evidence["identifier"] = value
+        evidence["identifier"] = identifier_value
+        evidence["label"] = label_value
         self.assertionEvidences.append(evidence)
 
-    def addAutoAssertionEvidence(self):
-        # = inference from background scientific knowledge used in manual assertion
-        #         - as using GPS coordinates
-        self.putAssertionEvidence("ECO:0000306")
-        # =biological system reconstruction evidence used in manual assertion
-        #       -  as using taxonomic and environment_biome evidence
-        self.putAssertionEvidence("ECO:0007746")
+    def addAutoAssertionEvidence(self, extra_evidence):
+        """addAutoAssertionEvidence adds the identifier and label for the evidence.
+        the identifier and label are from https://www.ebi.ac.uk/ols/ontologies/eco
+        multiple of these pairs are allowed per curation
+        :return:
+        """
+        ic()
+        ic(extra_evidence)
+        if extra_evidence == "combinatorial":
+            # for the marine/terrestrial
+            #         - as using GPS coordinates
+            identifier = "ECO:0007653"
+            label = "automatically integrated combinatorial computational evidence used in automatic assertion"
+            self.putAssertionEvidence(identifier, label)
 
+        # currently all evidence is based on GPS coordinate hits to shapefiles or taxonomy inference
+        # it would be useful if there was evidence code from spatial coordinates
+        identifier = "ECO:0000366"
+        label = "A type of evidence based on logical inference from an automatically curated annotation that is used in an automatic assertion."
+        self.putAssertionEvidence(identifier, label)
+        ic(self.get_filled_dict)
+
+        #sys.exit()
 
     def get_filled_dict(self):
         """get_filled_dict
@@ -137,7 +162,7 @@ def main():
     test_status = True
     demo_format(test_status)
 
-    environment_biome.pickle
+    #environment_biome.pickle
 
 
 

@@ -82,9 +82,12 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
     # remove empty list items
     local_list = [i for i in local_list if i]
 
+    out_file = analysis_dir + "curation_submissions:" + domain + '.txt'
+    create_submit_curations_file(local_list, out_file)
+
     return local_list
 
-def process_eez_fields(df_merge_sea_ena):
+def process_eez_fields(df_merge_sea_ena, analysis_dir):
     """process_eez_fields
         process all the EEZ relevant fields and return a list of sample curations in JSON format to make.
     :param df_gps:
@@ -113,7 +116,7 @@ def process_eez_fields(df_merge_sea_ena):
     curation_types2add = ['EEZ:GEONAME', 'EEZ:TERRITORY1', 'EEZ:TERRITORY2', 'EEZ:SOVEREIGN1', 'EEZ:SOVEREIGN2',\
                      'EEZ:MRGID', 'EEZ:MRGID_TER1', 'EEZ:MRGID_TER2', 'EEZ:MRGID_SOV1', 'EEZ:MRGID_SOV2']
     df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(2)
-    assertionAdditionalInfo = "Confidence:high; evidence:GPS coordinate in EEZ shapefile"
+    assertionAdditionalInfo = "confidence:high; evidence:GPS coordinate in EEZ shapefile"
     for dom_type in curation_types2add:
         (dummy, field) = dom_type.split(":")
         ic(field)
@@ -131,7 +134,10 @@ def process_eez_fields(df_merge_sea_ena):
                 df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis=1)
                 #earlier code filled in empty MRGID values to 0. Could not see an efficient way to stop doing an apply
                 # on those, hence the below is necessary.
-                df_specific.loc[df_specific[field] > 0, 'json_col'] = ""
+
+                #ic(df_specific[field].value_counts())
+                df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
+                #ic(df_specific['json_col'].value_counts())
 
             #to do, capture valid curation, from json_col each time
             #ic(df_specific.head())
@@ -139,10 +145,14 @@ def process_eez_fields(df_merge_sea_ena):
             local_list = df_specific['json_col'].values.tolist()
 
             #remove empty list items
+            #ic(local_list)
             local_list = [i for i in local_list if i]
+            #ic(local_list)
+            out_file = analysis_dir + "curation_submissions:" + field + '.txt'
+            create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
-            ic(len(curation_list))
-    ic(len(curation_list))
+            # ic(len(curation_list))
+    # ic(len(curation_list))
     return curation_list
 
 def merge_sea_ena(hit_dir):
@@ -162,34 +172,37 @@ def merge_sea_ena(hit_dir):
     return df_merge_sea_ena
 
 
-def submit_curations(full_curation_list, analysis_dir):
-    """submit_curations
+
+def create_submit_curations_file(full_curation_list, out_file):
+    """create_submit_curations_file
+        If curations add them in JSON format to the out_file
 
     :param full_curation_list:
-    :param  analysis_dir:
-    :return:
+    :param  out_file name:
+    :return: nowt
     """
     ic()
-    ic(len(full_curation_list))
-    ic("submit_curations TBD")
-    out_file = analysis_dir + "curations_submissions_json.txt"
-    ic(out_file)
-    # with open(out_file, 'w') as fp:
-    #     fp.write('\n'.join(full_curation_list))
 
-    submission_dict = {}
-    submission_dict['curations'] = []
+    if len(full_curation_list) == 0:
+        ic("Warning no curations, so not creating: ", out_file)
+    else:
+        ic("creating ", len(full_curation_list), " curations for submission in ", out_file)
+        #out_file = analysis_dir + "curations_submissions_json.txt"
 
-    for json_string in full_curation_list:
-        json_data = json.loads(json_string)
-        submission_dict['curations'].append(json_data)
+        ic(out_file)
+        # with open(out_file, 'w') as fp:
+        #     fp.write('\n'.join(full_curation_list))
+        submission_dict = {}
+        submission_dict['curations'] = []
 
-    ic(submission_dict)
+        for json_string in full_curation_list:
+            json_data = json.loads(json_string)
+            submission_dict['curations'].append(json_data)
+        #ic(submission_dict)
+        with open(out_file, 'w') as fp:
+             fp.write(json.dumps(submission_dict, indent=2))
 
-    with open(out_file, 'w') as fp:
-         fp.write(json.dumps(submission_dict, indent=2))
-
-    sys.exit()
+    return
 
 def main():
     test_status = True
@@ -202,7 +215,7 @@ def main():
     #demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'
     # df_gps = pd.read_csv(in_file, sep='\t', nrows =100)
-    local_curation_list = process_eez_fields(df_merged_ena_sea)
+    local_curation_list = process_eez_fields(df_merged_ena_sea,analysis_dir)
     full_curation_list.extend(local_curation_list)
 
     #sys.exit()
@@ -216,7 +229,7 @@ def main():
     #local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
     #full_curation_list.extend(local_curation_list)
 
-    submit_curations(full_curation_list, analysis_dir)
+    #submit_curations(full_curation_list, analysis_dir)
 
 if __name__ == '__main__':
     ic()

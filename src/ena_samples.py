@@ -48,7 +48,7 @@ def get_all_ena_detailed_sample_info(test_bool):
         # df = pd.read_csv(infile, sep = "\t")
 
         pf = ParquetFile(infile)
-        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "environment_biome"]
+        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date", "environment_biome"]
 
         # was useful to limit number of rows, and alternatively focus on specific species
         if test_bool:

@@ -87,9 +87,9 @@ def clean_up_df_tax2env(df):
     # get all those where it is water based and marine inclusive OR  terrestrial
     # df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
 
-    # set taxonomic_source
-    df['taxonomic_source'] = 'environment'
-    df.loc[df['NCBI:name'].str.contains('metagenome'), 'taxonomic_source'] = 'metagenome'
+    # set taxonomy_type
+    df['taxonomy_type'] = 'environment'
+    df.loc[df['NCBI:name'].str.contains('metagenome'), 'taxonomy_type'] = 'metagenome'
 
     return df
 
@@ -883,30 +883,24 @@ def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
     fig.write_html(out_graph_file)
 
 
-def analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict, df_ena_sample_detail, df_metag_tax):
-    """ analyse_all_ena_just_metag
-        __params__: plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax
+def merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, df_ena_sample_detail, df_tax2env):
+    """
+        __params__: plot_dir, analysis_dir, stats_dict, df_all_ena_sample_detail, df_tax
                passed_args
-               stats_dict, df_merged_all_metag
+               stats_dict, df_merged_tax
     """
     ic()
     ic(plot_dir)
-    # df_ena_sample_detail = df_all_ena_sample_detail.drop(
-    #     columns = ['altitude', 'elevation', 'checklist', 'collection_date',
-    #                'collection_date_submitted', 'country', 'taxonomic_classification', 'salinity', 'depth',
-    #                'environment_biome', 'environment_feature'])
 
-    stats_dict, df_merged_all_categories = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax,
-                                                           analysis_dir)
-    ic()
-    ic(df_merged_all_categories["taxonomy_type"].value_counts())
+    # stats_dict, df_merged_all_categories = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_tax2env,
+    #                                                        analysis_dir)
+    df_merged_ena_tax = pd.merge(df_ena_sample_detail, df_tax2env, how = 'left', left_on = ['tax_id'],
+                                       right_on = ['NCBI:taxid'])
+    ic(df_merged_ena_tax.shape)
+    ic(df_merged_ena_tax.sample(n=5))
+    ic(df_merged_ena_tax["taxonomy_type"].value_counts())
 
-    # taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir)
-    ic()
-    ic(df_merged_all_categories.head())
-    ic(df_merged_all_categories.shape[0])
-
-    return stats_dict, df_merged_all_categories
+    return stats_dict, df_merged_ena_tax
 
 
 def taxonomic_environment_assignment(df_mega):
@@ -1136,73 +1130,6 @@ def investigate_a_tax():
     fig.write_image(outfile)
     fig.show()
 
-def merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env):
-    """ merge_in_env_taxa
-       merge the metagenome and env taxa rows and remove duplicate columns (after checking if values needed)
-
-    :param stats_dict: merge_in_env_taxa
-    :param df_merge_metag: 
-    :param df_tax2env: 
-    :return: stats_dict, df_merge_combined_tax
-  
-    merge_in_env_taxa(stats_dict, df_merge_metag)
-    """
-    ic()
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-    ic(df_merge_metag.shape[0])
-    ic(df_merge_metag.head(2))
-    ic(df_tax2env.head(2))
-
-    df_tax2env['taxonomy_type'] = 'env_taxa'
-    ic(df_merge_metag.query('scientific_name == "Corynebacterium suranareeae"'))
-    ic(df_merge_metag.query('tax_id == 16084'))
-    ic(df_tax2env.query('`NCBI:taxid` == 16084'))
-
-    df_merge_ena_combined_tax = pd.merge(df_merge_metag, df_tax2env, how = 'left', left_on = ['tax_id'],
-                                          right_on = ['NCBI:taxid'], suffixes=('', '_y'))
-    df_merge_ena_combined_tax.drop_duplicates(inplace = True)
-    df_merge_ena_combined_tax['accession_index'] = df_merge_ena_combined_tax['accession']
-    df_merge_ena_combined_tax = df_merge_ena_combined_tax.reset_index().set_index('accession_index')
-    ic(df_merge_ena_combined_tax.columns)
-    ic(df_merge_ena_combined_tax.shape[0])
-
-
-    if 'taxonomy_type_y' in df_merge_ena_combined_tax:
-        df = df_merge_ena_combined_tax
-        df["taxonomy_type"].fillna(df["taxonomy_type_y"], inplace = True)
-        #df.loc[df.loc['taxonomy_type'] == 'ena_classified', 'taxonomy_type'] = df["taxonomy_type_y"]
-        #df.loc[df['c1'] == 'Value', 'c1'] = 10
-        ic("taxonomy_type_y is found!")
-        df_merge_ena_combined_tax = df
-
-    ic(df_merge_ena_combined_tax.head(5))
-    ic(df_merge_ena_combined_tax.query('scientific_name == "Corynebacterium suranareeae"'))
-
-    # remove duplicate columns (after checking if values needed)
-    columns_to_delete = []
-    ic()
-    all_cols = list(df_merge_ena_combined_tax.columns)
-    r = re.compile(".*_y$")
-    filtered_cols = list(filter(r.match, all_cols))
-    rem_ycol = list(map(lambda st: str.replace(st, "_y", ""), filtered_cols))
-
-    for field in rem_ycol:
-        ic(field)
-        df_merge_ena_combined_tax[field].fillna(df_merge_ena_combined_tax[field +'_y'], inplace=True)
-        columns_to_delete.append(field +'_y')
-    df_merge_ena_combined_tax = df_merge_ena_combined_tax.drop(columns_to_delete, axis = 1)
-    df_merge_ena_combined_tax.drop_duplicates(inplace=True)
-    ic(df_merge_ena_combined_tax.shape[0])
-    ic(df_merge_ena_combined_tax.head(5))
-
-    df_just_tax_env = df_merge_ena_combined_tax.query('taxonomy_type == "env_taxa"')
-    stats_dict["env_tax_ids_in_ena_count"] = df_just_tax_env["NCBI:taxid"].nunique()
-    stats_dict["env_tax_not_in_ena_count"] = stats_dict["_input_env_tax_id_count"] - stats_dict[
-        "env_tax_ids_in_ena_count"]
-    stats_dict["env_tax_in_ena_sample_count"] = df_just_tax_env.shape[0]
-
-    return stats_dict,  df_merge_ena_combined_tax
-
 
 def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     """merge_in_all_categories
@@ -1213,9 +1140,9 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     :return: df_merge_combined_tax
     """
     ic()
-    # ic(df_merge_combined_tax.head())
+    ic(df_merge_combined_tax.head())
     # ic(df_merge_combined_tax.shape[0])
-    # ic(df_merged_all_categories.head())
+    ic(df_merged_all_categories.head())
     df_merge_combined_tax = pd.merge(df_merge_combined_tax, df_merged_all_categories, how = 'left',
                                      on = ['lat', 'lon'], suffixes = ('', '_y'))
     df_merge_combined_tax['accession_index'] = df_merge_combined_tax['accession']
@@ -1487,27 +1414,6 @@ def main():
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
-
-
-    df_tax2env = get_taxonomy_info(taxonomy_dir)
-    ic(df_tax2env.query('`NCBI:taxid` == 16084'))
-
-    ic(df_tax2env)
-
-    sys.exit()
-
-
-    # temporary while debugging the rules!
-    df_merge_combined_tax = []
-    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-    ic()
-    ic(df_merge_combined_tax.columns)
-    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    ic(out_file)
-    put_pickleObj2File(df_merge_combined_tax, out_file)
-
-    quit(1)
-
     stats_dict = {}
     """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 
     re-running everything"""
@@ -1517,24 +1423,18 @@ def main():
     #
     # quit()
 
-
     ic(analysis_dir)
     ic(plot_dir)
-    (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
-    ic(df_tax2env.query('`NCBI:taxid` == 16084'))
+    df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    sys.exit()
-
-    # df_ena_all_species_count = get_ena_species_count(sample_dir)
     # get category information from hit file
-    ic()
     df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
     # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
     # ic(df_outliers)
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     ic()
-    test_status = False
+    test_status = True
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
     ic()
     ic(df_all_ena_sample_detail.head())
@@ -1542,27 +1442,29 @@ def main():
     ic('-' * 100)
 
     stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
-    stats_dict["_input_metag_tax_id_count"] = df_metag_tax["NCBI:taxid"].nunique()
-    stats_dict["_input_env_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
-    stats_dict["_input_total_tax_id_count"] = stats_dict["_input_metag_tax_id_count"] + stats_dict[
-        "_input_env_tax_id_count"]
-    ic()
-    stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
-                                                            df_all_ena_sample_detail, df_metag_tax)
-    ic(df_merge_metag.shape[0])
-    ic(df_merge_metag.head(5))
+    df_tmp = df_tax2env.query('taxonomy_type == "metagenome"')
+    stats_dict["_input_metag_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+    df_tmp = df_tax2env.query('taxonomy_type == "environment"')
+    stats_dict["_input_env_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+    stats_dict["_input_total_taxa_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
+    ic(stats_dict)
 
-    ic('-' * 100)
-    ic()
-    ic(df_merge_metag.query('scientific_name == "Corynebacterium suranareeae"'))
+    (stats_dict, df_merge_combined_tax) = merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, \
+                                                           df_all_ena_sample_detail, df_tax2env)
+    ic(df_merge_combined_tax.shape[0])
+    ic(df_merge_combined_tax.head(5))
+    sys.exit()
 
-    stats_dict, df_merge_combined_tax = merge_in_env_taxa(stats_dict, df_merge_metag, df_tax2env)
+
+
     #df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
     # ic(df.head(20))
     #ic(df_merge_combined_tax.query('scientific_name == "Corynebacterium suranareeae"'))
 
     ic('-' * 100)
-    df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories).reset_index()
+    df_merge_combined_tax = merge_in_all_categories(df_tax2env, df_merged_all_categories).reset_index()
+    ic(df_merge_combined_tax.sample(n=5))
+    sys.exit()
     # ic(df_merge_combined_tax["NCBI term"].value_counts())
     df_merge_combined_tax = df_merge_combined_tax.loc[:, ~df_merge_combined_tax.columns.str.contains('^level_')]
     df_merge_combined_tax.drop_duplicates(inplace=True)
@@ -1578,6 +1480,17 @@ def main():
     gc.collect()
     # ic(memory_usage())
 
+    # temporary while debugging the rules!
+    df_merge_combined_tax = []
+    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+    ic()
+    ic(df_merge_combined_tax.columns)
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
+    ic(out_file)
+    put_pickleObj2File(df_merge_combined_tax, out_file)
+
+    quit(1)
+    # end of temporary while debugging the rules!
 
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
     out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'

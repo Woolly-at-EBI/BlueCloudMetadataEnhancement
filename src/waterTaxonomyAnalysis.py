@@ -38,180 +38,61 @@ MyDataStuctures = {}
 def get_taxonomy_info(taxonomy_dir):
     """ get_taxonomy_info
      read in the relevant marine taxonomic terms.
-    These came from Stephane Pesant
+      These came from Stephane Pesant
         __params__:
              taxonomy_dir
         __returns__:
-                df_metag_tax, df_tax2env
+                df_tax2env
     """
     ic()
-    metagenomes_file: str = taxonomy_dir + "NCBI-metagenomes-to-environment.csv"
-    my_dtypes = {"NCBI:taxid": int, "NCBI metagenome category": "category", "taxonomic_source": "category"}
-    df_metag_tax = pd.read_csv(metagenomes_file, dtype=my_dtypes, index_col=None)
-    ic(df_metag_tax.columns)
-    df_metag_tax["NCBI:taxid"] = df_metag_tax["NCBI:taxid"]
-    df_metag_tax = clean_up_df_metag_tax(df_metag_tax)
-    ic(df_metag_tax.head(10))
 
-    taxa_env_file = taxonomy_dir + "NCBI-taxa-to-environment.csv"
-    my_dtypes = {"NCBI:taxid": int, "NCBI taxID Type": "category"}
-    # 'rule set description': "category", 'taxID rank offset: NCBI rank [relation] WoRMS rank': "category", 'NCBI-to-marine': "category"
-    my_cols = ["NCBI taxID Name", "NCBI taxID", "NCBI taxID Type", "NCBI-to-marine.1", "NCBI-to-terrestrial.1"]
-    df_tax2env = pd.read_csv(taxa_env_file, usecols=my_cols, dtype=my_dtypes, index_col=None).reset_index()
+    taxa_env_file = taxonomy_dir + "Blue-domain_environmental-flags-based-on-taxonomy.csv"
+    my_cols = ['NCBI taxID', 'NCBI taxID Name', 'rule set description', 'marine', 'terrestrial or freshwater',\
+               'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
+    df_tax2env = pd.read_csv(taxa_env_file, skiprows=1, index_col=None)
+    df_tax2env = df_tax2env.drop(0)
     ic(df_tax2env.columns)
-    #df_tax2env["NCBI taxID"] = df_tax2env["NCBI taxID"].astype(np.int16).abs()
+    ic(df_tax2env.head())
+
     df_tax2env = clean_up_df_tax2env(df_tax2env)
+    ic(df_tax2env.info())
     ic(df_tax2env.shape[0])
     ic(df_tax2env.head(10))
 
-    ic(df_tax2env.query('`NCBI:taxid` == 16084'))
+    ic(df_tax2env.query('`NCBI:taxid` == 24'))
 
-    return df_metag_tax, df_tax2env
-
-
-# def get_ena_detailed_sample_info(sample_dir):
-#     """ get_ena_detailed_sample_info
-#         This is filtered for just those with lat and lons
-#         __params__:
-#                passed_args:
-#                   sample_dir
-#         __return__:
-#             df_ena_sample_detail
-#     """
-#     ic()
-#     infile = sample_dir + "sample_much_lat_filtered.tsv"
-#     df_ena_sample_detail = pd.read_csv(infile, sep = "\t", nrows = 1000000000)
-#     ic(df_ena_sample_detail.head())
-#
-#     return df_ena_sample_detail
-
-
-
-
-
-def clean_up_df_metag_tax(df):
-    """ clean_up_df_metag_tax
-        mapping 1's to True and 0's to False
-
-        __params__:
-               passed_args: df
-
-        __return__: df
-        """
-    # N.B. changed all NaN's to 0. Mapping 1's to True and 0's to False
-    warnings.simplefilter('ignore')
-    df["marine (ocean connected)"] = df["marine (ocean connected)"].replace(np.nan, 0).astype(bool)
-    df["freshwater (land enclosed)"] = df["freshwater (land enclosed)"].replace(np.nan, 0).astype(bool)
-    df["taxonomic_source"] = 'metagenome'
-    warnings.resetwarnings()
-
-    return df
+    return df_tax2env
 
 
 def clean_up_df_tax2env(df):
     """ clean_up_df_tax2env
-       For NCBI-to-terrestrial.1 NCBI-to-marine.1" columns mapping 1's to True and 0's to False
-       make the key column names  the same as the metag one
-       N.B. also ensures that every row has at least one true water species (marine or terrestrial freshwater)
+        standardising the column names
+        making the columns with 1 and 0's to be true boolean
 
         __params__:
                passed_args: df_tax2env
-
         __return__: df_tax2env
 
     """
+    ic()
     # N.B. changed all NaN's to 0. Mapping 1's to True and 0's to False
     warnings.simplefilter('ignore')
-    df["NCBI-to-terrestrial.1"] = df["NCBI-to-terrestrial.1"].replace(np.nan, 0).astype(bool)
-    df["NCBI-to-marine.1"] = df["NCBI-to-marine.1"].replace(np.nan, 0).astype(bool)
+    my_cols = ['marine', 'terrestrial or freshwater', 'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
+    df = df.rename(columns = {'marine': 'taxa_marine', 'terrestrial or freshwater': 'taxa_terrestrial_or_freshwater',\
+                              'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI:name"})
+    df["taxa_marine"] = df["taxa_marine"].replace(np.nan, 0).astype(bool)
+    df['taxa_terrestrial_or_freshwater'] = df['taxa_terrestrial_or_freshwater'].replace(np.nan, 0).astype(bool)
     warnings.resetwarnings()
 
     # get all those where it is water based and marine inclusive OR  terrestrial
-    df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
+    # df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
 
-    # make the key column names  the same as the metag one
-    df = df.rename(columns = {'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI term"})
-    df = df.rename(columns={"NCBI-to-marine.1": "marine (ocean connected)", "NCBI-to-terrestrial.1": "freshwater (land enclosed)"})
-    df["taxonomic_source"] = 'environment'
-
-    df_tmp = df.query('(`freshwater (land enclosed)` == True) & (`marine (ocean connected)` == False)')
-    ic(df_tmp.head(10))
+    # set taxonomic_source
+    df['taxonomic_source'] = 'environment'
+    df.loc[df['NCBI:name'].str.contains('metagenome'), 'taxonomic_source'] = 'metagenome'
 
     return df
 
-
-# def analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail, df_tax2env):
-#     """ analyse_all_ena_all_tax2env
-#            analyse the taxonomy WRT the GPS coordinates
-#         __params__:
-#                passed_args: plot_dir,df_all_ena_sample_detail, df_tax2env
-#
-#         __return__: stats_dict, df_merged
-#
-#     """
-#
-#     ic()
-#     ic(plot_dir)
-#     ic(df_all_ena_sample_detail.shape[0])
-#     ic(df_tax2env.shape[0])
-#
-#     df_tax2env = df_tax2env.rename(columns = {'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI term"})
-#     ic(df_tax2env.head())
-#     df_merged_ena_tax2env = pd.merge(df_all_ena_sample_detail, df_tax2env, how = 'inner', left_on = ['tax_id'],
-#                                      right_on = ['NCBI:taxid'])
-#
-#     stats_dict["env_tax_ids_in_ena_count"] = df_merged_ena_tax2env["NCBI:taxid"].nunique()
-#     stats_dict["env_tax_not_in_ena_count"] = stats_dict["_input_env_tax_id_count"] - stats_dict[
-#         "env_tax_ids_in_ena_count"]
-#     stats_dict["env_tax_in_ena_sample_count"] = df_merged_ena_tax2env.shape[0]
-#
-#     print(f"total ENA samples={len(df_all_ena_sample_detail)}")
-#     print(f"total Taxonomic entries={len(df_tax2env)}")
-#
-#     samples_with_marine_tax = stats_dict["env_tax_in_ena_sample_count"]
-#     samples_without_marine_tax = df_all_ena_sample_detail.shape[0] - samples_with_marine_tax
-#     print(
-#         f"total ENA samples with a marine or freshwater tax_id={samples_with_marine_tax} "
-#         f"percentage= {(samples_with_marine_tax * 100) / len(df_all_ena_sample_detail):.2f} %")
-#     print(
-#         f"total ENA samples without a marine or freshwater tax_id={samples_without_marine_tax} "
-#         f"percentage= {(samples_without_marine_tax * 100) / len(df_all_ena_sample_detail):.2f} %")
-#
-#     # reduce the columns down to make it easier to debug (not reused elsewhere_
-#     df = df_merged_ena_tax2env[
-#         ["accession", "NCBI-to-marine.1", "NCBI-to-terrestrial.1", "NCBI:taxid", "NCBI taxID Type", "NCBI taxID rank",
-#          "NCBI term"]]
-#
-#     # ic(df.head())
-#     ic(df["NCBI-to-terrestrial.1"].value_counts())
-#     ic(df["NCBI-to-marine.1"].value_counts())
-#     both_true_total = len(df.loc[(df["NCBI-to-marine.1"] & df["NCBI-to-terrestrial.1"])])
-#     print(f"NCBI-to-marine.1 and NCBI-to-terrestrial.1 ={both_true_total}")
-#     just_marine_true_total = len(df.loc[(df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])])
-#     print(f"NCBI-to-marine.1 and not NCBI-to-terrestrial.1 ={just_marine_true_total}")
-#     just_terr_true_total = len(df.loc[(~df["NCBI-to-marine.1"] & df["NCBI-to-terrestrial.1"])])
-#     print(f"not NCBI-to-marine.1 and  NCBI-to-terrestrial.1 ={just_terr_true_total}")
-#     non_true_total = len(df.loc[(~df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])])
-#     print(f"not NCBI-to-marine.1 and not NCBI-to-terrestrial.1 ={non_true_total}")
-#
-#     non_true = df.loc[(~df["NCBI-to-marine.1"] & ~df["NCBI-to-terrestrial.1"])]
-#     ic(non_true.head())
-#
-#     # stats_dict = metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_merged_ena_tax2env, analysis_dir):
-#
-#     # Use the venn2 function
-#     # ic("plotting as venn")
-#     # # venn2(subsets = (10, 5, 2), set_labels = ('Group A', 'Group B'))
-#     # venn2(subsets = (just_terr_true_total, both_true_total, just_terr_true_total),
-#     # set_labels = ('Marine', 'Terrestrial'))
-#     # plt.title("ENA marine and terrestrial water taxon counts")
-#     # plt.show()
-#     # plotfile=plot_dir + 'ENA_marine_terrestrial_water_tax_counts.pdf'
-#     # ic(plotfile)
-#     # plt.savefig(plotfile)
-#
-#     return stats_dict, df
-# #
 
 def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
     """ taxa_notin_ena_coords  - DEPRECATED
@@ -1605,6 +1486,17 @@ def main():
                passed_args
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+
+
+    df_tax2env = get_taxonomy_info(taxonomy_dir)
+    ic(df_tax2env.query('`NCBI:taxid` == 16084'))
+
+    ic(df_tax2env)
+
+    sys.exit()
+
+
     # temporary while debugging the rules!
     df_merge_combined_tax = []
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
@@ -1630,6 +1522,8 @@ def main():
     ic(plot_dir)
     (df_metag_tax, df_tax2env) = get_taxonomy_info(taxonomy_dir)
     ic(df_tax2env.query('`NCBI:taxid` == 16084'))
+
+    sys.exit()
 
     # df_ena_all_species_count = get_ena_species_count(sample_dir)
     # get category information from hit file

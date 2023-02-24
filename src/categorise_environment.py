@@ -105,7 +105,7 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     df["environment_biome_hl"] = df["environment_biome"]
     df_wbiome = df
     ic('unclassified  - regex')
-    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^ENVO|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
+    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
 
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "unclassified", flags = re.I, regex=True)
 
@@ -199,6 +199,11 @@ def main():
     df_processed = process_environment_biome(df)
 
     get_values_as_dict(df_processed, "environment_biome", "environment_biome_hl")
+
+    ic(df_processed.sample(n=8))
+    df_temp = df_processed[["environment_biome", "environment_biome_hl"]]
+    df_temp = df_temp.drop_duplicates()
+    df_temp.to_csv("environment_biome_mapping.csv", index=False)
     ic("all processed  in categorise environment, bye.")
 
 if __name__ == '__main__':

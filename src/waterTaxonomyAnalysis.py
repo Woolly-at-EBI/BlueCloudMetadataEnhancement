@@ -112,6 +112,8 @@ def get_taxonomy_mapping_confidence_flags():
 
     taxa confidence rules  from Stephane Pesant
 
+    :usage: taxonomy_map_conf_flags dictionary = get_taxonomy_mapping_confidence_flags()
+
     :return: taxonomy_map_conf_flags dictionary
     """
 
@@ -144,8 +146,7 @@ def get_taxonomy_mapping_confidence_flags():
                     "NCBI-to-terrestrial-or-freshwater": {
                         "is not": 0,
                         "may be exclusively": 0,
-                        "not flagged as": 0,
-                        "_comment": "perhaps these are extra terrestrial... still this is referring to confidence in the marine designation"
+                        "not flagged as": 0
                     }
                 }
             }
@@ -1190,6 +1191,12 @@ def addConfidence(df_merge_combined_tax):
     df = df_merge_combined_tax[["tax_id", "location_designation", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
     ic(df.head())
 
+    taxonomy_map_conf_flags = get_taxonomy_mapping_confidence_flags()
+    ic(taxonomy_map_conf_flags)
+    tmp = taxonomy_map_conf_flags['taxa_marine']
+    marine_NCBI_to_marine_dict = tmp['NCBI-to-marine']
+    ic(marine_NCBI_to_marine_dict)
+
     def apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords):
         """apply_rules
             Applies logic to generate a numerical confidence score for this domain: marine or terrestrial
@@ -1244,7 +1251,21 @@ def addConfidence(df_merge_combined_tax):
                         df[taxa_term] == True), [conf_score]] = 2.5
             #next is the highest confidence as multiple hits of relevant shapefiles and a relevant taxonomy
             df.loc[(df[coord_dom_total] > 1) & (df[taxa_term] == True), [conf_score]] = 3
-            df.loc[(df[coord_dom_total] > 1) & (df[taxa_term] == True), [conf_score]] = 3
+
+            if dom_type == "marine":
+                ic(marine_NCBI_to_marine_dict)
+                for NCBI_to_marine_param in marine_NCBI_to_marine_dict:
+                    ic(NCBI_to_marine_param)
+                    tmp = marine_NCBI_to_marine_dict[NCBI_to_marine_param]
+                    for terra_param in tmp['NCBI-to-terrestrial-or-freshwater']:
+                        ic(terra_param, tmp['NCBI-to-terrestrial-or-freshwater'][terra_param])
+                        df.loc[((df[taxa_term] == True) and (df['NCBI-to-marine'] == NCBI_to_marine_param)), [conf_score]] = 3
+                    ic('***************************************')
+
+
+            sys.exit()
+
+
         elif dom_type == "marine_and_terrestrial":
             df.loc[(df["taxa_marine"] == True) & (df["taxa_terrestrial_or_freshwater"] == False), [
                 conf_score]] = 2
@@ -1255,16 +1276,6 @@ def addConfidence(df_merge_combined_tax):
             ic("ERROR: should never get here!")
 
         #Tops ups by automated regex high level mapping of the environment_biome ena field etc.
-        if dom_type == "marine":
-            df.loc[df["scientific_name"].str.contains("^sea|marine", regex = True, case = False), [
-            conf_score]] += 1
-        elif dom_type == "terrestrial":
-            df.loc[df["scientific_name"].str.contains("^sea|marine", regex = True, case = False), [
-            conf_score]] -= 0.5
-        elif dom_type == "marine_and_terrestrial":
-            df.loc[df["scientific_name"].str.contains("^estuary", regex = True, case = False), [
-                conf_score]] += 1
-
         conf_score_inc_biome = conf_score + "_inc_biome"
         df[conf_score_inc_biome] = df[conf_score]
         df.loc[(df["environment_biome_hl"] == dom_type), [conf_score_inc_biome]] += 1
@@ -1274,6 +1285,9 @@ def addConfidence(df_merge_combined_tax):
 
         ic(df[conf_score].value_counts().sort_values())
         ic(df[conf_score_inc_biome].value_counts().sort_values())
+
+        ic('quitting early')
+        sys.exit()
 
         return df
 
@@ -1380,11 +1394,10 @@ def addConfidence(df_merge_combined_tax):
 
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
     ic(df_merge_combined_tax.shape)
-
-    ic("*********************************************************")
-    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
+    ic("*********************************************************")
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
     df = dom_confidence(df_merge_combined_tax, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
 
@@ -1422,6 +1435,12 @@ def main():
     ic(analysis_dir)
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
+
+    # temporary while debugging the rules!
+    df_merge_combined_tax = []
+    addConfidence(df_merge_combined_tax)
+    ic("about to quit")
+    sys.exit()
 
     # get category information from hit file
     df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
@@ -1465,13 +1484,14 @@ def main():
 
     # temporary while debugging the rules!
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+    ic("about to quit")
+    sys.exit()
     ic()
     ic(df_merge_combined_tax.columns)
     out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     ic(out_file)
     put_pickleObj2File(df_merge_combined_tax, out_file)
     # end of temporary while debugging the rules!
-
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
     #ic()

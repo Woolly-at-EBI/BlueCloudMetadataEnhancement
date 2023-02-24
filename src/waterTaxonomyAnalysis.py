@@ -19,6 +19,7 @@ from icecream import ic
 import sys  #system specific parameters and names
 import gc   #garbage collector interface
 
+import json
 import plotly.express as px
 import plotly
 import re
@@ -88,11 +89,73 @@ def clean_up_df_tax2env(df):
     # get all those where it is water based and marine inclusive OR  terrestrial
     # df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
 
+    # These are highly important NCBI-to-marine NCBI-to-terrestrial-or-freshwater, as taxa dom confidence mapping
+    # clean the ^[ and ]$ from each if there
+    my_cols = ['NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater', 'rule set description']
+    for col in my_cols:
+        df[col] = df[col].replace(regex = ['\[', '\]'], value = '')
+        ic(col,df[col].value_counts())
+
+
+    ic(df.sample(n=10))
+
     # set taxonomy_type
     df['taxonomy_type'] = 'environment'
     df.loc[df['NCBI:name'].str.contains('metagenome'), 'taxonomy_type'] = 'metagenome'
 
     return df
+
+
+def get_taxonomy_mapping_confidence_flags():
+    """get_taxonomy_mapping_confidence_flags
+    mapped them as confidence of the marine designation i.e. whether this is correctly True or False
+
+    taxa confidence rules  from Stephane Pesant
+
+    :return: taxonomy_map_conf_flags dictionary
+    """
+
+    marine_json = """{
+        "taxa_marine": {
+            "NCBI-to-marine": {
+                "is exclusively": {
+                    "NCBI-to-terrestrial-or-freshwater": {
+                        "is not": 1
+                    }
+                },
+                "may be exclusively": {
+                    "NCBI-to-terrestrial-or-freshwater": {
+                        "not flagged as": 1
+                    }
+                },
+                "is not exclusively": {
+                    "NCBI-to-terrestrial-or-freshwater": {
+                        "is not exclusively": 1
+                    }
+                },
+                "is not": {
+                    "NCBI-to-terrestrial-or-freshwater": {
+                        "is not": 1,
+                        "is exclusively": 1,
+                        "not flagged as": 0.5
+                    }
+                },
+                "not flagged as": {
+                    "NCBI-to-terrestrial-or-freshwater": {
+                        "is not": 0,
+                        "may be exclusively": 0,
+                        "not flagged as": 0,
+                        "_comment": "perhaps these are extra terrestrial... still this is referring to confidence in the marine designation"
+                    }
+                }
+            }
+        }
+    }"""
+
+    taxonomy_map_conf_flags =json.loads(marine_json)
+    #print(json.dumps(taxonomy_map_conf_flags, indent = 2, default = str))
+
+    return taxonomy_map_conf_flags
 
 
 def taxa_notin_ena_coords(df_ena_sample_detail, df_metag_tax, df_tax2env, analysis_dir):
@@ -151,7 +214,7 @@ def clean_df_mega(df_mega):
     # ic(df_mega.head(10))
     # ic(df_mega.columns)
 
-    drop_columns = ["ena_country", "ena_region","sea_total",  "land_total", 'coords']
+    drop_columns = ["ena_country", "ena_region", "sea_total",  "land_total", 'coords']
 
     df_mega.drop(columns = drop_columns, inplace=True)
     df_mega['NCBI:taxid'] = df_mega['NCBI:taxid'].astype('Int64')
@@ -982,66 +1045,6 @@ def my_word_c(df_word_c, title, outfile):
     plt.show()
 
 
-# def combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict, df_all_ena_sample_detail, df_metag_tax, df_tax2env):
-#     """ combine_analysis_all_tax
-#         __params__:
-#                passed_args
-#                stats_dict, df_merged_ena_combined_tax
-#     """
-#     ic()
-#     ic(df_metag_tax.shape[0])
-#     ic(df_tax2env.shape[0])
-#     df = pd.concat([df_metag_tax, df_tax2env])
-#     ic(df.shape[0])
-#     ic(df.head())
-#
-#     # doing a left join, so all ENA samples represented.
-#     df_merged_ena_combined_tax = pd.merge(df_all_ena_sample_detail, df, how = 'left', left_on = ['tax_id'],
-#                                           right_on = ['NCBI:taxid'])
-#     df = df_merged_ena_combined_tax.drop_duplicates()
-#     df_merged_ena_combined_tax = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-#     ic(df_merged_ena_combined_tax.head(5))
-#     ic(df_merged_ena_combined_tax.shape[0])
-#     df = df_merged_ena_combined_tax
-#
-#     stats_dict["_global_total_samples_with_gps"] = df["lat"].count()
-#     stats_dict["_global_total_samples_with_water_tax"] = df["NCBI:taxid"].count()
-#     stats_dict["_global_total_samples_with_water_tax_and_gps"] = 0
-#     """ comparing a column to itself gets rid of NaN"""
-#     df["NCBI_taxid"] = df["NCBI:taxid"]
-#     df_tmp = df.query('lat == lat')
-#     ic(df_tmp.shape[0])
-#     df_tmp = df_tmp.query('NCBI_taxid == NCBI_taxid')
-#     ic(df_tmp.shape[0])
-#     stats_dict["_global_total_samples_with_water_tax_and_gps"] = df_tmp.shape[0]
-#
-#     df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
-#
-#     ic(df_merged_all_categories.head(2))
-#     ic(df_merged_all_categories.shape[0])
-#     ic(df_merged_ena_combined_tax.shape[0])
-#     df_mega = pd.merge(df_merged_ena_combined_tax, df_merged_all_categories, how = 'left', left_on = ['lat', 'lon'],
-#                        right_on = ['lat', 'lon'])
-#     df_mega.drop_duplicates(inplace=True)
-#     df_mega["location_designation"] = df_mega["location_designation"].fillna("no_gps")
-#     df_mega["NCBI:taxid"] = df_mega["NCBI:taxid"].fillna("undetermined")
-#     df_mega["NCBI term"] = df_mega["NCBI term"].fillna("undetermined")
-#
-#     # "taxa_marine",
-#     # "taxa_terrestrial_or_freshwater
-#     df_mega = taxonomic_environment_assignment(df_mega)
-#     ic(df_mega["location_designation"].value_counts())
-#     ic(df_mega.head())
-#     ic(df_mega.shape[0])
-#     out_file = analysis_dir + "all_ena_gps_tax_combined.tsv"
-#     ic(out_file)
-#     df_mega.to_csv(out_file, sep = '\t')
-#
-#     stats_dict = plot_combined_analysis(plot_dir, df_mega, stats_dict)
-#     investigate_gps_tax(df_mega, stats_dict)
-#
-#     return stats_dict, df_mega
-
 def plot_combined_analysis(plot_dir, df_mega, stats_dict):
     """plot_combined_analysis
 
@@ -1416,13 +1419,6 @@ def main():
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     stats_dict = {}
-
-    """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 
-    re-running everything"""
-    # infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
-    # df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
-    # plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts)
-
     ic(analysis_dir)
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
@@ -1476,33 +1472,17 @@ def main():
     put_pickleObj2File(df_merge_combined_tax, out_file)
     # end of temporary while debugging the rules!
 
-    sys.exit()
-
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
     #ic()
     # ic(memory_usage())
-    #ic("about to quit")
-    #ic(stats_dict)
     ic('-' * 80)
     #ic()
 
     # the rest of the below was used mainly when exploring the data, hence now commented.
-
-    #
-    # stats_dict, df_merge_metag = analyse_all_ena_just_metag(plot_dir, analysis_dir, stats_dict,
-    #                                                         df_all_ena_sample_detail, df_metag_tax)
-    #
-    # stats_dict, df_merged_ena_combined_tax = combine_analysis_all_tax(analysis_dir, plot_dir, stats_dict,
-    #                                                                   df_all_ena_sample_detail, df_metag_tax,
-    #                                                                   df_tax2env)
-    # stats_dict, df_merge_tax2env = analyse_all_ena_all_tax2env(plot_dir, stats_dict, df_all_ena_sample_detail,
-    #                                                            df_tax2env)
-    #
     # investigate_a_tax()
 
-    # ic(stats_dict)
-    ic()
+    ic(stats_dict)
     return ()
 
 

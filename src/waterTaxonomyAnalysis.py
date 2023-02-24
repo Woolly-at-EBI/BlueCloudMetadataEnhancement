@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
-
+global MyDataStuctures
 MyDataStuctures = {}
 
 
@@ -1415,13 +1415,12 @@ def main():
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
     stats_dict = {}
+
     """ This section can be deleted, plotting called elsewhere - is here as to allow plotting without 
     re-running everything"""
     # infile = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
     # df_merged_cats_metag_land_sea_counts = pd.read_csv(infile, sep = "\t")
     # plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts)
-    #
-    # quit()
 
     ic(analysis_dir)
     ic(plot_dir)
@@ -1436,7 +1435,6 @@ def main():
     ic()
     test_status = True
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
-    ic()
     ic(df_all_ena_sample_detail.head())
     ic(df_all_ena_sample_detail.shape[0])
     ic('-' * 100)
@@ -1453,35 +1451,23 @@ def main():
                                                            df_all_ena_sample_detail, df_tax2env)
     ic(df_merge_combined_tax.shape[0])
     ic(df_merge_combined_tax.head(5))
-    sys.exit()
 
 
-
-    #df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
-    # ic(df.head(20))
-    #ic(df_merge_combined_tax.query('scientific_name == "Corynebacterium suranareeae"'))
+    df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
+    ic(df.sample(n=3))
 
     ic('-' * 100)
-    df_merge_combined_tax = merge_in_all_categories(df_tax2env, df_merged_all_categories).reset_index()
+    df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories).reset_index()
+    ic(df_merge_combined_tax.shape[0])
     ic(df_merge_combined_tax.sample(n=5))
-    sys.exit()
-    # ic(df_merge_combined_tax["NCBI term"].value_counts())
-    df_merge_combined_tax = df_merge_combined_tax.loc[:, ~df_merge_combined_tax.columns.str.contains('^level_')]
-    df_merge_combined_tax.drop_duplicates(inplace=True)
-    # ic(df_merge_combined_tax["NCBI term"].value_counts())
-    # ic(df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"').shape[0])
 
+    # ic(df_merge_combined_tax["NCBI term"].value_counts())
+    ic(df_merge_combined_tax.query('scientific_name == "Piscirickettsia salmonis"').shape[0])
     #save save some memory and get rid of some stored structures
     # ic(memory_usage())
-    global MyDataStuctures
-    # del MyDataStuctures['df_all_ena_detailed_sample_info']  #need to reuse this!
-    global WordCloud
-    del WordCloud
-    gc.collect()
-    # ic(memory_usage())
+
 
     # temporary while debugging the rules!
-    df_merge_combined_tax = []
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
     ic()
     ic(df_merge_combined_tax.columns)
@@ -1489,14 +1475,10 @@ def main():
     ic(out_file)
     put_pickleObj2File(df_merge_combined_tax, out_file)
 
-    quit(1)
     # end of temporary while debugging the rules!
 
-    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    ic(out_file)
-    put_pickleObj2File(df_merge_combined_tax, pickle_file)
-    quit(1)
+    sys.exit()
+
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
     #ic()

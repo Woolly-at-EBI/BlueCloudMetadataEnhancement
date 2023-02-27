@@ -259,17 +259,19 @@ def print_df_mega(prefix, df_mega):
         :param df_mega_combined_counts:
         :return: df_mega_combined_counts
         """
+        ic()
         #    'taxa_marine', 'taxa_terrestrial_or_freshwater'
         df = pd.merge(df_mega_combined_counts,
                       df_mega[['tax_id', 'taxa_marine', 'taxa_terrestrial_or_freshwater']], on = 'tax_id',
                       how = 'inner')
-        ic(df.head(1000))
-        sys.exit()
-        # don't understand why this merge duplicates
-        df.drop_duplicates(inplace = True)
-        df.fillna(False, inplace = True)
-
         ic(df.head(5))
+        ic(df.shape)
+        # don't understand why this merge duplicates so f. much
+        df.drop_duplicates(inplace = True)
+        ic(df.shape)
+        df.fillna(False, inplace = True)
+        ic(df.head(5))
+        ic()
         return (df)
 
     def combine_count(df_mega_combined_counts, df_right, title):
@@ -423,13 +425,17 @@ def print_df_mega(prefix, df_mega):
     # Have coordinates and are classified as part of the marine domain as high confidence
     title = 'marine_hc'
     ic('###', title)
-    df_just_marine = df_mega.query('(location_designation_marine == True) and (`taxa_marine` == True)'
-                                   , engine = 'python')
+    ic(df_mega.sample(n=5))
+
+    # df_just_marine = df_mega.query('(location_designation_marine == True) and (`taxa_marine` == True)'
+    #                                , engine = 'python')
+    df_just_marine = df_mega.query('sample_confidence_marine == "high"', engine = 'python')
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     ic(out_file, df_just_marine.shape[0])
     ic(df_just_marine.head(5))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
     ic(df_just_marine["scientific_name"].value_counts())
+
 
     title = 'marine_hc_counts'
     glossary[
@@ -493,8 +499,9 @@ def print_df_mega(prefix, df_mega):
     title = 'terrestrial_hc_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is terrestrial location designation from both tax and GPS(high confidence)'
     ic('###', title)
-    df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) and \
-    (`taxa_terrestrial_or_freshwater` == True)', engine = 'python')
+    # df_just_terrestrial = df_mega.query('(location_designation_terrestrial == True) and \
+    # (`taxa_terrestrial_or_freshwater` == True)', engine = 'python')
+    df_just_terrestrial = df_mega.query('sample_confidence_terrestrial == "high"', engine = 'python')
     ic(df.head(2))
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
     df = df_just_terrestrial.groupby(["tax_id", "scientific_name", "taxonomy_type"]).size().to_frame('count')
@@ -922,6 +929,11 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
         df_merge_combined_tax["taxonomy_type"].fillna(df_merge_combined_tax["taxonomy_type_y"], inplace = True)
     df_merge_combined_tax.drop(columns = my_cols_y, inplace=True)
     ic(df_merge_combined_tax.head(5))
+
+    #cleanup
+    df_merge_combined_tax['sea_total'] = df_merge_combined_tax['sea_total'].fillna(0).astype(int)
+    df_merge_combined_tax['land_total'] = df_merge_combined_tax['land_total'].fillna(0).astype(int)
+
     ic()
     return df_merge_combined_tax
 
@@ -973,16 +985,16 @@ def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_
             #e.g. multiple samples in same domain by coordinates - not convinced on score
             #df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df["location_designation"] == 'marine and terrestrial')\
             #        , [conf_score]] = 1.5
-
-            df.loc[(df[coord_dom_total] > 1) & (df[dom_coord_designation] == True), [conf_score]] = 1.5
             df.loc[(df[coord_dom_total] == 1) & (df[taxa_term] == True), [conf_score]] = 1.5
-            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == True), [conf_score]] = 1
+            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == True), [conf_score]] = 1.5
 
             #Coping with particularly marine cases where the GPS coordinates are wrong or absebnt , but the taxonomy are clear
 
             df.loc[(df[dom_coord_designation] == False) & (df[taxa_term] == True) &
                    (df["opp_location_designation"] == False), [conf_score]] = 1.5
-            df.loc[(df["lat"].isna()) & (df[taxa_term] == True) & (df["opp_location_designation"] == False), [conf_score]] = 1.5
+            df.loc[(df["lat"].isna()) & (df[taxa_term] == True) & (df["opp_location_designation"] == False), [conf_score]] = 2
+
+            df.loc[(df[coord_dom_total] > 1) & (df[dom_coord_designation] == True), [conf_score]] = 2
 
             #(df["location_designation"] == 'marine and terrestrial')
             #next is the highest confidence as multiple hits of relevant shapefiles and a relevant taxonomy
@@ -1005,10 +1017,7 @@ def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_
             ic(df[taxa_term].value_counts())
             ic(df["opp_location_designation"].value_counts())
             df= df.drop(["opp_location_designation"], axis=1)
-            ic(df.sample(n=250))
-
-            ic("Exiting from addConfidence")
-            sys.exit()
+            #ic(df.sample(n=250))
 
         elif dom_type == "marine_and_terrestrial":
             df.loc[(df["taxa_marine"] == True) & (df["taxa_terrestrial_or_freshwater"] == False), [
@@ -1030,8 +1039,11 @@ def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_
         ic(df[conf_score].value_counts().sort_values())
         ic(df[conf_score_inc_biome].value_counts().sort_values())
 
-        ic('quitting early')
-        sys.exit()
+        ic(df.head())
+        ic(df.shape)
+        #to restrict this to certain
+        #df = df.query('(tax_id == 408172) or (tax_id == 939928) or (tax_id == 408170) or (tax_id == 1561972)')
+        ic(df.sample(n=5))
 
         return df
 
@@ -1061,7 +1073,7 @@ def scores2categories(df, conf_score, conf_field):
 
 def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field, conf_field_inc_biome):
         """dom_confidence
-            method to add the domain(e..g marine) evidence
+            method to add the domain(e.g. marine) evidence
         :param df_merge_combined_tax:
         :param conf_field i.e. "sample_confidence_marine" or "sample_confidence_terrestrial":
         :return:
@@ -1070,38 +1082,42 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
 
         conf_score = conf_field + '_score'
         ic(df_merge_combined_tax.sample(n=10))
-
+        count_field = ""
         if(conf_field == "sample_confidence_marine"):
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_marine", "sea_total", "taxa_marine"]]
-            df_tmp.loc[(df_tmp["sea_total"] > 1), ["location_designation_marine_conf"]] = True
-            df_species = df_tmp.groupby(["tax_id", "location_designation_marine_conf"]).\
+            df_tmp["location_designation_marine_conf"] = False
+            df_tmp = df_tmp.query('sea_total > 1')
+            df_species = df_tmp.groupby(["tax_id"]).\
                 size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-            df_species = df_species.rename(columns={"count": "count_of_samples_having_marine_coords"})
+            df_species["count"] = df_species["count"].astype(int)
+            count_field = "count_of_samples_having_marine_coords"
+            df_species = df_species.rename(columns = {"count": count_field})
         elif(conf_field == "sample_confidence_terrestrial"):
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_terrestrial", "land_total", "taxa_terrestrial_or_freshwater"]]
-            df_tmp.loc[(df_tmp["land_total"] > 1), ["location_designation_terrestrial_conf"]] = True
-            df_species = df_tmp.groupby(["tax_id", "location_designation_terrestrial_conf"]).\
+            df_tmp = df_tmp.query('land_total >= 1')
+            df_species = df_tmp.groupby(["tax_id"]).\
                 size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-            df_species = df_species.rename(columns={"count": "count_of_samples_having_terrestrial_coords"})
+            df_species["count"] = df_species["count"].astype(int)
+            count_field = "count_of_samples_having_terrestrial_coords"
+            df_species = df_species.rename(columns = {"count": count_field})
         elif(conf_field == "sample_confidence_marine_and_terrestrial"):
              df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation"]]
-             df_tmp.loc[(df_tmp["location_designation"] == "marine and terrestrial"), ["location_designation_marine_and_terrestrial_conf"]] = True
-             df_species = df_tmp.groupby(["tax_id", "location_designation_marine_and_terrestrial_conf"]).\
+             df_tmp = df_tmp.query('location_designation == "marine_and_terrestrial"')
+             df_species = df_tmp.groupby(["tax_id"]).\
                  size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-             df_species = df_species.rename(columns={"count": "count_of_samples_having_marine_and_terrestrial_coords"})
+             df_species["count"] = df_species["count"].astype(int)
+             count_field = "count_of_samples_having_marine_and_terrestrial_coords"
+             df_species = df_species.rename(columns={"count": count_field})
         else:
             ic("ERROR: conf_field is unknown: " + conf_field)
-            df_species = []
-            quit(1)
+            sys.exit()
 
         ic(df_species.head())
-        ic(df_merge_combined_tax.sample(n = 250))
-        ic("about to do pd.merge")
-        df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
-        ic(df.sample(n = 250))
-        #sys.exit()
+        ic(f"about to do pd.merge for: {count_field}")
+        df = pd.merge(df_merge_combined_tax, df_species, on="tax_id", how="left")
+        df[count_field] = df[count_field].fillna(0).astype(int)
+        ic(df.sample(n=10))
         ic(df.environment_biome_hl.value_counts())
-
 
         if (conf_field == "sample_confidence_marine"):
             dom_type = "marine"
@@ -1118,6 +1134,7 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         else:
             dom_coord_designation = taxa_term = coord_dom_total = count_of_sample_having_dom_coords = "to stop IDE warnings"
             dom_type = "marine_and_terrestrial"
+            count_of_sample_having_dom_coords = "count_of_samples_having_marine_and_terrestrial_coords"
         df = apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords)
         df = scores2categories(df, conf_score, conf_field)
 
@@ -1135,6 +1152,7 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         ic(df_grouped)
         ic("*********************************************************")
         ic(df.columns)
+        ic(df.head())
         ic()
         return df
 
@@ -1146,7 +1164,7 @@ def addConfidence(df_merge_combined_tax):
     :return:
     """
     ic()
-    ic(df_merge_combined_tax.sample(n=250))
+    ic(df_merge_combined_tax.sample(n=5))
 
     # sys.exit()
     # pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
@@ -1170,24 +1188,23 @@ def addConfidence(df_merge_combined_tax):
     df_merge_combined_tax["taxa_marine"] = df_merge_combined_tax["taxa_marine"].fillna(False)
     df_merge_combined_tax["taxa_terrestrial_or_freshwater"] = df_merge_combined_tax["taxa_terrestrial_or_freshwater"].fillna(False)
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
-    ic(df_merge_combined_tax.sample(n=250))   #definitely working!
+    ic(df_merge_combined_tax.sample(n=5))   #definitely working!
     ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
 
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
-    ic("quitting after first domConf")
-    sys.exit()
+    ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
-    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
+    df = df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
     df = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
-    #ic(df(n = 250))  #taxa marine etc.mix of True and False s oall good
+    ic(df.sample(n = 250))  #taxa marine etc.mix of True and False s oall good
 
 
     ic(df.head())
     df_marine_terre_conf = df.groupby(["sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome"]).size().to_frame('count').reset_index()
     ic(df_marine_terre_conf)
-    ic(df.query('(sample_confidence_marine_inc_biome == "high") & (sample_confidence_terrestrial_inc_biome == "high")').sample(n = 5, replace = True))
+    ic(df.query('(sample_confidence_marine_inc_biome == "high") & (sample_confidence_terrestrial_inc_biome == "high")').head())
     ic(df.query(
         '(sample_confidence_marine_inc_biome == "low") & (sample_confidence_terrestrial_inc_biome == "low")').sample(
         n = 5, replace = True))
@@ -1235,7 +1252,7 @@ def main():
 
     # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
     ic()
-    test_status = True
+    test_status = False
     df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
     ic(df_all_ena_sample_detail.head())
     ic(df_all_ena_sample_detail.shape[0])
@@ -1269,13 +1286,16 @@ def main():
 
     #  debugging the rules!
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-    ic("about to quit")
-    sys.exit()
-    ic()
+    # ic("about to quit")
+    # sys.exit()
+    # ic()
     ic(df_merge_combined_tax.columns)
     out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     ic(out_file)
     put_pickleObj2File(df_merge_combined_tax, out_file)
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
+    ic(out_file)
+    df_merge_combined_tax.to_csv(out_file,sep="\t",index=False)
     # end of temporary while debugging the rules!
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)

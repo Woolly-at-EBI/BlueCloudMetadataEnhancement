@@ -82,9 +82,16 @@ def clean_up_df_tax2env(df):
     my_cols = ['marine', 'terrestrial or freshwater', 'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
     df = df.rename(columns = {'marine': 'taxa_marine', 'terrestrial or freshwater': 'taxa_terrestrial_or_freshwater',\
                               'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI:name"})
-    df["taxa_marine"] = df["taxa_marine"].replace(np.nan, 0).astype(bool)
-    df['taxa_terrestrial_or_freshwater'] = df['taxa_terrestrial_or_freshwater'].replace(np.nan, 0).astype(bool)
+
+
+    df["taxa_marine"] = df["taxa_marine"].replace('-',0).replace(np.nan, 0).astype(int).astype(bool)
+    df["taxa_terrestrial_or_freshwater"] = df["taxa_terrestrial_or_freshwater"].replace('-',0).replace(np.nan, 0).astype(int).astype(bool)
+    # ic(df.head(100))
+
     warnings.resetwarnings()
+
+    ic(df.query('taxa_marine == True').head())
+    ic(df.query('taxa_terrestrial_or_freshwater == False').head())
 
     # get all those where it is water based and marine inclusive OR  terrestrial
     # df = df.loc[(df["NCBI-to-marine.1"] | df["NCBI-to-terrestrial.1"])]
@@ -256,6 +263,8 @@ def print_df_mega(prefix, df_mega):
         df = pd.merge(df_mega_combined_counts,
                       df_mega[['tax_id', 'taxa_marine', 'taxa_terrestrial_or_freshwater']], on = 'tax_id',
                       how = 'inner')
+        ic(df.head(1000))
+        sys.exit()
         # don't understand why this merge duplicates
         df.drop_duplicates(inplace = True)
         df.fillna(False, inplace = True)
@@ -661,154 +670,6 @@ def get_merged_all_categories_file(analysis_dir):
 
     return df
 
-def metag_taxa_with_ena_coords(stats_dict, df_ena_sample_detail, df_metag_tax, analysis_dir):
-    """ taxa_with_ena_coords
-    NCBI Taxa from samples that have at least 1 coordinate at ENA or marine org( via metagenome)
-    Only implemented with metagenomes!
-
-    For each taxon, please inform the following fields:
-
-    NCBI taxID
-    #samples in sea, sea & land, land
-    #of associated runs in sea, sea & land, land (if possible, to assess relevance/importance)
-
-    Strategy:
-        get all samples in ENA.
-             annotate the metag samples - joining on taxa id
-             annotate the marine/terrestrial and other categorical data from the shapefiles - join on lat and lon
-
-        __params__:
-               passed_args:
-               stats_dict - dictionary that gets past is gradually being populated
-               df_ena_sample_detail - all of ENA from web services
-                df_metag_tax, - this is just that taxa from Stephane's list
-        __return__:
-          stats_dict, df_merged_ena_metag_tax
-    """
-    ic()
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-    df_metag_tax['taxonomy_type'] = 'metagenome'
-    df_metag_tax['taxonomy_type'] = df_metag_tax["taxonomy_type"]
-    ic(df_metag_tax.head(2))
-    ic(df_ena_sample_detail.head(2))
-    ic(df_ena_sample_detail.shape[0])
-    #get all samples that have a metagenome tax id
-    # df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'inner', left_on = ['tax_id'],
-    #                                    right_on = ['NCBI:taxid'])
-
-    df_merged_ena_metag_tax = pd.merge(df_ena_sample_detail, df_metag_tax, how = 'left', left_on = ['tax_id'],
-                                       right_on = ['NCBI:taxid'])
-    ic(df_merged_ena_metag_tax.head(3))
-
-    ic("metag get counts of sample rows by NCBI taxid")
-    df_merged_ena_metag_tax['accession_index'] = df_merged_ena_metag_tax['accession']
-    df_merged_ena_metag_tax.set_index('accession_index', inplace=True)
-    df_merged_ena_metag_tax.drop_duplicates(inplace=True)
-    ic(df_merged_ena_metag_tax.head(2))
-    ic(df_merged_ena_metag_tax.shape[0])
-    df_just_metag = df_merged_ena_metag_tax.query('taxonomy_type == "metagenome"')
-    ic(df_just_metag.head(3))
-
-    # how many taxonomies did we and did not find? (in all not just GPS)
-    stats_dict["metag_tax_ids_in_ena_count"] = df_just_metag["NCBI:taxid"].nunique()
-    stats_dict["metag_tax_in_ena_sample_count"] = df_just_metag.shape[0]
-    stats_dict["metag_tax_not_in_ena_count"] = stats_dict["_input_metag_tax_id_count"] - stats_dict[
-        "metag_tax_ids_in_ena_count"]
-    ic(stats_dict)
-
-    """ metag get counts of sample rows by NCBI taxid" for simple plotting """
-    out_file = analysis_dir + 'tax_metag_sample_counts.tsv'
-    # df2 = df_merged_ena_metag_tax[["NCBI:taxid", "accession", "NCBI term", "taxa_marine",
-    # "taxa_terrestrial_or_freshwater"]]
-    ic(df_merged_ena_metag_tax.head(3))
-    df3 = df_merged_ena_metag_tax.groupby(
-        ["NCBI:taxid", "NCBI term", "NCBI metagenome category", "taxa_marine",
-         "taxa_terrestrial_or_freshwater"]).size().to_frame('count').reset_index()
-    df3["NCBI:taxid"] = df3["NCBI:taxid"].astype(np.int16).abs()
-    ic(df3.head(2))
-    ic(out_file)
-    df3.to_csv(out_file, sep = '\t')
-    ic(df3.head())
-
-    out_file = analysis_dir + 'tax_metag_all_ENA_counts.tsv'
-    df2 = df_merged_ena_metag_tax.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count').reset_index()
-    df2["NCBI:taxid"] = df2["NCBI:taxid"]
-    ic(out_file, df2.shape[0])
-    df2.to_csv(out_file, sep = '\t')
-
-    out_file = analysis_dir + 'tax_metag_lat_lon_counts.tsv'
-    df2 = df_merged_ena_metag_tax[["NCBI:taxid", "NCBI term", 'lat', 'lon']].drop_duplicates()
-    ic('["NCBI:taxid", "NCBI term", "lat", "lon"].drop_dups', df2.shape[0])
-    df2 = df2[df2['lat'].notna()]
-    ic('after_rm_lat_nan', df2.shape[0])
-    ic(df2.head(2))
-
-    df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count').reset_index()
-    ic(df3.head(2))
-    ic(out_file, df3.shape[0])
-    df3.to_csv(out_file, sep = '\t')
-
-    """ want to get samples in sea, sea & land, land"""
-    ic(df_merged_ena_metag_tax.head(2))
-    # this file comes from analyseHits.py
-    df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
-    # merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"
-    # df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
-    # ic(df_merged_all_categories.head(2))
-    # was inner when wanted just
-    ic(df_merged_all_categories.columns)
-    ic(df_merged_ena_metag_tax.query('scientific_name == "Corynebacterium suranareeae"'))
-    df = pd.merge(df_merged_ena_metag_tax, df_merged_all_categories, how = 'left', left_on = ['lat', 'lon'],
-                       right_on = ['lat', 'lon'])
-    df['accession_index'] = df['accession']
-    df_mega = df.set_index('accession_index').drop_duplicates()
-    ic(df_mega.query('scientific_name == "Corynebacterium suranareeae"'))
-    ic(df_mega.head(2))
-    ic(df_mega.columns)
-    ic(df_mega.shape[0])
-
-    fileprex = "merge_tax_metag"
-    ic("WARNING - not currently calling print_df_mega for the metag specifically")
-    # print_df_mega(fileprex, df_mega)
-
-
-    # quit()
-    #
-    # out_file = analysis_dir + 'tax_metag_sample_land_sea_counts.tsv'
-    # df3 = df_mega.groupby(
-    #     ["NCBI:taxid", "NCBI term", 'location_designation', "NCBI metagenome category", "taxa_marine",
-    #      "taxa_terrestrial_or_freshwater"]).size().to_frame('count').reset_index()
-    #
-    # ic(df3.head())
-    #
-    # stats_dict["metag_tax_and_GPS_location_sample_count"] = df_mega.shape[0]
-    # stats_dict["metag_tax_and_not_GPS_location_sample_count"] = stats_dict['metag_tax_in_ena_sample_count'] - stats_dict["metag_tax_and_GPS_location_sample_count"]
-    # ic(out_file, df3.shape[0])
-    # df3.to_csv(out_file, sep = '\t')
-
-    # df_tax_metag_sample_land_sea_counts = df3
-
-    # only commented out plotting whilst debugging
-    # plotting_metag(plot_dir,df_tax_metag_sample_land_sea_counts )
-
-    # """ tax 2 env get counts of sample rows by NCBI taxid"""
-    # out_file = analysis_dir + 'tax2env_sample_counts.tsv'
-    # df2 = df_merged_ena_tax2env[["NCBI:taxid", "accession", "NCBI term"]]
-    # df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
-    # ic(df3.head(2))
-    # ic(out_file)
-    # df3.to_csv(out_file, sep = '\t')
-    #
-    # out_file = analysis_dir + 'tax2env__lat_lon_counts.tsv'
-    # df2 = df_merged_ena_tax2env[["NCBI:taxid",  "NCBI term", 'lat', 'lon']].drop_duplicates()
-    # ic(df2.head(2))
-    # df3 = df2.groupby(["NCBI:taxid", "NCBI term"]).size().to_frame('count')
-    # ic(df3.head(2))
-    # ic(out_file)
-    # df3.to_csv(out_file, sep = '\t')
-
-    return stats_dict, df_mega
-
 
 def plotting_metag(plot_dir, df_merged_cats_metag_land_sea_counts):
     """ plotting_metag
@@ -965,6 +826,9 @@ def merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, df_ena_sample_detail, d
     ic(df_merged_ena_tax.sample(n=5))
     ic(df_merged_ena_tax["taxonomy_type"].value_counts())
 
+    ic("about to quit merge_ena_w_taxa")
+    sys.exit()
+
     return stats_dict, df_merged_ena_tax
 
 
@@ -987,63 +851,6 @@ def taxonomic_environment_assignment(df_mega):
 
     return df_mega
 
-
-def investigate_gps_tax(df_mega, stats_dict):
-
-    """ investigate_gps_tax
-        __params__:
-            passed_args
-        stats_dict, df_merged_ena_combined_tax 
-    """
-    ic()
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-
-    """commented all below out as causing run of memory"""
-    # df_mega = df_mega[
-    #     (df_mega["location_designation"] != "no_gps") | (df_mega["taxonomic_environment"] != "undetermined")]
-    #
-    # """ Want to investigate where marine from GPS but no marine species """
-    # df_marine_no_tax = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
-    # ic()
-    # df_ena_species = get_ena_species_info(sample_dir)
-    # ic()
-    # df_marine_no_tax = pd.merge(df_marine_no_tax, df_ena_species, how = 'inner', on = 'tax_id')
-    # ic()
-    # ic(df_marine_no_tax.shape[0])
-    # ic(df_marine_no_tax.head())
-    #
-    # df = df_marine_no_tax.groupby(
-    #     ["tax_id", 'scientific_name']).size().to_frame('count').reset_index().sort_values("count", ascending = False)
-    # ic()
-    # ic(df.head(20))
-    # outfile = analysis_dir + 'marine_no-marine-tax_species_sample_count.tsv'
-    # ic(outfile)
-    # df.to_csv(outfile, sep = "\t")
-    #
-    # df_word_c = df_marine_no_tax["scientific_name"]
-    # title = "Species observed where: marine (From GPS), but no-marine-tax-defined"
-    # my_word_c(df_word_c, title, plot_dir + 'marine_no-marine-tax-defined-World_Cloud.png')
-
-    return stats_dict
-
-def my_word_c(df_word_c, title, outfile):
-    """my_word_c
-    providing a dataframe with just one column, it automatically generates counts.
-    """
-    plt.subplots(figsize = (8, 8))
-    warnings.simplefilter('ignore')
-    word_cloud = WordCloud(
-        background_color = 'white',
-        width = 512,
-        height = 384
-    ).generate(' '.join(df_word_c))
-    warnings.resetwarnings()
-    plt.imshow(word_cloud)  # image show
-    plt.axis('off')  # to off the axis of x and y
-    plt.title(title)
-    ic(outfile)
-    plt.savefig(outfile)
-    plt.show()
 
 
 def plot_combined_analysis(plot_dir, df_mega, stats_dict):
@@ -1082,58 +889,6 @@ def plot_combined_analysis(plot_dir, df_mega, stats_dict):
     """Plotting end"""
 
     return stats_dict
-
-
-def investigate_a_tax():
-    """ investigate_a_tax
-    cut -f2- all_ena_gps_tax_combined.tsv | egrep -e '(^accession|410658)'  | cut -f 3,7,8,9,16-18,22,49,50 > 410658.tsv
-    """
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-
-    infile = analysis_dir + 'all_ena_gps_tax_combined.tsv'
-    #df_mega = pd.read_csv(infile, sep = "\t", nrows = 1000000)
-    df_mega = pd.read_csv(infile, sep = "\t", index_col=None)
-    ic(df_mega.head(3))
-    df_marine_undetermined = df_mega.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
-    ic(df_marine_undetermined.shape[0])
-    title = 'World view env_undetermined in GPS "sea" for all taxa'
-    fig = px.scatter_geo(df_marine_undetermined, lat = "lat", lon = "lon", title = title)
-    outfile = plot_dir + title.replace(" ", "_") + '.png'
-    outfile = outfile.replace('"', '')
-    ic(outfile)
-    fig.write_image(outfile)
-    fig.show()
-
-    infile = "/Users/woollard/projects/bluecloud/analysis/410658.tsv"
-    ic(infile)
-    df = pd.read_csv(infile, sep = "\t", index_col=None)
-    ic(df.head())
-
-    ic(df["location_designation"].value_counts())
-    ic(df["taxonomic_environment"].value_counts())
-    df_marine_undetermined = df.query("location_designation == 'marine' and taxonomic_environment == 'undetermined'")
-    ic(df_marine_undetermined.shape[0])
-    ic(df_marine_undetermined.head(2))
-    taxa = '410658'
-    inv_fields = ["environment_biome", "environment_feature", "environment_material"]
-
-    for field in inv_fields:
-        # ic(df_marine_undetermined[field].value_counts())
-        df_count = df_marine_undetermined[field].value_counts().rename_axis(field).reset_index(name='count').head(10)
-        # ic(df_count.head(2))
-        title = field + ' Top 10 Counts for env_undetermined in GPS "marine" for specific taxa:' + taxa
-        fig = px.pie(df_count, values = 'count', names = field, title = title)
-        # fig.show()
-        outfile = plot_dir + field + "Top1Counts_env_undetermined_gps_marine_for_taxa" + taxa + ".png"
-        ic(outfile)
-        fig.write_image(outfile)
-    title = 'World view env_undetermined in GPS "marine" for specific taxa:' + taxa
-    fig = px.scatter_geo(df_marine_undetermined, lat = "lat", lon = "lon", color = "environment_biome", title = title)
-    outfile = plot_dir + title.replace(" ", "_") + '.png'
-    outfile = outfile.replace('"', '')
-    ic(outfile)
-    fig.write_image(outfile)
-    fig.show()
 
 
 def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
@@ -1229,42 +984,56 @@ def addConfidence(df_merge_combined_tax):
            some rules that would not add further score are commented, but left here for completeness or later changes
         """
 
+        df["opp_location_designation"] = "none"
         if dom_type == "marine" or dom_type == "terrestrial":
             df.loc[df[taxa_term] == True, [conf_score]] = 1
             df.loc[df[dom_coord_designation] == True, [conf_score]] = 1
 
+            df.loc[(df["location_designation"] == 'marine'), "opp_location_designation"] = "terrestrial"
+            df.loc[(df["location_designation"] == 'terrestrial'), "opp_location_designation"] = "marine"
+
             #This often lowers the score:
             df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == False), [conf_score]] = 0.5
-            # df.loc[(df[dom_coord_designation] == False) & (df["taxa_marine"] == True) & (
-            #             df["taxa_terrestrial_or_freshwater"] == True), [conf_score]] = 1
+
             #e.g. multiple samples in same domain by coordinates - not convinced on score
-            df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df["location_designation"] == 'marine and terrestrial')\
-                    , [conf_score]] = 1.5
-            df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df[dom_coord_designation] == True), [conf_score]] = 1.5
-            df.loc[(df[coord_dom_total] == 1) & (df[taxa_term] == True), [conf_score]] = 2
-            #Coping with particularly marine cases where the GPS coordinates are wrong, but the taxonomy are clear
-            if dom_type == "marine":
-                df.loc[(df[taxa_term] == True) & (df["taxa_terrestrial_or_freshwater"] == False), [
-                    conf_score]] = 2
-            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == True), [conf_score]] = 2
-            df.loc[(df[coord_dom_total] > 1) & (df["location_designation"] == 'marine and terrestrial') & (
-                        df[taxa_term] == True), [conf_score]] = 2.5
+            #df.loc[(df[count_of_sample_having_dom_coords] > 1) & (df["location_designation"] == 'marine and terrestrial')\
+            #        , [conf_score]] = 1.5
+
+            df.loc[(df[coord_dom_total] > 1) & (df[dom_coord_designation] == True), [conf_score]] = 1.5
+            df.loc[(df[coord_dom_total] == 1) & (df[taxa_term] == True), [conf_score]] = 1.5
+            df.loc[(df["location_designation"] == 'marine and terrestrial') & (df[taxa_term] == True), [conf_score]] = 1
+
+            #Coping with particularly marine cases where the GPS coordinates are wrong or absebnt , but the taxonomy are clear
+
+            df.loc[(df[dom_coord_designation] == False) & (df[taxa_term] == True) &
+                   (df["opp_location_designation"] == False), [conf_score]] = 1.5
+            df.loc[(df["lat"].isna()) & (df[taxa_term] == True) & (df["opp_location_designation"] == False), [conf_score]] = 1.5
+
+            #(df["location_designation"] == 'marine and terrestrial')
             #next is the highest confidence as multiple hits of relevant shapefiles and a relevant taxonomy
-            df.loc[(df[coord_dom_total] > 1) & (df[taxa_term] == True), [conf_score]] = 3
+            df.loc[(df[coord_dom_total] > 1) & (df[taxa_term] == True) & (df["opp_location_designation"] == False), [conf_score]] = 3
 
             if dom_type == "marine":
                 ic(marine_NCBI_to_marine_dict)
+                ic(df['NCBI-to-marine'].value_counts())
+
                 for NCBI_to_marine_param in marine_NCBI_to_marine_dict:
                     ic(NCBI_to_marine_param)
                     tmp = marine_NCBI_to_marine_dict[NCBI_to_marine_param]
                     for terra_param in tmp['NCBI-to-terrestrial-or-freshwater']:
-                        ic(terra_param, tmp['NCBI-to-terrestrial-or-freshwater'][terra_param])
-                        df.loc[((df[taxa_term] == True) and (df['NCBI-to-marine'] == NCBI_to_marine_param)), [conf_score]] = 3
+                        message = "if marine \"" + NCBI_to_marine_param + "\" and terra_param: \"" + terra_param + "\" - confidence factor of this dependency: "
+                        ic(message, tmp['NCBI-to-terrestrial-or-freshwater'][terra_param])
+                        df.loc[(df[taxa_term] == True) & (df['NCBI-to-marine'] == terra_param) & (df[conf_score] <= 2), conf_score] += 1 * tmp['NCBI-to-terrestrial-or-freshwater'][terra_param]
+                        df.loc[(df[taxa_term] == False) & (df['NCBI-to-marine'] == terra_param), conf_score] -= 1 * tmp['NCBI-to-terrestrial-or-freshwater'][terra_param]
                     ic('***************************************')
 
+            ic(df[taxa_term].value_counts())
+            ic(df["opp_location_designation"].value_counts())
+            df= df.drop(["opp_location_designation"], axis=1)
+            ic(df.sample(n=10))
 
+            ic("Exiting from addConfidence")
             sys.exit()
-
 
         elif dom_type == "marine_and_terrestrial":
             df.loc[(df["taxa_marine"] == True) & (df["taxa_terrestrial_or_freshwater"] == False), [
@@ -1318,7 +1087,7 @@ def addConfidence(df_merge_combined_tax):
 
     def dom_confidence(df_merge_combined_tax, conf_field, conf_field_inc_biome):
         """dom_confidence
-            method to add the marine evidence
+            method to add the domain(e..g marine) evidence
         :param df_merge_combined_tax:
         :param conf_field i.e. "sample_confidence_marine" or "sample_confidence_terrestrial":
         :return:
@@ -1326,7 +1095,7 @@ def addConfidence(df_merge_combined_tax):
         ic()
 
         conf_score = conf_field + '_score'
-        ic(df_merge_combined_tax.head())
+        ic(df_merge_combined_tax.sample(n=10))
 
         if(conf_field == "sample_confidence_marine"):
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_marine", "sea_total", "taxa_marine"]]
@@ -1353,7 +1122,7 @@ def addConfidence(df_merge_combined_tax):
 
         ic(df_species.head())
         df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
-        #ic(df.head())
+
         ic(df.environment_biome_hl.value_counts())
 
 
@@ -1370,7 +1139,7 @@ def addConfidence(df_merge_combined_tax):
             coord_dom_total = "land_total"
             count_of_sample_having_dom_coords = "count_of_samples_having_terrestrial_coords"
         else:
-            dom_type = dom_coord_designation = taxa_term = coord_dom_total = count_of_sample_having_dom_coords = "to stop IDE warnings"
+            dom_coord_designation = taxa_term = coord_dom_total = count_of_sample_having_dom_coords = "to stop IDE warnings"
             dom_type = "marine_and_terrestrial"
         df = apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords)
         df = scores2categories(df, conf_score, conf_field)
@@ -1392,9 +1161,12 @@ def addConfidence(df_merge_combined_tax):
         ic()
         return df
 
+    df_merge_combined_tax["taxa_marine"] = df_merge_combined_tax["taxa_marine"].fillna(False)
+    df_merge_combined_tax["taxa_terrestrial_or_freshwater"] = df_merge_combined_tax["taxa_terrestrial_or_freshwater"].fillna(False)
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
     ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
+
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")

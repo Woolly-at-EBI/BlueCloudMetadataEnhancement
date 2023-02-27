@@ -93,9 +93,17 @@ def lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_valu
 
 def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     """ process_environment_biome(df):
-        creates a high level param
+        creates a high level mapping.
+        many regular expressions that are mapping the environment_biome to a few domain categories. It will of course be missing mapping some valid biomes and have some miss-maps.
+
+        current categories: marine, marine_and_terrestrial, terrestrial, terrestrial_probable, unclassified
+        The terrestrial_probable category is where terrestrial is the most likely e.g. human or rodent species referred to in the environment_biome if not recognised by another regex, but any of these could of course be found on boats or on the coast etc.!
+        Unclassified is a long tail of what has not yet been mapped (or can’t simply be).
 
         environment_biome_hl == lookup_term
+
+        This ultimately gets translated into a dictionary and the dictionary is pickled.
+        If the ENA_sample file is updated or the regexs are, will need to delete the picked file.
 
     :param df:
     :return: df_wbiome, my_lookup_dict

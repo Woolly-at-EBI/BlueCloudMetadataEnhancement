@@ -105,10 +105,10 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     df["environment_biome_hl"] = df["environment_biome"]
     df_wbiome = df
 
-
     ic("marine_and_terrestrial  - regex")
+    #maps to a temporary pattern that is cleaned up later, as otherwise marine or terrestrial recognises it!
     pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach|^tidal|^tide).*)'
-    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "m_and_t",
                                                                              flags = re.I, regex=True)
 
     ic('marine  - regex')
@@ -134,6 +134,8 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "unclassified",
                                                                                    flags = re.I, regex = True)
+
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace("m_and_t", "marine_and_terrestrial")
 
     df_wbiome = _process_remaining_values(df_wbiome, "environment_biome_hl", key_values, "unclassified")
     ic(df_wbiome["environment_biome_hl"].value_counts())

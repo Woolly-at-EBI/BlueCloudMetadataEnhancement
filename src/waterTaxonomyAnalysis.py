@@ -823,11 +823,11 @@ def merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, df_ena_sample_detail, d
     df_merged_ena_tax = pd.merge(df_ena_sample_detail, df_tax2env, how = 'left', left_on = ['tax_id'],
                                        right_on = ['NCBI:taxid'])
     ic(df_merged_ena_tax.shape)
-    ic(df_merged_ena_tax.sample(n=5))
+    #ic(df_merged_ena_tax.sample(n=100))  #definitely as geninuine taxa_* True andG False
     ic(df_merged_ena_tax["taxonomy_type"].value_counts())
 
     ic("about to quit merge_ena_w_taxa")
-    sys.exit()
+    #sys.exit()
 
     return stats_dict, df_merged_ena_tax
 
@@ -925,34 +925,7 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     ic()
     return df_merge_combined_tax
 
-
-def addConfidence(df_merge_combined_tax):
-    """addConfidence
-        adding confidence for metadata assignments
-    :param df_merge_combined_tax:
-    :return:
-    """
-    ic()
-    pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
-    if (os.path.isfile(pickle_file) == True):
-        df_merge_combined_tax = get_pickleObj(pickle_file)
-    else:
-        put_pickleObj2File(df_merge_combined_tax, pickle_file)
-
-    #df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
-
-    ic(df_merge_combined_tax.columns)
-    # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
-    df = df_merge_combined_tax[["tax_id", "location_designation", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
-    ic(df.head())
-
-    taxonomy_map_conf_flags = get_taxonomy_mapping_confidence_flags()
-    ic(taxonomy_map_conf_flags)
-    tmp = taxonomy_map_conf_flags['taxa_marine']
-    marine_NCBI_to_marine_dict = tmp['NCBI-to-marine']
-    ic(marine_NCBI_to_marine_dict)
-
-    def apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords):
+def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords):
         """apply_rules
             Applies logic to generate a numerical confidence score for this domain: marine or terrestrial
             allows some to be both! Need to tighten this up if want this to be categorical and a sample can only be
@@ -974,6 +947,8 @@ def addConfidence(df_merge_combined_tax):
         :return: df
         """
         ic()
+        ic(df.sample(n = 250))
+
         ic(dom_type)
 
         # set the defaults
@@ -1030,7 +1005,7 @@ def addConfidence(df_merge_combined_tax):
             ic(df[taxa_term].value_counts())
             ic(df["opp_location_designation"].value_counts())
             df= df.drop(["opp_location_designation"], axis=1)
-            ic(df.sample(n=10))
+            ic(df.sample(n=250))
 
             ic("Exiting from addConfidence")
             sys.exit()
@@ -1060,8 +1035,7 @@ def addConfidence(df_merge_combined_tax):
 
         return df
 
-
-    def scores2categories(df, conf_score, conf_field):
+def scores2categories(df, conf_score, conf_field):
         """ scores2categories
             convert the confidence scores to a categorical value and capture in conf_field
             ["zero", "low", "medium", "high"]
@@ -1085,7 +1059,7 @@ def addConfidence(df_merge_combined_tax):
         ic(df[conf_field].value_counts())
         return df
 
-    def dom_confidence(df_merge_combined_tax, conf_field, conf_field_inc_biome):
+def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field, conf_field_inc_biome):
         """dom_confidence
             method to add the domain(e..g marine) evidence
         :param df_merge_combined_tax:
@@ -1121,8 +1095,11 @@ def addConfidence(df_merge_combined_tax):
             quit(1)
 
         ic(df_species.head())
+        ic(df_merge_combined_tax.sample(n = 250))
+        ic("about to do pd.merge")
         df = pd.merge(df_merge_combined_tax, df_species, on="tax_id")
-
+        ic(df.sample(n = 250))
+        #sys.exit()
         ic(df.environment_biome_hl.value_counts())
 
 
@@ -1141,7 +1118,7 @@ def addConfidence(df_merge_combined_tax):
         else:
             dom_coord_designation = taxa_term = coord_dom_total = count_of_sample_having_dom_coords = "to stop IDE warnings"
             dom_type = "marine_and_terrestrial"
-        df = apply_rules(df, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords)
+        df = apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords)
         df = scores2categories(df, conf_score, conf_field)
 
         conf_score_inc_biome = conf_score + "_inc_biome"
@@ -1161,17 +1138,51 @@ def addConfidence(df_merge_combined_tax):
         ic()
         return df
 
+
+def addConfidence(df_merge_combined_tax):
+    """addConfidence
+        adding confidence for metadata assignments
+    :param df_merge_combined_tax:
+    :return:
+    """
+    ic()
+    ic(df_merge_combined_tax.sample(n=250))
+
+    # sys.exit()
+    # pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
+    # if (os.path.isfile(pickle_file) == True):
+    #     df_merge_combined_tax = get_pickleObj(pickle_file)
+    # else:
+    #     put_pickleObj2File(df_merge_combined_tax, pickle_file)
+
+    #df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
+
+    ic(df_merge_combined_tax.columns)
+    # df = df_merge_combined_tax.query('`NCBI term` == "Piscirickettsia salmonis"')
+    df = df_merge_combined_tax[["tax_id", "location_designation", "location_designation_marine", "location_designation_terrestrial", "environment_biome"]]
+
+    taxonomy_map_conf_flags = get_taxonomy_mapping_confidence_flags()
+    ic(taxonomy_map_conf_flags)
+    tmp = taxonomy_map_conf_flags['taxa_marine']
+    marine_NCBI_to_marine_dict = tmp['NCBI-to-marine']
+    ic(marine_NCBI_to_marine_dict)
+
     df_merge_combined_tax["taxa_marine"] = df_merge_combined_tax["taxa_marine"].fillna(False)
     df_merge_combined_tax["taxa_terrestrial_or_freshwater"] = df_merge_combined_tax["taxa_terrestrial_or_freshwater"].fillna(False)
     df_merge_combined_tax = process_environment_biome(df_merge_combined_tax)
+    ic(df_merge_combined_tax.sample(n=250))   #definitely working!
     ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
 
-    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
+    ic("quitting after first domConf")
+    sys.exit()
     ic("*********************************************************")
-    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
-    df = dom_confidence(df_merge_combined_tax, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
+    df = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
+    #ic(df(n = 250))  #taxa marine etc.mix of True and False s oall good
+
 
     ic(df.head())
     df_marine_terre_conf = df.groupby(["sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome"]).size().to_frame('count').reset_index()
@@ -1194,6 +1205,9 @@ def addConfidence(df_merge_combined_tax):
     # first off, do a search of the relative amount of granularity
 
     # # what if other samples have GPS but particular ones don't?
+
+    #ic(df.sample(n = 250)) # all fine!
+
     return df
 
 def main():
@@ -1209,10 +1223,10 @@ def main():
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
     # temporary while debugging the rules!
-    df_merge_combined_tax = []
-    addConfidence(df_merge_combined_tax)
-    ic("about to quit")
-    sys.exit()
+    # df_merge_combined_tax = []
+    # addConfidence(df_merge_combined_tax)
+    # ic("about to quit")
+    # sys.exit()
 
     # get category information from hit file
     df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
@@ -1240,7 +1254,6 @@ def main():
     ic(df_merge_combined_tax.shape[0])
     ic(df_merge_combined_tax.head(5))
 
-
     df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
     ic(df.sample(n=3))
 
@@ -1254,7 +1267,7 @@ def main():
     #save save some memory and get rid of some stored structures
     # ic(memory_usage())
 
-    # temporary while debugging the rules!
+    #  debugging the rules!
     df_merge_combined_tax = addConfidence(df_merge_combined_tax)
     ic("about to quit")
     sys.exit()

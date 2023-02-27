@@ -104,19 +104,17 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     
     df["environment_biome_hl"] = df["environment_biome"]
     df_wbiome = df
-    ic('unclassified  - regex')
-    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
 
-    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "unclassified", flags = re.I, regex=True)
-
-    ic('marine  - regex')
-    pattern = r'(.*(^subtidal|sound|shrimp|^see floor|anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|fjord|lichen| sea|^sea|ocean|plankton|marine|salt[ -]water|coastal[ -]*water|Artic water|reef|coral|dolphin|gulf).*)'
-    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine", flags = re.I, regex=True)
 
     ic("marine_and_terrestrial  - regex")
     pattern = r'(.*(estuar|estur|intertidal|shore|mangrove|brackish|brin|costal|coast|bay|trout|beach|^tidal|^tide).*)'
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine_and_terrestrial",
                                                                              flags = re.I, regex=True)
+
+    ic('marine  - regex')
+    pattern = r'(.*(^subtidal|sound|shrimp|^see floor|anemone|clams|^zebrafish|^cold seep|^mediterrean|epipelagic|^hydrothermal vent|deep[ -]sea|^westerlies biome|fjord|lichen| sea|^sea|ocean|plankton|marine|salt[ -]water|coastal[ -]*water|Artic water|reef|coral|dolphin|gulf).*)'
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "marine", flags = re.I,
+                                                                                   regex = True)
 
     ic("terrestrial  - regex")
     # cat sample_env_biome.txt | sed
@@ -124,12 +122,18 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     # 'sea level' | awk - F$'\t' '{ OFS = FS } { if (!/wood|wetland|forest|grassland|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|urban|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savan|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|beach|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak/) { print $1} }' | egrep - Ev
     # '(waste|wild accession|reactor)'
     pattern = r'(.*(^vine|^urban|terrestial|^tea|^sugarcane|^subsahelian|highland|^stream|barley|spruce|vegetable|fairy ring|arable|crop|^shrub|^silkworm|^shelterbelt|cactus|pricklr pear|^sawdust|^salt mine|^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|^fresh water|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|poultry|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|^hot spring|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|water[ \?]well|well[ \?]water|river|reservoir|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|lowland|island|lake|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|drinking water|freshwater|greenhouse|horse|grasses|plain|pond|rice|rose|rural|tree|silage|deer|vinegar|reed bed|soybean|oak).*)'
-    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "terrestrial", flags = re.I, regex=True)
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "terrestrial", flags = re.I,
+                                                                                   regex = True)
 
     ic('terrestrial_probable - regex')
     pattern = r'(.*(land|land|^sauerkraut|continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|wastewater|shower hose|mine|aquifer|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory).*)'
     df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "terrestrial_probable",
-                                                                             flags = re.I, regex=True)
+                                                                                   flags = re.I, regex = True)
+
+    ic('unclassified  - regex')
+    pattern = r'(.*(^\d*$|N\. A\.|^space|^animal|^protist|^archaeal|^air|^leaf|^prokary|stool|sludge|host associate|oilfield|^aquatic|^control|^oral|^anthropogenic|^fecal|^faeces|^feces|subsurface|bird|^water|^microb|^gut$|^gastrointestinal|sediment|^urine|^nasa|^lung|^skin|^colon|^organ|^hot$|^agar|^aquari).*)'
+    df_wbiome["environment_biome_hl"] = df_wbiome.environment_biome_hl.str.replace(pattern, "unclassified",
+                                                                                   flags = re.I, regex = True)
 
     df_wbiome = _process_remaining_values(df_wbiome, "environment_biome_hl", key_values, "unclassified")
     ic(df_wbiome["environment_biome_hl"].value_counts())
@@ -203,7 +207,9 @@ def main():
     ic(df_processed.sample(n=8))
     df_temp = df_processed[["environment_biome", "environment_biome_hl"]]
     df_temp = df_temp.drop_duplicates()
-    df_temp.to_csv("environment_biome_mapping.csv", index=False)
+    out_file = "environment_biome_mapping.tsv"
+    ic(out_file)
+    df_temp.to_csv(out_file, sep="\t", index=False)
     ic("all processed  in categorise environment, bye.")
 
 if __name__ == '__main__':

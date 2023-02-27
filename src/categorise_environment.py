@@ -4,7 +4,7 @@
     - process_environment_biome(df)
 
     Includes creating a pickled dictionary of environment_biome to some high level terms. This uses regex's across
-    the single environment_biome column, but for all rows in ena samples. It is thus time consuming!
+    the single environment_biome column, but for all rows in ena samples. It is thus time consuming (5 mins if run outside of an IDE!)
     so once this dictionary is created, it is pickled so that it can be fully reused. To update the high level mappings
      delete this file:  analysis_dir/environment_biome.pickle
 
@@ -152,9 +152,8 @@ def heavy_process_environment_biome(df, lookup_col, lookup_value_col):
     return df_wbiome, my_lookup_dict
 
 def get_pickle_file_name(lookup_col):
-    """
+    """get_pickle_file_name
 
-    :param analysis_dir:
     :param lookup_col:
     :return:
     """

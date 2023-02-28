@@ -10,6 +10,7 @@ __docformat___ = 'reStructuredText'
 # /opt/homebrew/bin/pydoc3 getGeoLocationCategorisation   #interactive
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
+import sys
 from icecream import ic
 from functools import reduce
 
@@ -21,7 +22,11 @@ from shapely.geometry import Point
 
 import plotly.express as px
 import plotly
+import plotly.io as pio
+pio.renderers.default = "browser"
 from get_directory_paths import get_directory_paths
+from ena_samples import get_ena_total_sample_count
+from ena_samples import get_all_ena_detailed_sample_info
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -294,7 +299,7 @@ def get_all_ena_lat_lon(samples_dir):
     return df1
 
 
-def categoryPlotting(df_merged_all_categories, plot_dir):
+def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     """  categoryPlotting
                 plotting using the category column subset
                 is using the scope aspect of plotly, this uses the inbuilt maps rather than the shapefile maps
@@ -307,61 +312,133 @@ def categoryPlotting(df_merged_all_categories, plot_dir):
 
     ic(df_merged_all_categories.head(3))
     width = 1500
+    scope = 'world'
 
-    def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size):
+    def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format):
+        if showlegendStatus == False:
+            title_string = ""
         fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
                              width = width, color = color_value,
                              title = title_string,
                              scope = scope)
         fig.update_traces(marker = dict(size = marker_size))
+        if showlegendStatus == False:
+            fig.update_layout(showlegend = False)
 
         ic(out_graph_file)
-        plotly.io.write_image(fig, out_graph_file, format = 'pdf')
+        plotly.io.write_image(fig, out_graph_file, format = format)
         # fig.show()
         return
 
-    def eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, scope):
+
+    showlegendStatus = True
+    title_string = 'ENA samples in Location Designation based on multiple shapefiles'
+    color_value = "location_designation"
+    color_discrete_map = {'terrestrial': 'rgb(30,144,255)', 'marine': 'rgb(220,20,60)',
+                          'marine and terrestrial': 'rgb(50,205,50)', 'neither marine nor terrestrial': 'rgb(148,0,211)'}
+
+    format = 'png'
+    out_graph_file = plot_dir + 'merge_all_location_designation.' + format
+    fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
+                         width = width, color = color_value,
+                         title = title_string,
+                         scope = scope,
+                         color_discrete_map=color_discrete_map)
+    fig.update_traces(marker = dict(size = marker_size))
+    ic(out_graph_file)
+    fig.show()
+    plotly.io.write_image(fig, out_graph_file, format = format)
+
+    df_merged_all_categories_just = df_merged_all_categories.query('location_designation == "marine and terrestrial"')
+    out_graph_file = plot_dir + 'merge_all_location_designation_m+t.' + format
+    fig = px.scatter_geo(df_merged_all_categories_just, "lat", "lon",
+                         width = width, color = color_value,
+                         title = title_string,
+                         scope = scope,
+                         color_discrete_map=color_discrete_map)
+    fig.update_traces(marker = dict(size = marker_size))
+    ic(out_graph_file)
+    fig.show()
+    plotly.io.write_image(fig, out_graph_file, format = format)
+
+
+
+    title = 'location_designation using GPS coordinates'
+    out_file = plot_dir + "location_designation_using_GPS_pie.png"
+    fig = px.pie(df_merged_all_categories["location_designation"],
+                 values = df_merged_all_categories["location_designation"].value_counts().values,
+                 names = df_merged_all_categories["location_designation"].value_counts().index, title = title,
+                 color_discrete_map=color_discrete_map)
+    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+    ic(out_file)
+    fig.show()
+    fig.write_image(out_file)
+
+    ic(df_merged_all_categories["location_designation"].value_counts())
+
+    sys.exit()
+
+    ic(df_merged_all_categories.columns)
+    cat="eez_iho_intersect_category"
+    title=cat
+    df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+    ic(df_all.describe())
+    df_top = df_all.head(10)
+    df_rest = df_all.iloc[10:]
+    ic(df_rest.head())
+    other_count = df_rest["counts"].sum()
+    df_top.loc[len(df_top)] = ['other_areas', other_count]
+    ic(df_top)
+
+    out_file = plot_dir + "eez_iho_intersect_category_using_GPS_pie.png"
+    fig = px.pie(df_top[cat],
+                    values = df_top['counts'],
+                    names = df_top[cat], title=title)
+    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+    ic(out_file)
+    fig.write_image(out_file)
+
+    sys.exit()
+    def eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, scope, showlegendStatus):
         title_string = 'ENA samples in eez_iho_intersect_category in ' + scope
-        out_graph_file = plot_dir + 'merge_all_intersect_eez_iho_cats' + scope + '.pdf'
+        format = 'png'
+        out_graph_file = plot_dir + 'merge_all_intersect_eez_iho_cats' + scope + '.' + format
         color_value = "eez_iho_intersect_category"
-        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'europe')
-    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'north america')
-    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'africa')
-    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'world')
+    showlegendStatus = False
+    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'europe', showlegendStatus)
+    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'north america', showlegendStatus)
+    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'africa', showlegendStatus)
+    eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, 'world', showlegendStatus)
 
-    scope = 'world'
-
+    showlegendStatus = True
+    format = 'png'
     title_string = 'ENA samples in IHO Categories'
     color_value = "IHO_category"
-    out_graph_file = plot_dir + 'merge_all_IHO_cats.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+
+    out_graph_file = plot_dir + 'merge_all_IHO_cats.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     title_string = 'ENA samples in ENA Country Categories'
     color_value = "ena_country"
-    out_graph_file = plot_dir + 'merge_all_ENA_country_cats.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+    out_graph_file = plot_dir + 'merge_all_ENA_country_cats.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     title_string = 'ENA samples in World Admin Categories'
     color_value = "worldAdmin_category"
-    out_graph_file = plot_dir + 'merge_all_worldAdmin_category.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
-
-    title_string = 'ENA samples in Location Designation based on multiple shapefiles'
-    color_value = "location_designation"
-    out_graph_file = plot_dir + 'merge_all_location_designation.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+    out_graph_file = plot_dir + 'merge_all_worldAdmin_category.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     title_string = 'ENA samples in EEZ categories'
     color_value = "eez_category"
-    out_graph_file = plot_dir + 'merge_all_eez_category.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+    out_graph_file = plot_dir + 'merge_all_eez_category.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     title_string = "ENA Samples in Hydrosheds"
     color_value = "feow_category"
-    out_graph_file = plot_dir + 'feow_category.pdf'
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size)
+    out_graph_file = plot_dir + 'feow_category.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     return
 
@@ -767,9 +844,12 @@ def analysis_lat_lon(sample_dir):
                passed_args: sample_dir
         rtn: df
     """
-    sample_file = sample_dir + 'sample_much_raw.tsv'
+    ic()
+
+    test_status = True
+    df = get_all_ena_detailed_sample_info(test_bool)
     cols = ["accession", "lat", "lon"]
-    df = pd.read_csv(sample_file, sep = "\t", index_col=None, usecols=cols, nrows=100000)
+
     df_filtered = df.loc[df['lat'].notnull()]
     # df_filtered['lat_decimal_len'] = str(df_filtered['lat'])[::-1].find('.')
     # df_filtered['lat_decimal_len'] = len(str(df_filtered['lat']).split(".")[1])
@@ -792,34 +872,18 @@ def analysis_lat_lon(sample_dir):
     return df
 
 
-def get_ena_total_sample_count(sample_dir):
-    """ get_ena_total_sample_count
-        __params__:
-               passed_args: sample_dir
-        rtn: integer line count
-    """
-    sample_file = sample_dir + 'sample_much_raw.tsv'
-    num_lines = sum(1 for line in open(sample_file))
-
-    return num_lines
-
-
 def main():
     """ main takes the "hit" files from the getGeoLocationCategorisation.py files, integrates and plots them
         __params__:
                passed_args
     """
-    full_rerun = True
+    full_rerun = False
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-    analysis_lat_lon(sample_dir)
-
-    quit(1)
+    #  analysis_lat_lon(sample_dir)
 
     ena_total_sample_count = get_ena_total_sample_count(sample_dir)
     ic(ena_total_sample_count)
-
-
 
     # get all the files processed
     if full_rerun:
@@ -848,9 +912,11 @@ def main():
         Done so that can save the time etc. of re-running the merging
      '''
 
-    extra_plots(df_merged_all, plot_dir, shape_dir)
+    categoryPlotting(df_merged_all_categories, plot_dir, full_rerun)
+    if full_rerun == False:
+        sys.exit()
     plot_merge_all(df_merged_all, plot_dir)
-    categoryPlotting(df_merged_all_categories, plot_dir)
+    extra_plots(df_merged_all, plot_dir, shape_dir)
 
     return ()
 

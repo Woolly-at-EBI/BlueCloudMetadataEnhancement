@@ -124,3 +124,14 @@ def get_ena_species_info(sample_dir):
     df_ena_species = df_ena_species[["tax_id", "scientific_name"]]
     ic()
     return df_ena_species
+
+def get_ena_total_sample_count(sample_dir):
+    """ get_ena_total_sample_count
+        __params__:
+               passed_args: sample_dir
+        rtn: integer line count
+    """
+    sample_file = sample_dir + 'sample_much_raw.tsv'
+    num_lines = sum(1 for line in open(sample_file))
+
+    return num_lines

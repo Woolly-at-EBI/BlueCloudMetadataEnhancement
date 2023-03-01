@@ -313,6 +313,20 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     ic(df_merged_all_categories.head(3))
     width = 1500
     scope = 'world'
+    cat = 'ena_country'
+    ic(cat)
+    df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+    ic(df_all.head())
+    ic(df_all.describe())
+    ic(df_all["counts"].sum())
+
+    cat = 'worldAdmin_category'
+    ic(cat)
+    df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+    ic(df_all.head())
+    ic(df_all.describe())
+    ic(df_all["counts"].sum())
+    sys.exit()
 
     def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format):
         """create_cat_figure

@@ -1226,13 +1226,62 @@ def addConfidence(df_merge_combined_tax):
     #ic(df.sample(n = 250)) # all fine!
 
     return df
+def get_lon_lat_dps(sample_dir):
+    """ get the properties with the number of decimal places for lon and lat
+    usage  df_lon_lat_dps = get_lon_lat_dps()
+    :return:
+    """
+    df_lon_lat_dps = pd.read_csv(sample_dir + "dps.txt")
+    df_lon_lat_dps["lat_dps"] = df_lon_lat_dps["lat_dps"].astype(int)
+    df_lon_lat_dps["lon_dps"] = df_lon_lat_dps["lon_dps"].astype(int)
+    ic(df_lon_lat_dps.head())
+    return df_lon_lat_dps
+
+def analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps):
+    """
+
+    :return:
+    """
+
+
+    # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
+    # df_merge_combined_tax_all_with_confidence = get_pickleObj(pickle_file)
+    # df_merge_combined_tax_all_with_confidence = df_merge_combined_tax_all_with_confidence.query('lat > 0')
+    # ic(df_merge_combined_tax_all_with_confidence.head())
+    # ic("about to do a big merge")
+    # df_merge_combined_tax_all_with_confidence = pd.merge(df_merge_combined_tax_all_with_confidence,df_lon_lat_dps,how="left", on="accession")
+    # df_merge_combined_tax_all_with_confidence["lat_dps"] = df_merge_combined_tax_all_with_confidence["lat_dps"].fillna(0).astype(int)
+    # df_merge_combined_tax_all_with_confidence["lon_dps"] = df_merge_combined_tax_all_with_confidence["lon_dps"].fillna(0).astype(int)
+    # ic(df_merge_combined_tax_all_with_confidence.head())
+    pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_just_latlon_dps.pickle'
+    # ic("creating: " + pickle_file)
+    # put_pickleObj2File(df_merge_combined_tax_all_with_confidence, pickle_file)
+
+    df = get_pickleObj(pickle_file)
+    ic(df.sample(n=3))
+    my_cols = ["accession","sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome","lat_dps","lon_dps"]
+    df_mini = df[my_cols]
+    ic(df_mini.sample(n=7))
+    my_cols = ["sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome","lat_dps","lon_dps"]
+    df_group = df_mini.groupby(my_cols).size().reset_index(name='counts').sort_values("counts", ascending = False)
+    ic(df_group.head())
+    ic(df_group.shape)
+    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps_analysis.tsv'
+    ic(out_file)
+    df_group.to_csv(out_file, sep="\t", index=False)
 
 def main():
     """ main
         __params__:
                passed_args
     """
+    ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    df_lon_lat_dps = get_lon_lat_dps(sample_dir)
+    analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps)
+
+    ic("about to quit")
+    sys.exit()
 
     stats_dict = {}
     ic(analysis_dir)
@@ -1240,13 +1289,14 @@ def main():
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
     # temporary while debugging the rules!
+
     # df_merge_combined_tax = []
     # addConfidence(df_merge_combined_tax)
-    # ic("about to quit")
-    # sys.exit()
+
 
     # get category information from hit file
     df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
+
     # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
     # ic(df_outliers)
 
@@ -1327,5 +1377,5 @@ if __name__ == '__main__':
     print(args)
     if args.verbosity:
         print("verbosity turned on")
-
     main()
+

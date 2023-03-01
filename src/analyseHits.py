@@ -308,13 +308,26 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
         __returns__:
 
     """
-    marker_size = 4
+    marker_size = marker_size_default = 4
 
     ic(df_merged_all_categories.head(3))
     width = 1500
     scope = 'world'
 
     def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format):
+        """create_cat_figure
+        plots the data on a map essentially
+
+        :param title_string:
+        :param color_value:
+        :param scope:
+        :param out_graph_file:
+        :param width:
+        :param marker_size:
+        :param showlegendStatus:
+        :param format:
+        :return:
+        """
         if showlegendStatus == False:
             title_string = ""
         fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
@@ -327,76 +340,147 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
 
         ic(out_graph_file)
         plotly.io.write_image(fig, out_graph_file, format = format)
-        # fig.show()
+        fig.show()
+        return
+    def create_cat_figure_w_color(df,title_string, color_value, color_discrete_map, scope, out_graph_file, width, marker_size, showlegendStatus, format):
+        """create_cat_figure
+        plots the data on a map essentially
+
+        :param title_string:
+        :param color_value:
+        :param scope:
+        :param out_graph_file:
+        :param width:
+        :param marker_size:
+        :param showlegendStatus:
+        :param format:
+        :return:
+        """
+        if showlegendStatus == False:
+            title_string = ""
+        fig = px.scatter_geo(df, "lat", "lon",
+                             width = width, color = color_value,
+                             title = title_string,
+                             scope = scope,
+                             color_discrete_map = color_discrete_map
+                             )
+        fig.update_traces(marker = dict(size = marker_size))
+        if showlegendStatus == False:
+            fig.update_layout(showlegend = False)
+
+        ic(out_graph_file)
+        plotly.io.write_image(fig, out_graph_file, format = format)
+        fig.show()
         return
 
+    def plot_pie(df, cat,  out_file):
 
-    showlegendStatus = True
-    title_string = 'ENA samples in Location Designation based on multiple shapefiles'
-    color_value = "location_designation"
-    color_discrete_map = {'terrestrial': 'rgb(30,144,255)', 'marine': 'rgb(220,20,60)',
-                          'marine and terrestrial': 'rgb(50,205,50)', 'neither marine nor terrestrial': 'rgb(148,0,211)'}
+        fig = px.pie(df[cat],
+                     values = df['counts'],
+                     names = df[cat], title = title)
+        fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+        fig.update_layout(title_text = title, title_x = 0.5)
+        fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
+        ic(out_file)
+        fig.write_image(out_file)
+        fig.show()
 
+    def plot_location_designation():
+        """
+
+        :return:
+        """
+        showlegendStatus = True
+        title_string = 'ENA samples in Location Designation based on multiple shapefiles'
+        color_value = "location_designation"
+        color_discrete_map = {'terrestrial': 'rgb(30,144,255)', 'marine': 'rgb(220,20,60)',
+                              'marine and terrestrial': 'rgb(50,205,50)', 'neither marine nor terrestrial': 'rgb(148,0,211)'}
+
+        format = 'png'
+        out_graph_file = plot_dir + 'merge_all_location_designation.' + format
+        fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
+                             width = width, color = color_value,
+                             title = title_string,
+                             scope = scope,
+                             color_discrete_map=color_discrete_map)
+        fig.update_traces(marker = dict(size = marker_size))
+        ic(out_graph_file)
+        fig.show()
+        plotly.io.write_image(fig, out_graph_file, format = format)
+
+        df_merged_all_categories_just = df_merged_all_categories.query('location_designation == "marine and terrestrial"')
+        out_file = plot_dir + 'merge_all_location_designation_m+t.' + format
+
+        create_cat_figure_w_color(df_merged_all_categories_just, title, cat, color_discrete_map, scope, out_file, width, marker_size, showlegendStatus,
+                                  format)
+
+        title = 'location_designation using GPS coordinates'
+        out_file = plot_dir + "location_designation_using_GPS_pie.png"
+        fig = px.pie(df_merged_all_categories["location_designation"],
+                     values = df_merged_all_categories["location_designation"].value_counts().values,
+                     names = df_merged_all_categories["location_designation"].value_counts().index, title = title,
+                     color_discrete_map=color_discrete_map)
+        fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+        ic(out_file)
+        fig.show()
+        fig.write_image(out_file)
+
+        ic(df_merged_all_categories["location_designation"].value_counts())
+
+        # plot_location_designation() as a pie chart
+        sys.exit()
+        ic(df_merged_all_categories.columns)
+        cat = "eez_iho_intersect_category"
+        title = cat
+        df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+        ic(df_all.describe())
+        df_top = df_all.head(10)
+        df_rest = df_all.iloc[10:]
+        other_count = df_rest["counts"].sum()
+        df_top.loc[len(df_top)] = ['other_areas', other_count]
+        out_file = plot_dir + "eez_iho_intersect_category_using_GPS_pie.png"
+        plot_pie(df_top, cat, out_file)
+
+    def plot_longhurst():
+
+        # plot_ longhurst as a pie chart
+        cat = "longhurst_category"
+        title = cat
+        df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+        ic(df_all.describe())
+        out_file = plot_dir + "longhurst_category_using_GPS_pie.png"
+        plot_pie(df_all, cat, out_file)
+        out_file = plot_dir + "longhurst_category_using_GPS_map.png"
+        format="png"
+        showlegendStatus = True
+        color_discrete_map = {'Coastal': 'rgb(30,144,255)', 'Trades': 'rgb(220,20,60)',
+                              'Westerlies': 'rgb(50,205,50)',
+                              'Polar': 'rgb(148,0,211)'}
+        create_cat_figure_w_color(df_merged_all_categories, title, cat, color_discrete_map, scope, out_file, width, marker_size, showlegendStatus, format)
+
+    #plot_longhurst()
+
+    title_string = 'ENA samples in Sea category (water polygons)'
+    color_value = "sea_category"
     format = 'png'
-    out_graph_file = plot_dir + 'merge_all_location_designation.' + format
-    fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
-                         width = width, color = color_value,
-                         title = title_string,
-                         scope = scope,
-                         color_discrete_map=color_discrete_map)
-    fig.update_traces(marker = dict(size = marker_size))
-    ic(out_graph_file)
-    fig.show()
-    plotly.io.write_image(fig, out_graph_file, format = format)
+    showlegendStatus = True
+    out_graph_file = plot_dir + 'merge_all_sea_category.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    df_merged_all_categories_just = df_merged_all_categories.query('location_designation == "marine and terrestrial"')
-    out_graph_file = plot_dir + 'merge_all_location_designation_m+t.' + format
-    fig = px.scatter_geo(df_merged_all_categories_just, "lat", "lon",
-                         width = width, color = color_value,
-                         title = title_string,
-                         scope = scope,
-                         color_discrete_map=color_discrete_map)
-    fig.update_traces(marker = dict(size = marker_size))
-    ic(out_graph_file)
-    fig.show()
-    plotly.io.write_image(fig, out_graph_file, format = format)
+    title_string = "ENA Samples in Hydrosheds"
+    marker_size = 1
+    color_value = "feow_category"
+    out_graph_file = plot_dir + 'feow_category.' + format
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
+    scope= 'europe'
+    title_string = "ENA Samples in Hydrosheds in " + scope
+    color_value = "feow_category"
+    out_graph_file = plot_dir + 'feow_category_' + scope + '.' + format
 
-
-    title = 'location_designation using GPS coordinates'
-    out_file = plot_dir + "location_designation_using_GPS_pie.png"
-    fig = px.pie(df_merged_all_categories["location_designation"],
-                 values = df_merged_all_categories["location_designation"].value_counts().values,
-                 names = df_merged_all_categories["location_designation"].value_counts().index, title = title,
-                 color_discrete_map=color_discrete_map)
-    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
-    ic(out_file)
-    fig.show()
-    fig.write_image(out_file)
-
-    ic(df_merged_all_categories["location_designation"].value_counts())
-
-    sys.exit()
-
-    ic(df_merged_all_categories.columns)
-    cat="eez_iho_intersect_category"
-    title=cat
-    df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
-    ic(df_all.describe())
-    df_top = df_all.head(10)
-    df_rest = df_all.iloc[10:]
-    ic(df_rest.head())
-    other_count = df_rest["counts"].sum()
-    df_top.loc[len(df_top)] = ['other_areas', other_count]
-    ic(df_top)
-
-    out_file = plot_dir + "eez_iho_intersect_category_using_GPS_pie.png"
-    fig = px.pie(df_top[cat],
-                    values = df_top['counts'],
-                    names = df_top[cat], title=title)
-    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
-    ic(out_file)
-    fig.write_image(out_file)
+    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
+    scope = "world"
+    marker_size = marker_size_default
 
     sys.exit()
     def eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, scope, showlegendStatus):
@@ -433,11 +517,6 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     title_string = 'ENA samples in EEZ categories'
     color_value = "eez_category"
     out_graph_file = plot_dir + 'merge_all_eez_category.' + format
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
-
-    title_string = "ENA Samples in Hydrosheds"
-    color_value = "feow_category"
-    out_graph_file = plot_dir + 'feow_category.' + format
     create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     return

@@ -75,6 +75,9 @@ function analyse_all_lat_lon () {
   echo "creating" $samples_dir/sample_tmp.txt
   echo "accession,lat_dps,lon_dps" > $samples_dir/dps.txt
   paste -d , $samples_dir/sample_tmp.txt $samples_dir/lat_len.tmp $samples_dir/lon_len.tmp >> $samples_dir/dps.txt
+  echo "creating: "$samples_dir/dps_sample_counts.txt
+  echo "lat_dps,lon_dps,counts" > $samples_dir/dps_sample_counts.txt
+  paste -d , $samples_dir/lat_len.tmp $samples_dir/lon_len.tmp | sort -n | uniq -c | sed 's/^ *//'| sort -nr | awk 'BEGIN { OFS=","} {print $2,$1}' >> $samples_dir/dps_sample_counts.txt
 
 
 }

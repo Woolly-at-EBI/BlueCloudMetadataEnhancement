@@ -372,7 +372,7 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df_just_marine.shape[0])
     ic(df_just_marine.head(5))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
-    ic(df_just_marine["scientific_name"].value_counts())
+    #ic(df_just_marine["scientific_name"].value_counts())
 
     title = 'marine_any_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is a marine location designation from at least one of tax and GPS(lower confidence)'
@@ -408,7 +408,7 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df_just_marine.shape[0])
     ic(df_just_marine.head(5))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
-    ic(df_just_marine["scientific_name"].value_counts())
+    #ic(df_just_marine["scientific_name"].value_counts())
 
     title = 'marine_counts'
     glossary[title] = 'count of all ENA samples for a tax_id where there is a marine location designation from at '\
@@ -434,7 +434,7 @@ def print_df_mega(prefix, df_mega):
     ic(out_file, df_just_marine.shape[0])
     ic(df_just_marine.head(5))
     df_just_marine.to_csv(out_file, sep = '\t', index = False)
-    ic(df_just_marine["scientific_name"].value_counts())
+    #ic(df_just_marine["scientific_name"].value_counts())
 
 
     title = 'marine_hc_counts'
@@ -959,7 +959,7 @@ def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_
         :return: df
         """
         ic()
-        ic(df.sample(n = 250))
+        ic(df.sample(n=3))
 
         ic(dom_type)
 
@@ -1016,17 +1016,19 @@ def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_
 
             ic(df[taxa_term].value_counts())
             ic(df["opp_location_designation"].value_counts())
-            df= df.drop(["opp_location_designation"], axis=1)
+
             #ic(df.sample(n=250))
 
         elif dom_type == "marine_and_terrestrial":
-            df.loc[(df["taxa_marine"] == True) & (df["taxa_terrestrial_or_freshwater"] == False), [
+            df.loc[(df["taxa_marine"] == True) & (df["taxa_terrestrial_or_freshwater"] == True), [
                 conf_score]] = 2
             df.loc[(df["location_designation"] == 'marine and terrestrial')\
                     , [conf_score]] += 0.5
 
         else:
             ic("ERROR: should never get here!")
+
+        df = df.drop(["opp_location_designation"], axis = 1)
 
         #Tops ups by automated regex high level mapping of the environment_biome ena field etc.
         conf_score_inc_biome = conf_score + "_inc_biome"
@@ -1081,7 +1083,7 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         ic()
 
         conf_score = conf_field + '_score'
-        ic(df_merge_combined_tax.sample(n=10))
+        ic(df_merge_combined_tax.sample(n=5))
         count_field = ""
         if(conf_field == "sample_confidence_marine"):
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_marine", "sea_total", "taxa_marine"]]
@@ -1155,23 +1157,111 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         ic(df.head())
         ic()
         return df
+def make_combined_single_domain_call(df_merge_combined_tax):
+    """
+     make a single combined domain call
+    :param df_merge_combined_tax:
+    :return: df
+    usage: df = make_combined_single_domain_call(df_merge_combined_tax)
+    """
+    ic()
+    ic(df_merge_combined_tax.columns)
+    ic(df_merge_combined_tax.shape)
+    df = df_merge_combined_tax
+    key_cols = ["scientific_name","sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome"]
+    df_grouped = df.groupby(key_cols).size().to_frame('count').reset_index()
+    ic(df_grouped)
+
+    df["combined_location_designation"] = "none"
+
+    zero_low = ['low', 'zero']
+    df.loc[((df["sample_confidence_terrestrial_inc_biome"] == 'high') | (df["sample_confidence_terrestrial_inc_biome"] == 'medium')) &
+           ((df["sample_confidence_marine_inc_biome"] == 'low') | (df["sample_confidence_marine_inc_biome"] == 'zero')), "combined_location_designation"] = "terrestrial"
+
+    df.loc[((df["sample_confidence_terrestrial_inc_biome"] == 'high') | (
+                df["sample_confidence_terrestrial_inc_biome"] == 'medium')) &
+           ((df["sample_confidence_marine_inc_biome"] == 'high') | (df[
+                                                                       "sample_confidence_marine_inc_biome"] == 'medium')), "combined_location_designation"] = "marine_and_terrestrial"
+
+    df.loc[((df["sample_confidence_marine_inc_biome"] == 'high') |(df["sample_confidence_marine_inc_biome"] == 'medium')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | ((df["sample_confidence_terrestrial_inc_biome"] == 'zero') | (df["sample_confidence_terrestrial_inc_biome"] == 'low'))), "combined_location_designation"] = "marine"
+    df.loc[df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'high', "combined_location_designation"] = "marine_and_terrestrial"
+    df.loc[((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & (df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'medium'), "combined_location_designation"] = "marine_and_terrestrial"
+    df.loc[(df["sample_confidence_marine_inc_biome"] == 'high') & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')), "combined_location_designation"] = "marine"
+    df.loc[(df["sample_confidence_terrestrial_inc_biome"] == 'high') & ((df["sample_confidence_marine_inc_biome"] == 'low') | (df["sample_confidence_marine_inc_biome"] == 'zero')), "combined_location_designation"] = "terrestrial"
+
+    #some remedial
+    df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (df["NCBI-to-terrestrial-or-freshwater"] == "is not"), "combined_location_designation"] = "marine"
+    df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (
+                df["NCBI-to-marine"] == "is not"), "combined_location_designation"] = "terrestrial"
+    df.loc[(df["combined_location_designation"] == "terrestrial") & (df["NCBI-to-marine"] == "may be exclusively"), "combined_location_designation"] = "marine_and_terrestrial"
+    df.loc[(df["combined_location_designation"] == "marine") & (df["NCBI-to-terrestrial-or-freshwater"] == "may be exclusively"), "combined_location_designation"] = "marine_and_terrestrial"
+    df.loc[(df["combined_location_designation"] == "none") & (df["NCBI-to-terrestrial-or-freshwater"] == "may be exclusively"), "combined_location_designation"] = "terrestrial"
+    df.loc[(df["combined_location_designation"] == "none") & (df["NCBI-to-marine"] == "may be exclusively"), "combined_location_designation"] = "marine"
+    ic(df.query('combined_location_designation == "marine_and_terrestrial"'))
+    ic(df.head(2))
+    ic(df.query('combined_location_designation == "marine_and_terrestrial"').head(2))
+
+
+    key_cols.append("combined_location_designation")
+    ic(key_cols)
+    df_grouped = df.groupby(key_cols).size().to_frame('count').reset_index().sort_values(by=["sample_confidence_marine_and_terrestrial_inc_biome"])
+    ic(df_grouped)
+    ic(df["combined_location_designation"].value_counts())
+
+    # tmp_keys = ["scientific_name", "NCBI-to-marine", "NCBI-to-terrestrial-or-freshwater","combined_location_designation"]
+    # ic(df[tmp_keys].query('combined_location_designation == "marine_and_terrestrial"').sample(n=1000))
+
+    ic(df["NCBI-to-marine"].value_counts())
+    ic()
+    ic("Doing some hight level checks using the taxonomy")
+    ic(df.query('combined_location_designation == "terrestrial" and `NCBI-to-marine` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation == "terrestrial" and `NCBI-to-marine` == "may be exclusively" ').shape[0])
+    ic(df.query('combined_location_designation == "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is not" ').shape[0])
+    ic(df.query(
+        'combined_location_designation == "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "not flagged as" ').shape[0])
+    ic(df.query('combined_location_designation == "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation != "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation == "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "may be exclusively" ').shape[0])
+    ic(df.query('combined_location_designation != "terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "may be exclusively" ').shape[0])
+    ic("*********************************************************")
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-terrestrial-or-freshwater` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-terrestrial-or-freshwater` == "may be exclusively"').shape[0])
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-marine` == "is not"').shape[0])
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-marine` == "not flagged as"').shape[0])
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-marine` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation != "marine" and `NCBI-to-marine` == "is exclusively"').shape[0])
+    ic(df.query('combined_location_designation == "marine" and `NCBI-to-marine` == "may be exclusively"').shape[0])
+    ic(df.query('combined_location_designation != "marine" and `NCBI-to-marine` == "may be exclusively"').shape[0])
+    ic("*********************************************************")
+    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-marine` == "is not"').shape[0])
+    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-marine` == "not flagged as"').shape[0])
+    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is not"').shape[0])
+    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "not flagged as"').shape[0])
+
+
+    ic("*********************************************************")
+    ic(df["combined_location_designation"].value_counts())
+
+    df_to_check = df.query('combined_location_designation != "marine" and `NCBI-to-marine` == "may be exclusively"')
+    ic(df_to_check[key_cols].shape[0])
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    out_file = analysis_dir + "tmp_check_df.tsv"
+    df_to_check.to_csv(out_file, sep = '\t')
+
+    sys.exit()
+    return df
 
 
 def addConfidence(df_merge_combined_tax):
     """addConfidence
         adding confidence for metadata assignments
+        want to try and separate into 3 categories
     :param df_merge_combined_tax:
     :return:
     """
     ic()
+    ic(df_merge_combined_tax.shape)
     ic(df_merge_combined_tax.sample(n=5))
-
-    # sys.exit()
-    # pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
-    # if (os.path.isfile(pickle_file) == True):
-    #     df_merge_combined_tax = get_pickleObj(pickle_file)
-    # else:
-    #     put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
     #df_merge_combined_tax = df_merge_combined_tax.head(1000000).query('taxonomic_source == "metagenome"')
 
@@ -1195,10 +1285,11 @@ def addConfidence(df_merge_combined_tax):
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine", "sample_confidence_marine_inc_biome")
     ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
-    df = df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
-    df = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
-    ic(df.sample(n = 250))  #taxa marine etc.mix of True and False s oall good
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
+    df = make_combined_single_domain_call(df_merge_combined_tax)
+    ic(df.sample(n = 5))  #taxa marine etc.mix of True and False s oall good
 
 
     ic(df.head())
@@ -1277,76 +1368,83 @@ def main():
     """
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-    df_lon_lat_dps = get_lon_lat_dps(sample_dir)
-    analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps)
 
-    ic("about to quit")
-    sys.exit()
 
     stats_dict = {}
     ic(analysis_dir)
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    # temporary while debugging the rules!
+    got_data_testing_down_stream = False
 
-    # df_merge_combined_tax = []
-    # addConfidence(df_merge_combined_tax)
+    if got_data_testing_down_stream == False:
+        # get category information from hit file
+        df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
 
+        # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
+        # ic(df_outliers)
 
-    # get category information from hit file
-    df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
+        # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
+        ic()
+        test_status = False
+        df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
+        ic(df_all_ena_sample_detail.head())
+        ic(df_all_ena_sample_detail.shape[0])
+        ic('-' * 100)
 
-    # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
-    # ic(df_outliers)
+        stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
+        df_tmp = df_tax2env.query('taxonomy_type == "metagenome"')
+        stats_dict["_input_metag_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+        df_tmp = df_tax2env.query('taxonomy_type == "environment"')
+        stats_dict["_input_env_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+        stats_dict["_input_total_taxa_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
+        ic(stats_dict)
 
-    # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
-    ic()
-    test_status = False
-    df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
-    ic(df_all_ena_sample_detail.head())
-    ic(df_all_ena_sample_detail.shape[0])
-    ic('-' * 100)
+        (stats_dict, df_merge_combined_tax) = merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, \
+                                                               df_all_ena_sample_detail, df_tax2env)
+        ic(df_merge_combined_tax.shape[0])
+        ic(df_merge_combined_tax.head(5))
 
-    stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
-    df_tmp = df_tax2env.query('taxonomy_type == "metagenome"')
-    stats_dict["_input_metag_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
-    df_tmp = df_tax2env.query('taxonomy_type == "environment"')
-    stats_dict["_input_env_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
-    stats_dict["_input_total_taxa_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
-    ic(stats_dict)
+        df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
+        ic(df.sample(n=3))
 
-    (stats_dict, df_merge_combined_tax) = merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, \
-                                                           df_all_ena_sample_detail, df_tax2env)
-    ic(df_merge_combined_tax.shape[0])
-    ic(df_merge_combined_tax.head(5))
+        ic('-' * 100)
+        df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories).reset_index()
+        ic(df_merge_combined_tax.shape[0])
+        ic(df_merge_combined_tax.sample(n=5))
 
-    df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
-    ic(df.sample(n=3))
+        # ic(df_merge_combined_tax["NCBI term"].value_counts())
+        ic(df_merge_combined_tax.query('scientific_name == "Piscirickettsia salmonis"').shape[0])
+        #save save some memory and get rid of some stored structures
+        # ic(memory_usage())
 
-    ic('-' * 100)
-    df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories).reset_index()
-    ic(df_merge_combined_tax.shape[0])
-    ic(df_merge_combined_tax.sample(n=5))
+        #  debugging the rules!
+        df_merge_combined_tax = addConfidence(df_merge_combined_tax)
+        # ic("about to quit")
+        # sys.exit()
+        # ic()
+        ic(df_merge_combined_tax.columns)
+        out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
+        ic(out_file)
+        put_pickleObj2File(df_merge_combined_tax, out_file)
+        out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
+        ic(out_file)
+        df_merge_combined_tax.to_csv(out_file, sep="\t", index=False)
+        # end of temporary while debugging the rules!
+    else:
+        pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
+        if (os.path.isfile(pickle_file) == True):
+            df_merge_combined_tax = get_pickleObj(pickle_file)
+        else:
+            put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
-    # ic(df_merge_combined_tax["NCBI term"].value_counts())
-    ic(df_merge_combined_tax.query('scientific_name == "Piscirickettsia salmonis"').shape[0])
-    #save save some memory and get rid of some stored structures
-    # ic(memory_usage())
+    addConfidence(df_merge_combined_tax)
 
-    #  debugging the rules!
-    df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-    # ic("about to quit")
-    # sys.exit()
-    # ic()
-    ic(df_merge_combined_tax.columns)
-    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    ic(out_file)
-    put_pickleObj2File(df_merge_combined_tax, out_file)
-    out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
-    ic(out_file)
-    df_merge_combined_tax.to_csv(out_file,sep="\t",index=False)
-    # end of temporary while debugging the rules!
+    df_lon_lat_dps = get_lon_lat_dps(sample_dir)
+    analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps)
+
+    ic("about to quit")
+    sys.exit()
 
     print_df_mega('merge_tax_combined', df_merge_combined_tax)
     #ic()

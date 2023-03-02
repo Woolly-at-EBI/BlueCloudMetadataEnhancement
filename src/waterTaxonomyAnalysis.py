@@ -1157,9 +1157,55 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         ic(df.head())
         ic()
         return df
+
+
+def add_combined_single_domain_call_score(df_merge_combined_tax):
+    """
+
+    :param df_merge_combined_tax:
+    :return: df
+    """
+    ic()
+    df = df_merge_combined_tax
+    df["combined_location_designation_score"] = "low"
+    df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_marine_inc_biome"] == 'high') & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')),  "combined_location_designation_score"] = "high"
+
+    df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium'),
+    "combined_location_designation_score"] = "medium"
+
+    df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_marine_inc_biome"] == 'medium') & (df["sample_confidence_terrestrial_inc_biome"] == 'zero'),
+            "combined_location_designation_score"] = "high"
+    #############################################
+
+    df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'high') & \
+           ((df["sample_confidence_marine_inc_biome"] == 'low') | (df["sample_confidence_marine_inc_biome"] == 'zero')),\
+    "combined_location_designation_score"] = "high"
+
+    df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium'),\
+            "combined_location_designation_score"] = "medium"
+
+    df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium') & \
+            (df["sample_confidence_marine_inc_biome"] == 'zero'), "combined_location_designation_score"] = "high"
+   #############################################
+
+    df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & \
+           (df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'high'),\
+           "combined_location_designation_score"] = "high"
+    df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (
+                df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'medium'),\
+                "combined_location_designation_score"] = "medium"
+    df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (
+                df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'low') \
+           & ((df["sample_confidence_marine_inc_biome"] == 'high') | (df["sample_confidence_marine_inc_biome"] == 'medium')) & \
+            ((df["sample_confidence_terrestrial_inc_biome"] == 'high') | (df["sample_confidence_terrestrial_inc_biome"] == 'medium')), \
+            "combined_location_designation_score"] = "high"
+
+    return df
+
 def make_combined_single_domain_call(df_merge_combined_tax):
     """
      make a single combined domain call
+
     :param df_merge_combined_tax:
     :return: df
     usage: df = make_combined_single_domain_call(df_merge_combined_tax)
@@ -1242,13 +1288,14 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     ic("*********************************************************")
     ic(df["combined_location_designation"].value_counts())
 
+    df = add_combined_single_domain_call_score(df)
+
     df_to_check = df.query('combined_location_designation != "marine" and `NCBI-to-marine` == "may be exclusively"')
     ic(df_to_check[key_cols].shape[0])
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     out_file = analysis_dir + "tmp_check_df.tsv"
     df_to_check.to_csv(out_file, sep = '\t')
 
-    sys.exit()
     return df
 
 
@@ -1288,7 +1335,7 @@ def addConfidence(df_merge_combined_tax):
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
-    df = make_combined_single_domain_call(df_merge_combined_tax)
+
     ic(df.sample(n = 5))  #taxa marine etc.mix of True and False s oall good
 
 
@@ -1328,27 +1375,17 @@ def get_lon_lat_dps(sample_dir):
     ic(df_lon_lat_dps.head())
     return df_lon_lat_dps
 
-def analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps):
+def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir, df_lon_lat_dps):
     """
 
-    :return:
+    :return: df_merge_combined_tax_all_with_confidence
     """
-
-
-    # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    # df_merge_combined_tax_all_with_confidence = get_pickleObj(pickle_file)
-    # df_merge_combined_tax_all_with_confidence = df_merge_combined_tax_all_with_confidence.query('lat > 0')
+    df_merge_combined_tax_all_with_confidence = pd.merge(df_merge_combined_tax_all_with_confidence,df_lon_lat_dps,how="left", on="accession")
+    df_merge_combined_tax_all_with_confidence["lat_dps"] = df_merge_combined_tax_all_with_confidence["lat_dps"].fillna(0).astype(int)
+    df_merge_combined_tax_all_with_confidence["lon_dps"] = df_merge_combined_tax_all_with_confidence["lon_dps"].fillna(0).astype(int)
     # ic(df_merge_combined_tax_all_with_confidence.head())
-    # ic("about to do a big merge")
-    # df_merge_combined_tax_all_with_confidence = pd.merge(df_merge_combined_tax_all_with_confidence,df_lon_lat_dps,how="left", on="accession")
-    # df_merge_combined_tax_all_with_confidence["lat_dps"] = df_merge_combined_tax_all_with_confidence["lat_dps"].fillna(0).astype(int)
-    # df_merge_combined_tax_all_with_confidence["lon_dps"] = df_merge_combined_tax_all_with_confidence["lon_dps"].fillna(0).astype(int)
-    # ic(df_merge_combined_tax_all_with_confidence.head())
-    pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_just_latlon_dps.pickle'
-    # ic("creating: " + pickle_file)
-    # put_pickleObj2File(df_merge_combined_tax_all_with_confidence, pickle_file)
 
-    df = get_pickleObj(pickle_file)
+    df = df_merge_combined_tax_all_with_confidence
     ic(df.sample(n=3))
     my_cols = ["accession","sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome","lat_dps","lon_dps"]
     df_mini = df[my_cols]
@@ -1361,6 +1398,9 @@ def analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps):
     ic(out_file)
     df_group.to_csv(out_file, sep="\t", index=False)
 
+    return df_merge_combined_tax_all_with_confidence
+
+
 def main():
     """ main
         __params__:
@@ -1369,15 +1409,14 @@ def main():
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
 
-
     stats_dict = {}
     ic(analysis_dir)
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    got_data_testing_down_stream = False
+    got_data_testing_down_stream = 3
 
-    if got_data_testing_down_stream == False:
+    if got_data_testing_down_stream == 1:
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
 
@@ -1418,6 +1457,10 @@ def main():
         #save save some memory and get rid of some stored structures
         # ic(memory_usage())
 
+        out_file = analysis_dir + df_merge_combined_tax.pickle
+        ic(out_file)
+        put_pickleObj2File(df_merge_combined_tax, out_file)
+
         #  debugging the rules!
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
         # ic("about to quit")
@@ -1431,17 +1474,38 @@ def main():
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep="\t", index=False)
         # end of temporary while debugging the rules!
-    else:
-        pickle_file = "/Users/woollard/projects/bluecloud/analysis/df_merge_combined_tax.pickle"
+    elif got_data_testing_down_stream == 2:
+        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
         if (os.path.isfile(pickle_file) == True):
             df_merge_combined_tax = get_pickleObj(pickle_file)
         else:
-            put_pickleObj2File(df_merge_combined_tax, pickle_file)
+            ic("ERROR, can't read ", pickle_file)
 
-    addConfidence(df_merge_combined_tax)
+        df_lon_lat_dps = get_lon_lat_dps(sample_dir)
+        df_merge_combined_tax = analyse_lon_lat_dps(df_merge_combined_tax, analysis_dir, df_lon_lat_dps)
+        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
+        ic("writing: ", pickle_file)
+        put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
-    df_lon_lat_dps = get_lon_lat_dps(sample_dir)
-    analyse_lon_lat_dps(analysis_dir, df_lon_lat_dps)
+    elif got_data_testing_down_stream == 3:
+
+        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
+        if (os.path.isfile(pickle_file) == True):
+            df_merge_combined_tax = get_pickleObj(pickle_file)
+        else:
+            ic("ERROR, can't read ", pickle_file)
+
+        df_merge_combined_tax = make_combined_single_domain_call(df_merge_combined_tax)
+        ic(df_merge_combined_tax.head(5))
+
+        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
+        ic("writing: ", pickle_file)
+        put_pickleObj2File(df_merge_combined_tax, pickle_file)
+        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
+        ic(out_file)
+        df_merge_combined_tax.to_csv(out_file, sep = '\t')
+
+    #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n
 
     ic("about to quit")
     sys.exit()

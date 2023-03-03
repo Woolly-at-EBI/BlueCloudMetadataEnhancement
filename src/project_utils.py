@@ -10,6 +10,10 @@ __docformat___ = 'reStructuredText'
 import os.path
 import pickle
 from icecream import ic
+import plotly.express as px
+import plotly
+import plotly.io as pio
+pio.renderers.default = "browser"
 
 def put_pickleObj2File(obj,pickle_file):
     """
@@ -60,3 +64,25 @@ def memory_usage():
     memory_usage_by_variable = memory_usage_by_variable.sort_values(by='Size', ascending=False).head(10)
     memory_usage_by_variable['Size'] = memory_usage_by_variable['Size'].apply(lambda x: obj_size_fmt(x))
     return memory_usage_by_variable
+
+def plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, other_params):
+    """
+
+    :param df:
+    :param cat: - the category (column) to focus on
+    :param color: #factor to colour the histograms by - can be the same as category
+    :param title:
+    :param log_y: bool
+    :param out_graph_file:
+    :param format:
+    :param other_params:  miscellaneous optional parameters passed in as dict - future proofing
+    :return:
+    """
+    fig = px.histogram(df, title = title, x = cat,
+                       width = width, color = color, log_y = log_y)
+    fig.update_xaxes(categoryorder = "total descending")
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+    # fig.show()
+    ic(out_graph_file)
+    plotly.io.write_image(fig, out_graph_file, format = format)
+    fig.show()

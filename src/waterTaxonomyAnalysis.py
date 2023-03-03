@@ -1400,7 +1400,6 @@ def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir,
 
     return df_merge_combined_tax_all_with_confidence
 
-
 def main():
     """ main
         __params__:
@@ -1414,7 +1413,7 @@ def main():
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    got_data_testing_down_stream = 3
+    got_data_testing_down_stream = 4
 
     if got_data_testing_down_stream == 1:
         # get category information from hit file
@@ -1504,6 +1503,37 @@ def main():
         out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep = '\t')
+
+    elif got_data_testing_down_stream == 4:
+        ic(got_data_testing_down_stream)
+        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
+        # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
+        # if (os.path.isfile(pickle_file) == True):
+        #     df_merge_combined_tax = get_pickleObj(pickle_file)
+        # else:
+        #     ic("ERROR, can't read ", pickle_file)
+        df_merge_combined_tax = pd.read_csv(out_file,sep = "\t",nrows=100000)
+        df_groupby = df_merge_combined_tax.groupby(["combined_location_designation", "combined_location_designation_score"]).size().to_frame('count').reset_index()
+        ic(df_groupby)
+        format = 'png'
+        cat = "combined_location_designation"
+        title = cat
+        out_graph_file = plot_dir + cat + "_score." + format
+        log_y = False
+        width = 1500
+        other_params = {}
+        plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
+        out_graph_file = plot_dir + cat + "_score_log." + format
+        out_graph_file = plot_dir + cat + "." + format
+        plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y, out_graph_file, width, format, other_params)
+        out_graph_file = plot_dir + cat + "_log." + format
+
+        log_y = True
+        plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)", log_y, out_graph_file,
+                  width, format, other_params)
+        out_graph_file = plot_dir + cat + "." + format
+        plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y, out_graph_file,
+                  width, format, other_params)
 
     #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n
 

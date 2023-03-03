@@ -311,7 +311,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     marker_size = marker_size_default = 4
 
     ic(df_merged_all_categories.head(3))
-    width = 1500
+    width =1500
     scope = 'world'
     cat = 'ena_country'
     ic(cat)

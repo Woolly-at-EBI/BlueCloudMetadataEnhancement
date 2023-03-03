@@ -65,7 +65,7 @@ def memory_usage():
     memory_usage_by_variable['Size'] = memory_usage_by_variable['Size'].apply(lambda x: obj_size_fmt(x))
     return memory_usage_by_variable
 
-def plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, other_params):
+def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, other_params):
     """
 
     :param df:
@@ -85,4 +85,25 @@ def plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, other
     # fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = format)
+    fig.show()
+def u_plot_pie(df, cat, value_column, title, out_file):
+    """
+
+    :param df:
+    :param cat:
+    :param value_column:
+    :param out_file:
+    :return:
+    """
+    ic(cat, value_column, title, out_file)
+    ic(df.head(2))
+
+    fig = px.pie(df,
+                 values = value_column,
+                 names = df[cat], title = title)
+    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+    fig.update_layout(title_text = title, title_x = 0.5)
+    fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
+    ic(out_file)
+    fig.write_image(out_file)
     fig.show()

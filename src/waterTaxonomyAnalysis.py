@@ -1243,6 +1243,8 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     df.loc[(df["combined_location_designation"] == "marine") & (df["NCBI-to-terrestrial-or-freshwater"] == "may be exclusively"), "combined_location_designation"] = "marine_and_terrestrial"
     df.loc[(df["combined_location_designation"] == "none") & (df["NCBI-to-terrestrial-or-freshwater"] == "may be exclusively"), "combined_location_designation"] = "terrestrial"
     df.loc[(df["combined_location_designation"] == "none") & (df["NCBI-to-marine"] == "may be exclusively"), "combined_location_designation"] = "marine"
+
+    df.loc[(df["combined_location_designation"] == "none") & (len(df["location_designation"])>5), "combined_location_designation"] = df["location_designation"]
     ic(df.query('combined_location_designation == "marine_and_terrestrial"'))
     ic(df.head(2))
     ic(df.query('combined_location_designation == "marine_and_terrestrial"').head(2))
@@ -1336,17 +1338,14 @@ def addConfidence(df_merge_combined_tax):
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
 
-    ic(df.sample(n = 5))  #taxa marine etc.mix of True and False s oall good
+    ic(df_merge_combined_tax.sample(n = 5))  #taxa marine etc.mix of True and False s oall good
 
-
-    ic(df.head())
-    df_marine_terre_conf = df.groupby(["sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome"]).size().to_frame('count').reset_index()
-    ic(df_marine_terre_conf)
-    ic(df.query('(sample_confidence_marine_inc_biome == "high") & (sample_confidence_terrestrial_inc_biome == "high")').head())
-    ic(df.query(
+    ic(df_merge_combined_tax.head())
+    ic(df_merge_combined_tax.query('(sample_confidence_marine_inc_biome == "high") & (sample_confidence_terrestrial_inc_biome == "high")').head())
+    ic(df_merge_combined_tax.query(
         '(sample_confidence_marine_inc_biome == "low") & (sample_confidence_terrestrial_inc_biome == "low")').sample(
         n = 5, replace = True))
-    ic(df.query(
+    ic(df_merge_combined_tax.query(
         '(sample_confidence_marine_inc_biome == "low") & (sample_confidence_terrestrial_inc_biome == "medium")').sample(
         n = 5, replace = True))
 
@@ -1361,9 +1360,10 @@ def addConfidence(df_merge_combined_tax):
 
     # # what if other samples have GPS but particular ones don't?
 
-    #ic(df.sample(n = 250)) # all fine!
-
-    return df
+    #ic(df_merge_combined_tax.sample(n = 250)) # all fine!
+    ic("about to leave the following")
+    ic()
+    return df_merge_combined_tax
 def get_lon_lat_dps(sample_dir):
     """ get the properties with the number of decimal places for lon and lat
     usage  df_lon_lat_dps = get_lon_lat_dps()
@@ -1413,9 +1413,10 @@ def main():
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    got_data_testing_down_stream = 4
+    got_data_testing_down_stream = 2
 
     if got_data_testing_down_stream == 1:
+        ic("*********** got_data_testing_down_stream >=1")
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
 
@@ -1456,9 +1457,16 @@ def main():
         #save save some memory and get rid of some stored structures
         # ic(memory_usage())
 
-        out_file = analysis_dir + df_merge_combined_tax.pickle
+        out_file = analysis_dir + 'merge_combined_tax.pickle'
         ic(out_file)
         put_pickleObj2File(df_merge_combined_tax, out_file)
+    if got_data_testing_down_stream <= 2:
+        ic("*********** got_data_testing_down_stream <=2")
+        pickle_file = analysis_dir + 'merge_combined_tax.pickle'
+        if (os.path.isfile(pickle_file) == True):
+            df_merge_combined_tax = get_pickleObj(pickle_file)
+        else:
+            ic("ERROR, can't read ", pickle_file)
 
         #  debugging the rules!
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
@@ -1473,7 +1481,8 @@ def main():
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep="\t", index=False)
         # end of temporary while debugging the rules!
-    elif got_data_testing_down_stream == 2:
+    if got_data_testing_down_stream <= 3:
+        ic("*********** got_data_testing_down_stream <=3")
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
         if (os.path.isfile(pickle_file) == True):
             df_merge_combined_tax = get_pickleObj(pickle_file)
@@ -1486,7 +1495,8 @@ def main():
         ic("writing: ", pickle_file)
         put_pickleObj2File(df_merge_combined_tax, pickle_file)
 
-    elif got_data_testing_down_stream == 3:
+    if got_data_testing_down_stream <= 4:
+        ic("*********** got_data_testing_down_stream <=4")
 
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
         if (os.path.isfile(pickle_file) == True):
@@ -1504,35 +1514,48 @@ def main():
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep = '\t')
 
-    elif got_data_testing_down_stream == 4:
-        ic(got_data_testing_down_stream)
-        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
-        # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
-        # if (os.path.isfile(pickle_file) == True):
-        #     df_merge_combined_tax = get_pickleObj(pickle_file)
-        # else:
-        #     ic("ERROR, can't read ", pickle_file)
-        df_merge_combined_tax = pd.read_csv(out_file,sep = "\t",nrows=100000)
+    if got_data_testing_down_stream <= 5:
+        ic("*********** got_data_testing_down_stream <=5")
+        quicky = False
+        if quicky == False:
+            out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
+            pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
+            if (os.path.isfile(pickle_file) == True):
+              df_merge_combined_tax = get_pickleObj(pickle_file)
+            else:
+              ic("ERROR, can't read ", pickle_file)
+        else:
+            df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv" ,sep = "\t",nrows=100000)
         df_groupby = df_merge_combined_tax.groupby(["combined_location_designation", "combined_location_designation_score"]).size().to_frame('count').reset_index()
         ic(df_groupby)
         format = 'png'
         cat = "combined_location_designation"
         title = cat
-        out_graph_file = plot_dir + cat + "_score." + format
+
         log_y = False
         width = 1500
         other_params = {}
-        plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
-        out_graph_file = plot_dir + cat + "_score_log." + format
+
+        fig = px.scatter(df_merge_combined_tax, title = "Lat/Lon over time", x = "collection_date", y = "lon_dps", width = width,
+                         color = "combined_location_designation")
+        fig = px.histogram(df_merge_combined_tax, x = "lon_dps", log_y=True, color = "combined_location_designation")
+        fig.show()
+        sys.exit()
+        out_graph_file = plot_dir + cat + "_pie." + format
+        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", out_graph_file)
+        sys.exit()
+        out_graph_file = plot_dir + cat + "_hist." + format
+        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
         out_graph_file = plot_dir + cat + "." + format
-        plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y, out_graph_file, width, format, other_params)
-        out_graph_file = plot_dir + cat + "_log." + format
+        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y, out_graph_file, width, format, other_params)
+        u_plot_pie(df_merge_combined_tax, cat, out_file)
 
         log_y = True
-        plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)", log_y, out_graph_file,
+        out_graph_file = plot_dir + cat + "_score_log." + format
+        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)", log_y, out_graph_file,
                   width, format, other_params)
         out_graph_file = plot_dir + cat + "." + format
-        plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y, out_graph_file,
+        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y, out_graph_file,
                   width, format, other_params)
 
     #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n

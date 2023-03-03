@@ -99,9 +99,11 @@ def clean_up_df_tax2env(df):
     # These are highly important NCBI-to-marine NCBI-to-terrestrial-or-freshwater, as taxa dom confidence mapping
     # clean the ^[ and ]$ from each if there
     my_cols = ['NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater', 'rule set description']
+    my_regex1 = r"\["
+    my_regex2 = r"\]"
     for col in my_cols:
-        df[col] = df[col].replace(regex = ['\[', '\]'], value = '')
-        ic(col,df[col].value_counts())
+        df[col] = df[col].replace(regex = [my_regex1, my_regex2], value = '')
+        ic(col, df[col].value_counts())
 
 
     ic(df.sample(n=10))
@@ -1413,8 +1415,8 @@ def main():
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    got_data_testing_down_stream = 2
-
+    # This takes over 20mins to run all the way through with a full ENA dataset os broke into chunks that can be started downstream
+    got_data_testing_down_stream = 5
     if got_data_testing_down_stream == 1:
         ic("*********** got_data_testing_down_stream >=1")
         # get category information from hit file
@@ -1467,6 +1469,7 @@ def main():
             df_merge_combined_tax = get_pickleObj(pickle_file)
         else:
             ic("ERROR, can't read ", pickle_file)
+        ic(df_merge_combined_tax.shape)
 
         #  debugging the rules!
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
@@ -1488,7 +1491,7 @@ def main():
             df_merge_combined_tax = get_pickleObj(pickle_file)
         else:
             ic("ERROR, can't read ", pickle_file)
-
+        ic(df_merge_combined_tax.shape)
         df_lon_lat_dps = get_lon_lat_dps(sample_dir)
         df_merge_combined_tax = analyse_lon_lat_dps(df_merge_combined_tax, analysis_dir, df_lon_lat_dps)
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
@@ -1503,6 +1506,7 @@ def main():
             df_merge_combined_tax = get_pickleObj(pickle_file)
         else:
             ic("ERROR, can't read ", pickle_file)
+        ic(df_merge_combined_tax.shape)
 
         df_merge_combined_tax = make_combined_single_domain_call(df_merge_combined_tax)
         ic(df_merge_combined_tax.head(5))
@@ -1516,7 +1520,7 @@ def main():
 
     if got_data_testing_down_stream <= 5:
         ic("*********** got_data_testing_down_stream <=5")
-        quicky = False
+        quicky = True
         if quicky == False:
             out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
             pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
@@ -1525,7 +1529,9 @@ def main():
             else:
               ic("ERROR, can't read ", pickle_file)
         else:
-            df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv" ,sep = "\t",nrows=100000)
+            ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
+            df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv" ,sep = "\t", nrows=100000)
+        ic(df_merge_combined_tax.shape)
         df_groupby = df_merge_combined_tax.groupby(["combined_location_designation", "combined_location_designation_score"]).size().to_frame('count').reset_index()
         ic(df_groupby)
         format = 'png'
@@ -1536,14 +1542,48 @@ def main():
         width = 1500
         other_params = {}
 
-        fig = px.scatter(df_merge_combined_tax, title = "Lat/Lon over time", x = "collection_date", y = "lon_dps", width = width,
+        df_mini = df_merge_combined_tax[["lat_dps", "lon_dps", "collection_date", "combined_location_designation"]]
+        df_mini = df_mini[df_mini['lat_dps'].notnull()].query('lat_dps > 0')
+        df_mini = df_mini[df_mini['collection_date'].notnull()]
+        #df_mini["collection_date"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore")
+        df_mini["collection_date"] = pd.to_datetime(df_mini["collection_date"], errors = 'coerce')
+        ic(df_mini.dtypes)
+        df_mini["collection_date"] = df_mini["collection_date"].dt.date
+        ic(df_mini["collection_date"].head(3))
+        start_date = pd.to_datetime('2000-01-01').date()
+        end_date = pd.to_datetime('2024-01-01').date()
+        df_mini = df_mini[(df_mini["collection_date"] > start_date) & (df_mini["collection_date"] < end_date)]
+        fig = px.scatter(df_mini, title = "Lat/Lon over time since year=2000", x = "collection_date", y = "lat_dps", width = width,
                          color = "combined_location_designation")
-        fig = px.histogram(df_merge_combined_tax, x = "lon_dps", log_y=True, color = "combined_location_designation")
+        # cat_order = {}
+        # cat_order[]
+        # fig.update_layout(category_order= "reversed")
+        out_file = plot_dir + "merged_all_combined_lat_lon." + 'png'
+        ic(out_file)
+        fig.write_image(out_file)
         fig.show()
+        df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "combined_location_designation")
+        fig.update_xaxes(type = 'category')
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+        fig.update_xaxes(categoryorder = 'category ascending')
+        out_file = plot_dir + "merged_all_combined_collection." + 'png'
+        ic(out_file)
+        fig.write_image(out_file)
+        fig.show()
+
+        df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "lat_dps")
+        fig.update_xaxes(type = 'category')
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+        fig.update_xaxes(categoryorder = 'category ascending')
+        fig.show()
+
         sys.exit()
+
         out_graph_file = plot_dir + cat + "_pie." + format
         u_plot_pie(df_groupby, cat, "count", cat + " sample counts", out_graph_file)
-        sys.exit()
+
         out_graph_file = plot_dir + cat + "_hist." + format
         u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
         out_graph_file = plot_dir + cat + "." + format

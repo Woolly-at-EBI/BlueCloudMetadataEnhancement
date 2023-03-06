@@ -58,19 +58,19 @@ function analyse_all_lat_lon () {
   echo "    total with no dps"
   cut -f2 $coordinates_file | tail +2 | sed '/^$/d' | grep -v '\.' | wc -l
   echo "   with dps"
-  cut -f2 $coordinates_file | tail +2 | sed '/^$/d' | grep '\.' | sed 's/^[0-9]*\.//' | awk '{print length}' | sort -n | uniq -c | sed 's/^ *//'| awk 'BEGIN { OFS=";"} {print $2,$1}'
+  cut -f2 $coordinates_file | tail +2 | sed '/^$/d' | grep '\.' | sed 's/^\-//;s/^[0-9]*\.//' | awk '{print length}' | sort -n | uniq -c | sed 's/^ *//'| awk 'BEGIN { OFS=";"} {print $2,$1}'
   echo "Median for latitude"
-  cut -f2 $coordinates_file| tail +2 | sed 's/^[0-9]*\.//' | awk '{print length}' | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }'
-  cut -f2 $coordinates_file| tail +2 | sed 's/^[0-9]*\.//' | awk '{print length}' > $samples_dir/lat_len.tmp
+  cut -f2 $coordinates_file| tail +2 | sed 's/^\-//;s/^[0-9]*\.//' | awk '{print length}' | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }'
+  cut -f2 $coordinates_file| tail +2 | sed 's/^\-//;s/^[0-9]*\.//' | awk '{print length}' > $samples_dir/lat_len.tmp
   echo "--------"
   echo "For longitude"
   echo "    total with no dps"
   cut -f3 $coordinates_file | tail +2 | sed '/^$/d' | grep -v '\.' | wc -l
   echo "    with dps"
-  cut -f3 $coordinates_file | tail +2 | sed '/^$/d' | grep '\.' | sed 's/^[0-9]*\.//' | awk '{print length}' | sort -n | uniq -c | sed 's/^ *//'| awk 'BEGIN { OFS=";"} {print $2,$1}'
+  cut -f3 $coordinates_file | tail +2 | sed '/^$/d' | grep '\.' | sed 's/^\-//;s/^[0-9]*\.//' | awk '{print length}' | sort -n | uniq -c | sed 's/^ *//'| awk 'BEGIN { OFS=";"} {print $2,$1}'
   echo "Median for longitude"
-  cut -f3 $coordinates_file | tail +2 | sed 's/^[0-9]*\.//' | awk '{print length}' | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }'
-  cut -f3 $coordinates_file | tail +2 | sed 's/^[0-9]*\.//' | awk '{print length}' > $samples_dir/lon_len.tmp
+  cut -f3 $coordinates_file | tail +2 | sed 's/^\-//;s/^[0-9]*\.//' | awk '{print length}' | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }'
+  cut -f3 $coordinates_file | tail +2 | sed 's/^\-//;/^[0-9]*\.//' | awk '{print length}' > $samples_dir/lon_len.tmp
   tail +2  $coordinates_file | cut -f 1 > $samples_dir/sample_tmp.txt
   echo "creating" $samples_dir/sample_tmp.txt
   echo "accession,lat_dps,lon_dps" > $samples_dir/dps.txt

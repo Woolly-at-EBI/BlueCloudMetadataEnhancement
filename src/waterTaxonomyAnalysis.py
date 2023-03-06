@@ -1106,7 +1106,7 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
             df_species = df_species.rename(columns = {"count": count_field})
         elif(conf_field == "sample_confidence_marine_and_terrestrial"):
              df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation"]]
-             df_tmp = df_tmp.query('location_designation == "marine_and_terrestrial"')
+             df_tmp = df_tmp.query('location_designation == "marine and terrestrial"')
              df_species = df_tmp.groupby(["tax_id"]).\
                  size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
              df_species["count"] = df_species["count"].astype(int)
@@ -1231,7 +1231,8 @@ def make_combined_single_domain_call(df_merge_combined_tax):
            ((df["sample_confidence_marine_inc_biome"] == 'high') | (df[
                                                                        "sample_confidence_marine_inc_biome"] == 'medium')), "combined_location_designation"] = "marine_and_terrestrial"
 
-    df.loc[((df["sample_confidence_marine_inc_biome"] == 'high') |(df["sample_confidence_marine_inc_biome"] == 'medium')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | ((df["sample_confidence_terrestrial_inc_biome"] == 'zero') | (df["sample_confidence_terrestrial_inc_biome"] == 'low'))), "combined_location_designation"] = "marine"
+    df.loc[((df["sample_confidence_marine_inc_biome"] == 'high') |(df["sample_confidence_marine_inc_biome"] == 'medium')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low')\
+        | ((df["sample_confidence_terrestrial_inc_biome"] == 'zero') | (df["sample_confidence_terrestrial_inc_biome"] == 'low'))), "combined_location_designation"] = "marine"
     df.loc[df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'high', "combined_location_designation"] = "marine_and_terrestrial"
     df.loc[((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & (df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'medium'), "combined_location_designation"] = "marine_and_terrestrial"
     df.loc[(df["sample_confidence_marine_inc_biome"] == 'high') & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')), "combined_location_designation"] = "marine"
@@ -1247,6 +1248,8 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     df.loc[(df["combined_location_designation"] == "none") & (df["NCBI-to-marine"] == "may be exclusively"), "combined_location_designation"] = "marine"
 
     df.loc[(df["combined_location_designation"] == "none") & (len(df["location_designation"])>5), "combined_location_designation"] = df["location_designation"]
+    #cope with a use case of the above
+    df.loc[(df["combined_location_designation"] == "marine and terrestrial"), "combined_location_designation"] = "marine_and_terrestrial"
     ic(df.query('combined_location_designation == "marine_and_terrestrial"'))
     ic(df.head(2))
     ic(df.query('combined_location_designation == "marine_and_terrestrial"').head(2))
@@ -1283,10 +1286,10 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     ic(df.query('combined_location_designation == "marine" and `NCBI-to-marine` == "may be exclusively"').shape[0])
     ic(df.query('combined_location_designation != "marine" and `NCBI-to-marine` == "may be exclusively"').shape[0])
     ic("*********************************************************")
-    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-marine` == "is not"').shape[0])
-    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-marine` == "not flagged as"').shape[0])
-    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is not"').shape[0])
-    ic(df.query('combined_location_designation == "marine and terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "not flagged as"').shape[0])
+    ic(df.query('combined_location_designation == "marine_and_terrestrial" and `NCBI-to-marine` == "is not"').shape[0])
+    ic(df.query('combined_location_designation == "marine_and_terrestrial" and `NCBI-to-marine` == "not flagged as"').shape[0])
+    ic(df.query('combined_location_designation == "marine_and_terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "is not"').shape[0])
+    ic(df.query('combined_location_designation == "marine_and_terrestrial" and `NCBI-to-terrestrial-or-freshwater` == "not flagged as"').shape[0])
 
 
     ic("*********************************************************")
@@ -1416,7 +1419,7 @@ def main():
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
     # This takes over 20mins to run all the way through with a full ENA dataset os broke into chunks that can be started downstream
-    got_data_testing_down_stream = 5
+    got_data_testing_down_stream = 2
     if got_data_testing_down_stream == 1:
         ic("*********** got_data_testing_down_stream >=1")
         # get category information from hit file
@@ -1520,7 +1523,7 @@ def main():
 
     if got_data_testing_down_stream <= 5:
         ic("*********** got_data_testing_down_stream <=5")
-        quicky = True
+        quicky = False
         if quicky == False:
             out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
             pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
@@ -1544,40 +1547,77 @@ def main():
 
         df_mini = df_merge_combined_tax[["lat_dps", "lon_dps", "collection_date", "combined_location_designation"]]
         df_mini = df_mini[df_mini['lat_dps'].notnull()].query('lat_dps > 0')
-        df_mini = df_mini[df_mini['collection_date'].notnull()]
-        #df_mini["collection_date"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore")
-        df_mini["collection_date"] = pd.to_datetime(df_mini["collection_date"], errors = 'coerce')
-        ic(df_mini.dtypes)
-        df_mini["collection_date"] = df_mini["collection_date"].dt.date
-        ic(df_mini["collection_date"].head(3))
-        start_date = pd.to_datetime('2000-01-01').date()
-        end_date = pd.to_datetime('2024-01-01').date()
-        df_mini = df_mini[(df_mini["collection_date"] > start_date) & (df_mini["collection_date"] < end_date)]
-        fig = px.scatter(df_mini, title = "Lat/Lon over time since year=2000", x = "collection_date", y = "lat_dps", width = width,
-                         color = "combined_location_designation")
-        # cat_order = {}
-        # cat_order[]
-        # fig.update_layout(category_order= "reversed")
-        out_file = plot_dir + "merged_all_combined_lat_lon." + 'png'
-        ic(out_file)
-        fig.write_image(out_file)
-        fig.show()
-        df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "combined_location_designation")
+
+        #df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        fig = px.histogram(df_mini, x = "lat_dps", log_y=True, color = "combined_location_designation")
         fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
-        fig.update_xaxes(categoryorder = 'category ascending')
-        out_file = plot_dir + "merged_all_combined_collection." + 'png'
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+        fig.update_xaxes(categoryorder = 'array',
+                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+        out_file = plot_dir + "merged_all_combined_lat_dps." + 'png'
         ic(out_file)
         fig.write_image(out_file)
         fig.show()
 
-        df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "lat_dps")
+        #df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        fig = px.histogram(df_mini, x = "lon_dps", log_y=True, color = "combined_location_designation")
         fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
-        fig.update_xaxes(categoryorder = 'category ascending')
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+        fig.update_xaxes(categoryorder = 'array',
+                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+        out_file = plot_dir + "merged_all_combined_lon_dps." + 'png'
+        ic(out_file)
+        fig.write_image(out_file)
         fig.show()
+
+        df_mini = df_mini[~(df_mini["combined_location_designation"] == 'terrestrial')]
+        fig = px.histogram(df_mini, x = "lon_dps", log_y=True, color = "combined_location_designation")
+        fig.update_xaxes(type = 'category')
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+        fig.update_xaxes(categoryorder = 'array',
+                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+        out_file = plot_dir + "merged_all_combined_lon_dps." + 'png'
+        ic(out_file)
+        fig.write_image(out_file)
+        fig.show()
+
+        sys.exit()
+
+        df_mini = df_mini[df_mini['collection_date'].notnull()]
+
+        # #df_mini["collection_date"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore")
+        # df_mini["collection_date"] = pd.to_datetime(df_mini["collection_date"], errors = 'coerce')
+        # ic(df_mini.dtypes)
+        # df_mini["collection_date"] = df_mini["collection_date"].dt.date
+        # ic(df_mini["collection_date"].head(3))
+        # start_date = pd.to_datetime('2000-01-01').date()
+        # end_date = pd.to_datetime('2024-01-01').date()
+        # df_mini = df_mini[(df_mini["collection_date"] > start_date) & (df_mini["collection_date"] < end_date)]
+        # fig = px.scatter(df_mini, title = "Lat/Lon over time since year=2000", x = "collection_date", y = "lat_dps", width = width,
+        #                  color = "combined_location_designation")
+        # # cat_order = {}
+        # # cat_order[]
+        # # fig.update_layout(category_order= "reversed")
+        # out_file = plot_dir + "merged_all_combined_lat_lon." + 'png'
+        # ic(out_file)
+        # fig.write_image(out_file)
+        # fig.show()
+        # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "combined_location_designation")
+        # fig.update_xaxes(type = 'category')
+        # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+        # fig.update_xaxes(categoryorder = 'category ascending')
+        # out_file = plot_dir + "merged_all_combined_collection." + 'png'
+        # ic(out_file)
+        # fig.write_image(out_file)
+        # fig.show()
+        #
+        # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+        # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "lat_dps")
+        # fig.update_xaxes(type = 'category')
+        # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+        # fig.update_xaxes(categoryorder = 'category ascending')
+        # fig.show()
 
         sys.exit()
 

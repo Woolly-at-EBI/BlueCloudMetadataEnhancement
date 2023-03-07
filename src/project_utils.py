@@ -81,17 +81,18 @@ def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, oth
     fig = px.histogram(df, title = title, x = cat,
                        width = width, color = color, log_y = log_y)
     fig.update_xaxes(categoryorder = "total descending")
-    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 12))
     # fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = format)
     fig.show()
-def u_plot_pie(df, cat, value_column, title, out_file):
+def u_plot_pie(df, cat, value_column, title, type, out_file):
     """
 
     :param df:
     :param cat:
     :param value_column:
+    :param tupe:  is value or percent
     :param out_file:
     :return:
     """
@@ -101,7 +102,7 @@ def u_plot_pie(df, cat, value_column, title, out_file):
     fig = px.pie(df,
                  values = value_column,
                  names = df[cat], title = title)
-    fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+    fig.update_traces(hoverinfo = 'label+percent', textinfo = type)
     fig.update_layout(title_text = title, title_x = 0.5)
     fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
     ic(out_file)

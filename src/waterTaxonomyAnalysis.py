@@ -1473,6 +1473,15 @@ def main():
         else:
             ic("ERROR, can't read ", pickle_file)
         ic(df_merge_combined_tax.shape)
+        df_groupby = df_merge_combined_tax.groupby(["location_designation"]).size().to_frame('count').reset_index()
+        cat = "location_designation"
+        out_graph_file = plot_dir + "location_designation_sample_counts_value." + "png"
+        ic(df_groupby)
+        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", out_graph_file)
+        out_graph_file = plot_dir + "location_designation_sample_counts_percent." + "png"
+        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "percent", out_graph_file)
+
+        sys.exit()
 
         #  debugging the rules!
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
@@ -1571,17 +1580,26 @@ def main():
         fig.show()
 
         df_mini = df_mini[~(df_mini["combined_location_designation"] == 'terrestrial')]
+        fig = px.histogram(df_mini, x = "lat_dps", log_y = True, color = "combined_location_designation")
+        fig.update_xaxes(type = 'category')
+        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+        fig.update_xaxes(categoryorder = 'array',
+                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+        out_file = plot_dir + "merged_all_combined_lat_wo_terrestrial_dps." + 'png'
+        ic(out_file)
+        fig.write_image(out_file)
+        fig.show()
+
         fig = px.histogram(df_mini, x = "lon_dps", log_y=True, color = "combined_location_designation")
         fig.update_xaxes(type = 'category')
         fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
         fig.update_xaxes(categoryorder = 'array',
                          categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
-        out_file = plot_dir + "merged_all_combined_lon_dps." + 'png'
+        out_file = plot_dir + "merged_all_combined_lon_wo_terrestrial_dps." + 'png'
         ic(out_file)
         fig.write_image(out_file)
         fig.show()
 
-        sys.exit()
 
         df_mini = df_mini[df_mini['collection_date'].notnull()]
 
@@ -1619,8 +1637,6 @@ def main():
         # fig.update_xaxes(categoryorder = 'category ascending')
         # fig.show()
 
-        sys.exit()
-
         out_graph_file = plot_dir + cat + "_pie." + format
         u_plot_pie(df_groupby, cat, "count", cat + " sample counts", out_graph_file)
 
@@ -1628,7 +1644,7 @@ def main():
         u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
         out_graph_file = plot_dir + cat + "." + format
         u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y, out_graph_file, width, format, other_params)
-        u_plot_pie(df_merge_combined_tax, cat, out_file)
+        u_plot_pie(df_merge_combined_tax, cat, "combined_location_designation", title, out_file)
 
         log_y = True
         out_graph_file = plot_dir + cat + "_score_log." + format

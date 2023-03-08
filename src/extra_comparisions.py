@@ -35,7 +35,7 @@ def merged_plots(df):
     for cat in cats:
         ic(cat)
         df_groupby = df.groupby(["combined_location_designation", cat]).size().to_frame('count').reset_index()
-        #ic(df_groupby)
+        ic(df_groupby)
         color = "combined_location_designation"
         other_params = {}
         title = cat + " " + color
@@ -46,16 +46,14 @@ def merged_plots(df):
         #u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, other_params)
         df_tmp = df
         #ic(df_tmp.head())
+        df_tmp.loc[df_tmp["combined_location_designation"] == "terrestrial", cat] = np.NaN
         df_tmp.loc[df_tmp[cat] == 0, cat] = np.NaN
-
+        df_tmp = df_tmp[~df_tmp[cat].isna()]
         df_tmp[cat] = True
 
-        df_tmp = df_tmp[~df_tmp[cat].isna()]
-
         #df_tmp.loc[len(df_tmp[cat]) > 1, "hit_found"] = 1
-
         df_groupby = df_tmp.groupby(["combined_location_designation", cat]).size().to_frame('count').reset_index()
-        ic("final-",df_groupby)
+
         # type = "percent"
         # out_graph_file = plot_dir + cat + "_" + color + "pie" + type +  "." + format
         # u_plot_pie(df_groupby, "combined_location_designation", 'count', title, type, out_graph_file)
@@ -67,6 +65,8 @@ def merged_plots(df):
         df_groupby = df_groupby.drop(cat, axis=1)
         df_groupby = df_groupby.rename(columns = {"count": cat})
         df_groupby = df_groupby[df_groupby[cat].notna()]
+
+
         if fori == 0:
             df_combined = df_groupby
         else:
@@ -75,7 +75,9 @@ def merged_plots(df):
 
         fori += 1
         ic(df_combined)
-        
+
+    df_tr = df_combined.transpose()
+    ic(df_tr)
 
 
 

@@ -36,6 +36,37 @@ function run_geolocation () {
     $cmd
 }
 
+#
+shape_file=$shapefile_dir/shape_file/wwf_global200ecoregions/g200_fw.shp
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+#
+shape_file=$shapefile_dir/shape_file/wwf_global200ecoregions/g200_marine.shp
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+#
+shape_file=$shapefile_dir/shape_file/wwf_global200ecoregions/g200_terr.shp
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+#
+shape_file=$shapefile_dir/shape_file/
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+#
+shape_file=$shapefile_dir/shape_file/
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+#
+shape_file=$shapefile_dir/shape_file/
+out_file=$outdir/
+run_geolocation $shape_file  $out_file
+
+
 #marine: Intersect_EEZ_IHO : Intersect_EEZ_IHO
 shape_file=$shapefile_dir/Intersect_EEZ_IHO_v4_2020/Intersect_EEZ_IHO_v4_2020.shp
 out_file=$outdir/intersect_eez_iho_hits.tsv

@@ -33,9 +33,10 @@ from geopandas.geoseries import *
 from shapely.geometry import Polygon, Point
 
 import argparse
+import sys
 
 
-def read_shape(shapefile):
+def read_shape(shapefile, geo_crs):
     """ read in the shape file
     n.b. it is assumed that the shapefile is using GPS style CRS
     __params__:
@@ -43,15 +44,19 @@ def read_shape(shapefile):
     __returns__
          eez_shape - geopanda object
     """
-    ic()
 
-    eez_shape = gpd.read_file(shapefile)
-    ic(len(eez_shape.index))  # getting the total number of images
-    ic("finished reading eez_shape")
+    my_shape = gpd.read_file(shapefile)
+    ic(f"finished reading my_shape{shapefile}")
+    ic(f"# of polygons in shape {len(my_shape.index)}")  # getting the total number of images
+
+    if my_shape.crs == None:
+        ic(f"No CRC in shape file so trying: {geo_crs}")
+        my_shape = my_shape.set_crs(geo_crs)
+
     pd.set_option('display.max_columns', None)
     # ic(eez_shape.head(1))
     # plt = eez_shape.plot()
-    return eez_shape
+    return my_shape
 
 
 def old_test_location(eez_shape, lat, lon):
@@ -192,7 +197,7 @@ def plotting_eez_points(eez_shape, point_in_polys_geodf, points_geodf):
     plt.show()
 
 
-def test_locations(eez_shape, points_series, points_geodf):
+def test_locations(my_shape, points_series, points_geodf):
     """ test the lat and lon coordinate
         this is done by polygon searching, using the GDAL libs via GEOPANDAS
          see this for more background to doing this fast  https://www.matecdev.com/posts/point-in-polygon.html
@@ -201,7 +206,7 @@ def test_locations(eez_shape, points_series, points_geodf):
          The coordinate references system if source and target are checked: if necessary the shapefile coordinates
          are re-projected.
         __params__:
-                eez_shape
+                my_shape
                 points_series
                 points_geodf
         __returns__:
@@ -226,11 +231,14 @@ def test_locations(eez_shape, points_series, points_geodf):
     # ic(matches_df)
     # ic(type(matches_df))
 
-    if points_geodf.crs != eez_shape.crs:
-        ic("CRS mismatch so reprojecting the CRS for the eez_shape")
-        eez_shape = eez_shape.to_crs(points_geodf.crs)
+    # ic(points_geodf.crs)
+    # ic(my_shape.crs)
 
-    df = gpd.tools.sjoin(points_geodf, eez_shape, predicate = "within", how = 'left')
+    if points_geodf.crs != my_shape.crs:
+        ic("CRS mismatch so re-projecting the CRS for the shape")
+        my_shape = my_shape.to_crs(points_geodf.crs)
+
+    df = gpd.tools.sjoin(points_geodf, my_shape, predicate = "within", how = 'left')
     # the above geo dataframe contains one row per query point. So pick on points not matched, by checking GEONAME,
     # to ignore those for now
     # point_in_polys_geodf = df[df['GEONAME'].notna()]
@@ -262,11 +270,13 @@ def main(passed_args):
         shape_file = passed_args.shapefile
     if passed_args.outfile:
         out_filename = passed_args.outfile
+    if passed_args.geo_crc:
+         geo_crc = passed_args.geo_crc
     ic(coordinates_file)
     ic(shape_file)
     ic(out_filename)
 
-    eez_shape = read_shape(shape_file)
+    eez_shape = read_shape(shape_file, geo_crc)
 
     ic(passed_args.typeofcontents)
     if passed_args.typeofcontents == "point":
@@ -278,12 +288,13 @@ def main(passed_args):
     elif passed_args.typeofcontents == "line":
         ic()
 
-    # getting all the ena_cordinates including regions in geometry format for the analysis
-    all_ena_coordinates_file = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
+    # getting all the ena_coordinates including regions in geometry format for the analysis
+    #all_ena_coordinates_file = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
+    all_ena_coordinates_file = coordinates_file
     out_filename = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
     (points_series, points_geodf) = create_points_geoseries(all_ena_coordinates_file)
-    points_geodf.to_csv(out_filename, sep = "\t")
     ic(out_filename)
+    points_geodf.to_csv(out_filename, sep = "\t")
 
     return ()
 
@@ -299,6 +310,8 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--outfile", help = "Output file", required = False)
     parser.add_argument("-s", "--shapefile", help = "shape file that contains the polygons", required = False)
     parser.add_argument("-c", "--coordinatesfile", help = "Latitude and longitude coordinate file, format=TBD",
+                        required = False)
+    parser.add_argument("-g", "--geo_crc", help = "geo_crc of the shapefile format=TBD",
                         required = False)
     parser.add_argument("-t", "--typeofcontents", help = "the type of the coordinates file e.g. point, line, polygon",
                         default = "point", required = False)

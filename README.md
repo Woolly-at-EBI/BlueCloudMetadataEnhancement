@@ -43,4 +43,4 @@ These are low in the priority list for this project, but we have gathered much m
 ## Contributors
 * Main author so far: Peter Woollard
 * Marine Domain expert and taxonomy details: Stéphane Pesant
-* Some technical ideas and work: Josie Burgin and Suran Jayathilaka
+* Some technical ideas and work: Josie Burgin, Suran Jayathilaka and Lili Meszaros

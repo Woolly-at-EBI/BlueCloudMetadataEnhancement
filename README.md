@@ -38,7 +38,7 @@ The hydroshed shapefile is available.
 These are low in the priority list for this project, but we have gathered much metadata in the course of the marine and fresh water metadata. So we may add this as a freeby.
 
 ## Script documentation
-[a relative link](docs/script_documentation.md)
+[a relative link](docs/Script_documentation.md)
 
 ## Contributors
 * Main author so far: Peter Woollard

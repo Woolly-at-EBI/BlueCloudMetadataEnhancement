@@ -210,26 +210,15 @@ def test_locations(my_shape, points_series, points_geodf):
                 points_series
                 points_geodf
         __returns__:
-                get_locations as point_in_polys_geodf
+                get_locations as df_with_hits
     """
     ic()
     pd.set_option('display.max_columns', None)
-    # ic(eez_shape.head(1))
     ic(points_series.head(3))
     # ic(type(points_series))
-    # tmp_df = points_series.to_frame()
-    # tmp_df = tmp_df.rename(columns = {0: 'geometry'}).set_geometry('geometry')
-    # ic(tmp_df.head())
 
     # the points are the columns, the shapes are the rownames, True recorded if matches
     ic("run the eez_shape.contains(point)")
-    # this loop works but is slow.
-    # matches_df = pd.concat([eez_shape.contains(point) for point in points_series], axis=1)
-    # matches_df = pd.concat([tmp_df.apply(lambda row: eez_shape.contains(row), axis=1)])
-    # ic(points_series.head())
-    # matches_df = points_series.apply(lambda point: eez_shape.contains(point))
-    # ic(matches_df)
-    # ic(type(matches_df))
 
     # ic(points_geodf.crs)
     # ic(my_shape.crs)
@@ -238,14 +227,12 @@ def test_locations(my_shape, points_series, points_geodf):
         ic("CRS mismatch so re-projecting the CRS for the shape")
         my_shape = my_shape.to_crs(points_geodf.crs)
 
-    df = gpd.tools.sjoin(points_geodf, my_shape, predicate = "within", how = 'left')
-    # the above geo dataframe contains one row per query point. So pick on points not matched, by checking GEONAME,
-    # to ignore those for now
-    # point_in_polys_geodf = df[df['GEONAME'].notna()]
+    df_with_hits = gpd.tools.sjoin(points_geodf, my_shape, predicate = "within", how = 'left')
+    # The above geo dataframe contains one row per query point, whether there are hits or not
     pointInPolys_geodf = df
 
-    ic(len(pointInPolys_geodf.index))
-    return pointInPolys_geodf
+    ic(len(pdf_with_hits.index))
+    return df_with_hits
 
 
 def main(passed_args):
@@ -289,17 +276,24 @@ def main(passed_args):
         ic()
 
     # getting all the ena_coordinates including regions in geometry format for the analysis
+    # March 2023 don't think this is still being used ANYWHERE, or how if this is called last so commented! And not
     #all_ena_coordinates_file = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
-    all_ena_coordinates_file = coordinates_file
-    out_filename = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
-    (points_series, points_geodf) = create_points_geoseries(all_ena_coordinates_file)
-    ic(out_filename)
-    points_geodf.to_csv(out_filename, sep = "\t")
+    # all_ena_coordinates_file = coordinates_file
+    # out_filename = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
+    # (points_series, points_geodf) = create_points_geoseries(all_ena_coordinates_file)
+    # ic(out_filename)
+    # points_geodf.to_csv(out_filename, sep = "\t")
 
     return ()
 
 
 if __name__ == '__main__':
+    """
+    mainly handles the command line params
+    typeofcontents - only polygon is currently handled. i.e. comparing points with polygons.
+      lines e.g. for rivers needs to be done
+    
+    """
     ic()
     # Read arguments from command line
     prog_des = "Script to get the marine zone classification for a set of longitude and latitude coordinates"
@@ -311,7 +305,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--shapefile", help = "shape file that contains the polygons", required = False)
     parser.add_argument("-c", "--coordinatesfile", help = "Latitude and longitude coordinate file, format=TBD",
                         required = False)
-    parser.add_argument("-g", "--geo_crc", help = "geo_crc of the shapefile format=TBD",
+    parser.add_argument("-g", "--geo_crc", help = "geo_crc of the shapefile format=EPSG:4326",
                         required = False)
     parser.add_argument("-t", "--typeofcontents", help = "the type of the coordinates file e.g. point, line, polygon",
                         default = "point", required = False)

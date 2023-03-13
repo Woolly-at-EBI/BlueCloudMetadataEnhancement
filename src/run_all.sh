@@ -1,6 +1,7 @@
 
 # script to run the lat lon coordinates against various shapefiles, using geopandas - the script automatically re-projects if different coordinate reference systems(CRS) are used.
 # it returns a file one row per coordinate. Additionally annotation from the shapefile is only added if a hit else nowt (NaN).
+# key thing to check is the EPSG coding system for the shape file and to specify that on the command line
 # Peter Woollard, ENA, EMBL-EBI, December 2022
 
 #usage:   ./run_all.sh [-b basedir]
@@ -40,26 +41,11 @@ function run_geolocation () {
 
 geo_crc="EPSG:4326"
 
-##WWF 200, 3 shapefiles
-#shape_file=$shapefile_dir/wwf_global200ecoregions/g200_fw.shp
-#out_file=$outdir/g200_fw_hits.tsv
-#run_geolocation "$shape_file"  "$out_file" "$geo_crc"
-#
-#exit
-#
-#shape_file=$shapefile_dir/wwf_global200ecoregions/g200_marine.shp
-#out_file=$outdir/g200_marine_hits.tsv
-#run_geolocation "$shape_file"  "$out_file" "$geo_crc"
-#
-#shape_file=$shapefile_dir/wwf_global200ecoregions/g200_terr.shp
-#out_file=$outdir/g200_terr_hits.tsv
-#rrun_geolocation "$shape_file"  "$out_file" "$geo_crc"
-
 #wwf_GLWD_level1
 shape_file=$shapefile_dir/wwf_GLWD_level1/glwd_1.shp
 out_file=$outdir/glwd_1_hits.tsv
 run_geolocation "$shape_file"  "$out_file" "$geo_crc"
-#
+
 shape_file=$shapefile_dir/wwf_GLWD_level2/glwd_2.shp
 out_file=$outdir/glwd_2_hits.tsv
 run_geolocation "$shape_file"  "$out_file" "$geo_crc"
@@ -97,9 +83,9 @@ out_file=$outdir/intersect_eez_iho_hits.tsv
 run_geolocation "$shape_file"  "$out_file" "$geo_crc"
 
 #terrestrial: oprvs_watercourse : freshwater use cases ( have hits, but not currently using)
-shape_file=$shapefile_dir/shape_file/oprvrs_essh_gb/data/WatercourseLink.shp
-out_file=$outdir/oprvs_hits.tsv
-run_run_geolocation "$shape_file"  "$out_file" "$geo_crc"
+#shape_file=$shapefile_dir/oprvrs_essh_gb/data/WatercourseLink.shp
+#out_file=$outdir/oprvs_hits.tsv
+#run_geolocation "$shape_file"  "$out_file" "EPSG:22700"
 
 #marine: GEBCO_undersea_multiline : GEBCO undersea feature names  (zero hits for multiline with the points )  ( have hits, but not currently using)
 shape_file=$shapefile_dir/features/features-multilinestring.shp

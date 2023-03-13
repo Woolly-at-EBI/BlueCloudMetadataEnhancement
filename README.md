@@ -23,7 +23,7 @@ The computational geometry that underlies the polygon searching with coordinates
 
 The metagenome information for marine and freshwater organisms was prepared. This is merged in with metadata above.
 
-It is complementary. The shape and taxonomic information do seem to be broadly agree, but there are many points of analysis needed.
+It is complementary. The shape and taxonomic information do broadly agree, but there are many points of analysis needed.
 
 ## Sample Types
 

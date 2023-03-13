@@ -41,6 +41,11 @@ function run_geolocation () {
 
 geo_crc="EPSG:4326"
 
+shape_file=$shapefile_dir/natural_earth_vector/10m_physical/ne_10m_rivers_north_america.shp
+out_file=$outdir/ne_10m_rivers_north_america_hits.tsv
+run_geolocation "$shape_file"  "$out_file" "$geo_crc"
+exit
+
 #wwf_GLWD_level1
 shape_file=$shapefile_dir/wwf_GLWD_level1/glwd_1.shp
 out_file=$outdir/glwd_1_hits.tsv
@@ -73,7 +78,7 @@ out_file=$outdir/ne_10m_rivers_north_america_hits.tsv
 run_geolocation "$shape_file"  "$out_file" "$geo_crc"
 
 #Natural Earth Lake and river centre lines
-shape_file=$shapefile_dir/natural_earth_vector/50m_physical/ne_50m_rivers_lake_centerlines.shp
+shape_file=$shapefile_dir/natural_earth_vector/10m_physical/ne_10m_rivers_lake_centerlines_scale_rank.shp
 out_file=$outdir/ne_50m_rivers_lake_centerlines_hits.tsv
 run_geolocation "$shape_file"  "$out_file" "$geo_crc"
 

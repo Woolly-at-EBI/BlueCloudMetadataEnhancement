@@ -143,21 +143,18 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
             df
 
     """
-
-    ic(hit_file)
-
-    # nrow=100
-    # df = pd.read_csv(hit_file, sep = '\t', nrows = nrow)
+    ic()
+    ic(hit_file, filter_field, cat_name, filter_swap_value)
     df = pd.read_csv(hit_file, sep = '\t', low_memory = False)
-    # ic(df.head(8))
-    # df = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
     ic(df.columns)
-    # ic(df.head(15))
-    ''' they all have the index, first col, drop it'''
-    df = df.iloc[:, 1:]
     df = df[~df[filter_field].isnull()]
+    ic(df.head(2))
     # the first one captures feow_category
-    if filter_field == "index_right":
+    if cat_name in ["glwd_1_category", "glwd_2_category"]:
+        df = df.rename({'index_right': cat_name}, axis = 1)
+        df[cat_name] = df['TYPE']
+        ic(df[cat_name].value_counts())
+    elif filter_field == "index_right":
         if 'x' in df.columns:
             df = df.drop(['x', 'y'], axis = 1)
         df[filter_field] = filter_swap_value
@@ -203,8 +200,11 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
         #               'UN_SOV2', 'UN_SOV3', 'UN_TER1', 'UN_TER2', 'UN_TER3'], axis = 1)
         df['index_right'] = filter_swap_value
         df = df.rename({'index_right': cat_name}, axis = 1)
+    else:
+        ic(f"ERROR {cat_name} not matching anything!")
     ic(df.columns)
     # ic(df.head(15))
+    ic()
     return df
 
 
@@ -216,8 +216,11 @@ def mergeDFs(data_frames, out_filename):
         __returns__:
             df_merged
     """
+    ic()
+    ic(data_frames)
+
     df_merged = reduce(lambda left, right: pd.merge(left, right, on = ['coords', 'lon', 'lat'],
-                                                    how = 'outer'), data_frames)
+                                                    how = 'outer', suffixes = ('', '_y')), data_frames)
     # df_merged = df_merged.loc[~df_merged.index.duplicated(), :].copy()
     # df_merged.reset_index(inplace=True)
     ic(df_merged.head(2))
@@ -225,7 +228,7 @@ def mergeDFs(data_frames, out_filename):
     ic(df_merged.columns)
 
     if len(out_filename) > 1:
-        df_merged.to_csv(out_filename, sep = "\t")
+        df_merged.to_csv(out_filename, sep = "\t", index=False)
     ic(out_filename)
     return df_merged
 
@@ -252,51 +255,50 @@ def createTotal(df_merged_all_categories, categories, total):
     return df_merged_all_categories
 
 
-def get_all_ena_lat_lon(samples_dir):
-    """  get_all_ena_lat_lon inc. country and accession(sample_id)
-          This file was created by
-          curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&
-          fields=accession%2C%20lon%2C%20lat%2C%20country&includeMetagenomes=true&result=sample&sortDirection=asc"
-          -H "accept: */*" > sample_lat_lon_country.tsv
-            awk '$2 ~ /^[0-9*]|^lon$/{print;}' sample_lat_lon_country.tsv > sample_lat_lon_country_clean.tsv
-          :param
-            samples_dir_
-          :return
-             dataframe
-    """
-
-    crs_value = "EPSG:4326"
-    pd.set_option('display.max_columns', None)
-    ena_file = samples_dir + "sample_lat_lon_country_clean.tsv"
-    df = pd.read_csv(ena_file, sep = '\t')
-
-    df['coords'] = list(zip(df['lon'], df['lat']))
-    df['coords'] = df['coords'].apply(Point)
-    points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
-    points_geodf = points_geodf.drop(['accession'], axis = 1)
-    points_geodf = points_geodf.drop_duplicates()
-
-    # ic("look for dups")
-    # boolean = points_geodf.duplicated(subset = ['coords']).any()
-    # print(boolean, end = '\n\n')  # True
-    #
-    # ic("look for dups")
-    # (tmp_df) = points_geodf.duplicated(subset = None, keep = 'first')
-    # doing the following rather than rename as it changes the order too.
-    #
-    points_geodf[['ena_country', 'ena_region']] = points_geodf['country'].str.split(":", expand = True)
-    points_geodf = points_geodf.drop(['country'], axis = 1)
-    points_geodf['ena_category'] = 'ena'
-    # ic(points_geodf.head(15))
-    # nightmare with unhashable Points
-    # df1 = pd.DataFrame(points_geodf)
-    ena_tmp_file = samples_dir + "sample_lat_lon_country_clean_tmp.tsv"
-    points_geodf.to_csv(ena_tmp_file, sep = '\t')
-    df1 = pd.read_csv(ena_tmp_file, sep = '\t')
-    # ic(df1.head(10))
-    # quit()
-
-    return df1
+# def get_all_ena_lat_lon_geo(samples_dir):
+#     """  get_all_ena_lat_lon_geo inc. country and accession(sample_id)
+#           This file was created by
+#           curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&
+#           fields=accession%2C%20lon%2C%20lat%2C%20country&includeMetagenomes=true&result=sample&sortDirection=asc"
+#           -H "accept: */*" > sample_lat_lon_country.tsv
+#             awk '$2 ~ /^[0-9*]|^lon$/{print;}' sample_lat_lon_country.tsv > sample_lat_lon_country_clean.tsv
+#           :param
+#             samples_dir_
+#           :return
+#              dataframe
+#     """
+#     ic()
+#     crs_value = "EPSG:4326"
+#     pd.set_option('display.max_columns', None)
+#     ena_file = samples_dir + "all_sample_lat_lon_country.tsv"
+#     df = pd.read_csv(ena_file, sep = '\t')
+#
+#     df['coords'] = list(zip(df['lon'], df['lat']))
+#     df['coords'] = df['coords'].apply(Point)
+#     points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
+#     points_geodf = points_geodf.drop(['accession'], axis = 1)
+#     points_geodf = points_geodf.drop_duplicates()
+#
+#     # ic("look for dups")
+#     # boolean = points_geodf.duplicated(subset = ['coords']).any()
+#     # print(boolean, end = '\n\n')  # True
+#     #
+#     # ic("look for dups")
+#     # (tmp_df) = points_geodf.duplicated(subset = None, keep = 'first')
+#     # doing the following rather than rename as it changes the order too.
+#     #
+#     points_geodf[['ena_country', 'ena_region']] = points_geodf['country'].str.split(":", expand = True)
+#     points_geodf = points_geodf.drop(['country'], axis = 1)
+#     points_geodf['ena_category'] = 'ena'
+#     # ic(points_geodf.head(15))
+#     # nightmare with unhashable Points
+#     # df1 = pd.DataFrame(points_geodf)
+#     #read to and from a flat file as a workaround - was getting some strange behaviours and not time to debug
+#     ena_tmp_file = samples_dir + "sample_lat_lon_country_clean_tmp.tsv"
+#     points_geodf.to_csv(ena_tmp_file, sep = '\t', index=False)
+#     df1 = pd.read_csv(ena_tmp_file, sep = '\t')
+#
+#     return df1
 
 
 def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
@@ -313,12 +315,12 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     ic(df_merged_all_categories.head(3))
     width =1500
     scope = 'world'
-    cat = 'ena_country'
-    ic(cat)
-    df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
-    ic(df_all.head())
-    ic(df_all.describe())
-    ic(df_all["counts"].sum())
+    # cat = 'ena_country'
+    # ic(cat)
+    # df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+    # ic(df_all.head())
+    # ic(df_all.describe())
+    # ic(df_all["counts"].sum())
 
     cat = 'worldAdmin_category'
     ic(cat)
@@ -388,7 +390,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
         return
 
     def plot_pie(df, cat,  out_file):
-
+        title = cat
         fig = px.pie(df[cat],
                      values = df['counts'],
                      names = df[cat], title = title)
@@ -424,7 +426,8 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
 
         df_merged_all_categories_just = df_merged_all_categories.query('location_designation == "marine and terrestrial"')
         out_file = plot_dir + 'merge_all_location_designation_m+t.' + format
-
+        cat = 'location_designation'
+        title = 'merge_all_location_designation_m+t.'
         create_cat_figure_w_color(df_merged_all_categories_just, title, cat, color_discrete_map, scope, out_file, width, marker_size, showlegendStatus,
                                   format)
 
@@ -518,10 +521,10 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     out_graph_file = plot_dir + 'merge_all_IHO_cats.' + format
     create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    title_string = 'ENA samples in ENA Country Categories'
-    color_value = "ena_country"
-    out_graph_file = plot_dir + 'merge_all_ENA_country_cats.' + format
-    create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
+    # title_string = 'ENA samples in ENA Country Categories'
+    # color_value = "ena_country"
+    # out_graph_file = plot_dir + 'merge_all_ENA_country_cats.' + format
+    # create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
     title_string = 'ENA samples in World Admin Categories'
     color_value = "worldAdmin_category"
@@ -579,26 +582,38 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
     for match in all_columns:
         if "category" in match:
             categories.append(match)
+    ic(categories)
 
-    columns2keep = ['lat', 'lon', 'coords', 'ena_country', 'ena_region'] + categories
+    #columns2keep = ['lat', 'lon', 'coords', 'ena_country', 'ena_region'] + categories
+    columns2keep = ['lat', 'lon', 'coords'] + categories
     ic(columns2keep)
     df_merged_all_categories = df_merged_all[columns2keep]
     ic(df_merged_all_categories.head(2))
+
     sea_categories = ['eez_category', 'longhurst_category', 'IHO_category', 'sea_category']
     land_categories = ['land_category', 'worldAdmin_category', 'feow_category']
+    freshwater_categories = ['glwd_2_category', 'ne_10m_lakes_category', 'feow_category']
 
     df_merged_all_categories = createTotal(df_merged_all_categories, sea_categories, 'sea_total')
     df_merged_all_categories = createTotal(df_merged_all_categories, land_categories, 'land_total')
+    df_merged_all_categories = createTotal(df_merged_all_categories, freshwater_categories, 'freshwater_total')
 
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] > 0),
         'location_designation_marine'] = True
+
     df_merged_all_categories.loc[
         (df_merged_all_categories['land_total'] > 0),
         'location_designation_terrestrial'] = True
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation_other'] = 'neither marine nor terrestrial'
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['freshwater_total'] > 0),
+        'location_designation_freshwater'] = True
+    df_merged_all_categories.loc[
+        (df_merged_all_categories['location_designation_marine'] | df_merged_all_categories['location_designation_freshwater'] ),
+        'location_designation_aquatic'] = True
 
    # NOT preferentially choosing marine
     df_merged_all_categories.loc[
@@ -617,21 +632,22 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
 
-    ic(df_merged_all_categories.head(15))
+    ic(df_merged_all_categories.head(5))
     out_file = analysis_dir + 'merged_all_categories.tsv'
-    ic(out_file)
+    ic(df_merged_all_categories.shape[0])
     ic(df_merged_all_categories["location_designation"].value_counts())
-    df_merged_all_categories.to_csv(out_file, sep = '\t')
+    ic(out_file)
+    df_merged_all_categories.to_csv(out_file, sep = '\t',index=False)
 
     ic("========================================================")
 
     return out_file
 
 
-def mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds,
-                     df_intersect_eez_iho, hit_dir):
+def mergeAndAnalysis(hit_df_dict, hit_dir):
     """  mergeAndAnalysis
-            is used to merge a bunch of data frames.
+            is used to merge a bunch of data frames. df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds,
+                     df_intersect_eez_iho
 
         __params__:
         df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds,
@@ -640,19 +656,26 @@ def mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_la
         __returns__:
 
     """
-    sea_data_frames = [df_eez, df_longhurst, df_seaIHO, df_seawater, df_intersect_eez_iho]
+    ic()
+    ic(hit_df_dict.keys())
+
+    freshwater_frames = [hit_df_dict['glwd_2'], hit_df_dict['ne_10m_lakes'], hit_df_dict['hydrosheds']]
+    out_filename = hit_dir + 'merged_freshwater.tsv'
+    df_merged_freshwater = mergeDFs(freshwater_frames, out_filename)
+
+    sea_data_frames = [hit_df_dict["eez"], hit_df_dict["longhurst"], hit_df_dict["seaIHO"], hit_df_dict["seawater"], hit_df_dict["intersect_eez_iho"]]
     out_filename = hit_dir + 'merged_sea.tsv'
+    #sea_data_frames = [hit_df_dict["eez"], hit_df_dict["longhurst"]]
     df_merged_sea = mergeDFs(sea_data_frames, out_filename)
 
-    land_data_frames = [df_land, df_worldAdmin, df_hydrosheds]
+    land_data_frames = [hit_df_dict["land"], hit_df_dict["worldAdmin"], hit_df_dict["hydrosheds"]]
     out_filename = hit_dir + 'merged_land.tsv'
     df_merged_land = mergeDFs(land_data_frames, out_filename)
 
-    data_frames = [df_merged_sea, df_merged_land, df_ena]
+    data_frames = [df_merged_sea, df_merged_land, df_merged_freshwater]
     out_filename = hit_dir + 'merged_all.tsv'
     df_merged_all = mergeDFs(data_frames, out_filename)
     ic(df_merged_all.head(3))
-    ic(df_ena.head(3))
 
     df_merged_all = mergeDFs(data_frames, out_filename)
 
@@ -667,39 +690,61 @@ def processHitFiles(hit_dir):
         __params__:
 
         __returns__:
-         (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
+        hit_df_dict  is a dictionary of data frames
+        containing:
+           (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
 
     """
     ic(hit_dir)
-    hitfile = hit_dir + 'intersect_eez_iho_hits.tsv'
-    df_intersect_eez_iho = clean_df(hitfile, 'MARREGION', 'eez_iho_intersect_category', 'eez_iho_intersect')
-    ic(df_intersect_eez_iho.head(2))
+    hit_df_dict = {}
 
-    hitfile = hit_dir + 'seawater_polygons_hits.tsv'
-    df_seawater = clean_df(hitfile, 'index_right', 'sea_category', 'seawater')
+    # comment as glwd_1 all in glwd_2
+    # hitfile = hit_dir + 'glwd_1_hits.tsv'
+    # hit_df_dict["glwd_1"] = clean_df(hitfile, 'index_right', 'glwd_1_category', 'freshwater')
+    # df = hit_df_dict["glwd_1"]
+    # ic(df.columns)
+    # ic(df.query('glwd_1_category == "freshwater"').head())
+    # ic(df['glwd_1_category'].value_counts())
 
-    hitfile = hit_dir + 'land_polygons_hits.tsv'
-    df_land = clean_df(hitfile, 'index_right', 'land_category', 'land')
+    hitfile = hit_dir + 'glwd_2_hits.tsv'
+    hit_df_dict["glwd_2"] = clean_df(hitfile, 'index_right', 'glwd_2_category', 'freshwater')
+    df = hit_df_dict["glwd_2"]
+    ic(df.columns)
+    ic(df['glwd_2_category'].value_counts())
 
-    hitfile = hit_dir + 'world-administrative-boundaries_hits.tsv'
-    df_worldAdmin = clean_df(hitfile, 'region', 'worldAdmin_category', 'land')
-
-    hitfile = hit_dir + 'World_Seas_IHO_v3_hits.tsv'
-    df_seaIHO = clean_df(hitfile, 'MRGID', 'IHO_category', 'sea')
+    hitfile = hit_dir + 'ne_10m_lakes_hits.tsv'
+    hit_df_dict["ne_10m_lakes"] = clean_df(hitfile, 'index_right', 'ne_10m_lakes_category', 'Lakes')
+    ic(hit_df_dict["ne_10m_lakes"]["ne_10m_lakes_category"].value_counts())
 
     hitfile = hit_dir + 'feow_hydrosheds_hits.tsv'
-    df_hydrosheds = clean_df(hitfile, 'index_right', 'feow_category', 'hydroshed')
+    hit_df_dict["hydrosheds"] = clean_df(hitfile, 'index_right', 'feow_category', 'hydroshed')
+
+    hitfile = hit_dir + 'intersect_eez_iho_hits.tsv'
+    hit_df_dict["intersect_eez_iho"] = clean_df(hitfile, 'MARREGION', 'eez_iho_intersect_category', 'eez_iho_intersect')
+    ic(hit_df_dict["intersect_eez_iho"].head(2))
+
+    hitfile = hit_dir + 'seawater_polygons_hits.tsv'
+    hit_df_dict["seawater"] = clean_df(hitfile, 'index_right', 'sea_category', 'seawater')
+
+    hitfile = hit_dir + 'land_polygons_hits.tsv'
+    hit_df_dict["land"] = clean_df(hitfile, 'index_right', 'land_category', 'land')
+
+    hitfile = hit_dir + 'world-administrative-boundaries_hits.tsv'
+    hit_df_dict["worldAdmin"] = clean_df(hitfile, 'region', 'worldAdmin_category', 'land')
+
+    hitfile = hit_dir + 'World_Seas_IHO_v3_hits.tsv'
+    hit_df_dict["seaIHO"] = clean_df(hitfile, 'MRGID', 'IHO_category', 'sea')
+
+    hitfile = hit_dir + 'feow_hydrosheds_hits.tsv'
+    hit_df_dict["hydrosheds"] = clean_df(hitfile, 'index_right', 'feow_category', 'hydroshed')
 
     hitfile = hit_dir + 'longhurst_v4_hits.tsv'
-    df_longhurst = clean_df(hitfile, 'ProvCode', 'longhurst_category', 'blank')
+    hit_df_dict["longhurst"] = clean_df(hitfile, 'ProvCode', 'longhurst_category', 'blank')
 
     hitfile = hit_dir + 'eez_hits.tsv'
-    df_eez = clean_df(hitfile, 'GEONAME', 'eez_category', 'EEZ')
+    hit_df_dict["eez"] = clean_df(hitfile, 'GEONAME', 'eez_category', 'EEZ')
 
-    ic(df_eez.head())
-    ic(df_eez.shape[0])
-
-    return (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho)
+    return (hit_df_dict)
 
 def processTrawlFindings(yes, yes_both_not_eez , no, skip,trawl_count):
     """ processTrawlFindings
@@ -776,7 +821,7 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
     """ want to look up each pair of lat/lon starts and sea if they are in the same EEZ as lat/lon ends
     so doing via doing two intersection's """
     df_merged_starts = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
-                                right_on=['lon_start','lat_start'])
+                                right_on=['lon_start','lat_start'], suffixes = ('', '_y'))
 
     df_merged_starts = df_merged_starts.set_index('actual_start_index')
     # df_merged_starts = df_merged_starts[df_merged_starts['external_id'].notna()].reset_index()
@@ -784,7 +829,7 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
     ic(df_merged_starts.head(2))
 
     df_merged_ends = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
-                                right_on=['lon_end','lat_end'])
+                                right_on=['lon_end','lat_end'],suffixes = ('', '_y'))
     df_merged_ends = df_merged_ends.set_index('actual_end_index')
     # df_merged_ends = df_merged_ends[df_merged_ends['external_id'].notna()].reset_index()
     ic(df_merged_ends.shape[0])
@@ -940,7 +985,7 @@ def analysis_lat_lon(sample_dir):
     ic()
 
     test_status = True
-    df = get_all_ena_detailed_sample_info(test_bool)
+    df = get_all_ena_detailed_sample_info(test_status)
     cols = ["accession", "lat", "lon"]
 
     df_filtered = df.loc[df['lat'].notnull()]
@@ -970,7 +1015,7 @@ def main():
         __params__:
                passed_args
     """
-    full_rerun = False
+    full_rerun = True
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     #  analysis_lat_lon(sample_dir)
@@ -980,16 +1025,12 @@ def main():
 
     # get all the files processed
     if full_rerun:
-        df_ena = get_all_ena_lat_lon(sample_dir)
-        (df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho) \
-            = processHitFiles(hit_dir)
-        df_merged_all = mergeAndAnalysis(df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin,
-                                         df_hydrosheds, df_intersect_eez_iho, hit_dir)
+        #df_ena = get_all_ena_lat_lon_geo(sample_dir)
+        hit_df_dict = processHitFiles(hit_dir)
+        df_merged_all = mergeAndAnalysis(hit_df_dict, hit_dir)
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir)
-
-
-
-    df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
+    else:
+        df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
     df_merged_all = clean_merge_all(df_merged_all)
 
     merged_all_categories_file = analysis_dir + "merged_all_categories.tsv"

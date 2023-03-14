@@ -690,14 +690,12 @@ def analysis(df_merged_all, analysis_dir, plot_dir, my_data):
     df_merged_all_categories = df_merged_all[columns2keep]
     ic(df_merged_all_categories.head(2))
 
-    category_dict = get_domain_cat_dict
+    category_dict = my_data.get_domain_cat_dict()
     ic(category_dict)
     ic()
 
-
     df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['marine'], 'sea_total')
-    sys.exit()
-    df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['terrestril'], 'land_total')
+    df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['terrestrial'], 'land_total')
     df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['freshwater'], 'freshwater_total')
 
     df_merged_all_categories.loc[

@@ -230,11 +230,11 @@ def main():
     #sys.exit()
 
     pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    # df_merge_combined_tax = get_pickleObj(pickle_file)
-    # df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
-    #put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle")
-
-    df_merge_combined_tax = get_pickleObj("./tmp.pickle")
+    df_merge_combined_tax = get_pickleObj(pickle_file)
+    df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
+    # put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle", True)
+    #
+    # df_merge_combined_tax = get_pickleObj("./tmp.pickle")
     local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
     full_curation_list.extend(local_curation_list)
 

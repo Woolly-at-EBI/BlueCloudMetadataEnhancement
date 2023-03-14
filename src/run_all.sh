@@ -37,13 +37,16 @@ function run_geolocation () {
     cmd="time python3 $prog -c $coordinates_file -s $shape_file -g $geo_crc -o $out_file"
     echo "$cmd"
     $cmd
+    echo "*****************************************************\n\n"
 }
 
 geo_crc="EPSG:4326"
 
-shape_file=$shapefile_dir/natural_earth_vector/10m_physical/ne_10m_rivers_north_america.shp
-out_file=$outdir/ne_10m_rivers_north_america_hits.tsv
-run_geolocation "$shape_file"  "$out_file" "$geo_crc"
+#wwf_global200ecoregions
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_fw.shp"  "$outdir/g200_fw_hits.shp" "$geo_crc"
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_marine.shp"  "$outdir/g200_marine_hits.shp" "$geo_crc"
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_terr.shp"  "$outdir/g200_terr_hits.shp" "$geo_crc"
+
 exit
 
 #wwf_GLWD_level1

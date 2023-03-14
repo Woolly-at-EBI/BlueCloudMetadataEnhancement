@@ -28,9 +28,9 @@ from icecream import ic
 
 import matplotlib.pyplot as plt
 import geopandas as gpd
-
 from geopandas.geoseries import *
 from shapely.geometry import Point
+pd.set_option('display.max_columns', None)
 
 import argparse
 import sys
@@ -121,7 +121,6 @@ def test_locations(my_shape, points_geodf):
                 get_locations as df_with_hits
     """
     ic()
-    pd.set_option('display.max_columns', None)
 
     # ic(type(points_series))
     # the points are the columns, the shapes are the row names
@@ -129,7 +128,7 @@ def test_locations(my_shape, points_geodf):
     # ic(my_shape.crs)
 
     if points_geodf.crs != my_shape.crs:
-        ic("CRS mismatch so re-projecting the CRS for the shape")
+        ic("CRS mismatch so re-projecting the CRS for the shape from: " + my_shape.crs)
         my_shape = my_shape.to_crs(points_geodf.crs)
 
     # The geo dataframe contains one row per query point, whether there are hits or not

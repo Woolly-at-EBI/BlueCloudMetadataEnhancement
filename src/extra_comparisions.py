@@ -130,7 +130,7 @@ def merged_plots(df_start):
     cats = ["longhurst_category", "IHO_category", "eez_iho_intersect_category", "sea_category", "sea_total", "land_category",\
             "worldAdmin_category", "feow_category", "land_total"]
 
-    cats = ["sea_category", "longhurst_category", "eez_iho_intersect_category", "sea_total", "feow_category"]
+    cats = ["sea_category", "longhurst_category", "eez_iho_intersect_category", "sea_total", "feow_category", 'glwd_2_category', 'ne_10m_lakes_category']
 
     format = 'png'
     #for designation in ["marine", "marine_and_terrestrial"]:
@@ -198,8 +198,32 @@ def merge_comb_calls_plus_cat_dfs():
     return df_all_merged
 
 
+def freshwater_plots(df):
+    """
+
+    :param df:
+    :return:
+    """
+    ic()
+    ic(df.head())
+    cats = ["feow_category", 'glwd_1_category', 'glwd_2_category', 'ne_10m_lakes_category']
+    for cat in cats:
+        ic(cat)
+        ic(df[cat].value_counts())
+
+    ic(df.groupby(cats).size())
+    ic(df.groupby(['glwd_2_category', 'ne_10m_lakes_category']).size())
+    ic(df.groupby(["feow_category", 'glwd_2_category']).size())
+    ic(df.groupby(["feow_category", 'ne_10m_lakes_category']).size())
+    ic(df.groupby(['location_designation', 'glwd_2_category']).size())
+
+
+
 def main():
     df = merge_comb_calls_plus_cat_dfs()
+    freshwater_plots(df)
+    ic("about to exist before merged_plots!")
+    sys.exit()
     merged_plots(df)
 
 if __name__ == '__main__':

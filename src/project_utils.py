@@ -8,6 +8,8 @@ __docformat___ = 'reStructuredText'
 """
 
 import os.path
+import pandas as pd
+import sys
 import pickle
 from icecream import ic
 import plotly.express as px
@@ -15,15 +17,19 @@ import plotly
 import plotly.io as pio
 pio.renderers.default = "browser"
 
-def put_pickleObj2File(obj,pickle_file):
+def put_pickleObj2File(obj, pickle_file, verbose):
     """
 
     :param obj:
     :param pickle_file
-    :return:
+    :param verbose
+    :return: nowt
     """
+    if verbose:
+        ic(f"writing {pickle_file}")
     with open(pickle_file, 'wb') as handle:
         pickle.dump(obj, handle, protocol = pickle.HIGHEST_PROTOCOL)
+
 def get_pickleObj(pickle_file):
     """
 
@@ -76,7 +82,7 @@ def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, oth
     :param out_graph_file:
     :param format:
     :param other_params:  miscellaneous optional parameters passed in as dict - future proofing
-    :return:
+    :return: fig
     """
     fig = px.histogram(df, title = title, x = cat,
                        width = width, color = color, log_y = log_y)
@@ -85,19 +91,19 @@ def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, oth
     # fig.show()
     ic(out_graph_file)
     plotly.io.write_image(fig, out_graph_file, format = format)
-    fig.show()
+    #fig.show()
+    return fig
+
 def u_plot_pie(df, cat, value_column, title, type, out_file):
     """
 
     :param df:
     :param cat:
     :param value_column:
-    :param tupe:  is value or percent
+    :param type:  is value or percent
     :param out_file:
-    :return:
+    :return: fig
     """
-    ic(cat, value_column, title, out_file)
-    ic(df.head(2))
 
     fig = px.pie(df,
                  values = value_column,
@@ -107,4 +113,5 @@ def u_plot_pie(df, cat, value_column, title, type, out_file):
     fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
     ic(out_file)
     fig.write_image(out_file)
-    fig.show()
+    #fig.show()
+    return fig

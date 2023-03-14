@@ -592,7 +592,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir):
 
     sea_categories = ['eez_category', 'longhurst_category', 'IHO_category', 'sea_category']
     land_categories = ['land_category', 'worldAdmin_category', 'feow_category']
-    freshwater_categories = ['glwd_2_category', 'ne_10m_lakes_category', 'feow_category']
+    freshwater_categories = ['glwd_1_category', 'glwd_2_category', 'ne_10m_lakes_category', 'feow_category']
 
     df_merged_all_categories = createTotal(df_merged_all_categories, sea_categories, 'sea_total')
     df_merged_all_categories = createTotal(df_merged_all_categories, land_categories, 'land_total')
@@ -659,7 +659,7 @@ def mergeAndAnalysis(hit_df_dict, hit_dir):
     ic()
     ic(hit_df_dict.keys())
 
-    freshwater_frames = [hit_df_dict['glwd_2'], hit_df_dict['ne_10m_lakes'], hit_df_dict['hydrosheds']]
+    freshwater_frames = [hit_df_dict['glwd_1'], hit_df_dict['glwd_2'], hit_df_dict['ne_10m_lakes'], hit_df_dict['hydrosheds']]
     out_filename = hit_dir + 'merged_freshwater.tsv'
     df_merged_freshwater = mergeDFs(freshwater_frames, out_filename)
 
@@ -698,13 +698,12 @@ def processHitFiles(hit_dir):
     ic(hit_dir)
     hit_df_dict = {}
 
-    # comment as glwd_1 all in glwd_2
-    # hitfile = hit_dir + 'glwd_1_hits.tsv'
-    # hit_df_dict["glwd_1"] = clean_df(hitfile, 'index_right', 'glwd_1_category', 'freshwater')
-    # df = hit_df_dict["glwd_1"]
-    # ic(df.columns)
-    # ic(df.query('glwd_1_category == "freshwater"').head())
-    # ic(df['glwd_1_category'].value_counts())
+
+    hitfile = hit_dir + 'glwd_1_hits.tsv'
+    hit_df_dict["glwd_1"] = clean_df(hitfile, 'index_right', 'glwd_1_category', 'freshwater')
+    df = hit_df_dict["glwd_1"]
+    ic(df.columns)
+    ic(df['glwd_1_category'].value_counts())
 
     hitfile = hit_dir + 'glwd_2_hits.tsv'
     hit_df_dict["glwd_2"] = clean_df(hitfile, 'index_right', 'glwd_2_category', 'freshwater')

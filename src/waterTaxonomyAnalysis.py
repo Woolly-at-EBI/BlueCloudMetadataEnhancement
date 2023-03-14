@@ -7,8 +7,6 @@ ___start_date___ = 2022-12-21
 __docformat___ = 'reStructuredText'
 
 """
-from wordcloud import WordCloud
-
 from ena_samples import *
 from categorise_environment import process_environment_biome
 from project_utils import *
@@ -16,18 +14,15 @@ from project_utils import *
 import os.path
 import pandas as pd
 from icecream import ic
-import sys  #system specific parameters and names
-import gc   #garbage collector interface
+import sys  # system specific parameters and names
+import gc   # garbage collector interface
 
 import json
 import plotly.express as px
 import plotly
-import re
 import argparse
 import warnings
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
@@ -49,8 +44,8 @@ def get_taxonomy_info(taxonomy_dir):
     ic()
 
     taxa_env_file = taxonomy_dir + "Blue-domain_environmental-flags-based-on-taxonomy.csv"
-    my_cols = ['NCBI taxID', 'NCBI taxID Name', 'rule set description', 'marine', 'terrestrial or freshwater',\
-               'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
+    # my_cols = ['NCBI taxID', 'NCBI taxID Name', 'rule set description', 'marine', 'terrestrial or freshwater',
+    #            'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
     df_tax2env = pd.read_csv(taxa_env_file, skiprows=1, index_col=None)
     df_tax2env = df_tax2env.drop(0)
     ic(df_tax2env.columns)
@@ -80,7 +75,7 @@ def clean_up_df_tax2env(df):
     # N.B. changed all NaN's to 0. Mapping 1's to True and 0's to False
     warnings.simplefilter('ignore')
     my_cols = ['marine', 'terrestrial or freshwater', 'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater']
-    df = df.rename(columns = {'marine': 'taxa_marine', 'terrestrial or freshwater': 'taxa_terrestrial_or_freshwater',\
+    df = df.rename(columns = {'marine': 'taxa_marine', 'terrestrial or freshwater': 'taxa_terrestrial_or_freshwater',
                               'NCBI taxID': "NCBI:taxid", "NCBI taxID Name": "NCBI:name"})
 
 
@@ -224,8 +219,8 @@ def clean_df_mega(df_mega):
     # ic(df_mega.head(10))
     # ic(df_mega.columns)
 
-    drop_columns = ["ena_country", "ena_region", "sea_total",  "land_total", 'coords']
-
+    #drop_columns = ["ena_country", "ena_region", "sea_total",  "land_total", 'coords']
+    drop_columns = ["sea_total", "land_total", 'coords']
     df_mega.drop(columns = drop_columns, inplace=True)
     df_mega['NCBI:taxid'] = df_mega['NCBI:taxid'].astype('Int64')
     ic(df_mega.shape[0])
@@ -664,10 +659,10 @@ def get_merged_all_categories_file(analysis_dir):
         ic(df.columns)
 
         # attempting to reduce the memory footprint
-        most_cats = ['ena_country', 'ena_region', 'eez_category', 'longhurst_category', 'IHO_category',
+        most_cats = ['eez_category', 'longhurst_category', 'IHO_category',
              'sea_category', 'eez_iho_intersect_category', 'land_category', 'worldAdmin_category', 'feow_category',
-             'ena_category', 'location_designation_marine',
-             'location_designation_terrestrial', 'location_designation_other', 'location_designation']
+             'location_designation_marine',  'location_designation_terrestrial', 'location_designation_other', 'location_designation',
+             'glwd_1_category', 'glwd_2_category', 'ne_10m_lakes_category', 'location_designation_freshwater', 'location_designation_aquatic']
         # ic(df.memory_usage())
         for my_cat in most_cats:
             df[my_cat] = df[my_cat].astype("category")
@@ -930,13 +925,14 @@ def merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories):
     if 'taxonomy_type_y' in df_merge_combined_tax:
         df_merge_combined_tax["taxonomy_type"].fillna(df_merge_combined_tax["taxonomy_type_y"], inplace = True)
     df_merge_combined_tax.drop(columns = my_cols_y, inplace=True)
-    ic(df_merge_combined_tax.head(5))
 
     #cleanup
     df_merge_combined_tax['sea_total'] = df_merge_combined_tax['sea_total'].fillna(0).astype(int)
     df_merge_combined_tax['land_total'] = df_merge_combined_tax['land_total'].fillna(0).astype(int)
 
-    ic()
+    ic(df_merge_combined_tax.shape[0])
+    ic(df_merge_combined_tax.sample(n = 5))
+
     return df_merge_combined_tax
 
 def apply_rules(df, marine_NCBI_to_marine_dict, conf_score, dom_type, dom_coord_designation, taxa_term, coord_dom_total, count_of_sample_having_dom_coords):
@@ -1153,7 +1149,7 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
             ic("sorry: no rows")
 
         df_grouped = df.groupby([conf_field_inc_biome, conf_field]).size().to_frame('count').reset_index()
-        ic(df_grouped)
+        ic(df_grouped.head(10))
         ic("*********************************************************")
         ic(df.columns)
         ic(df.head())
@@ -1218,7 +1214,7 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     df = df_merge_combined_tax
     key_cols = ["scientific_name","sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome"]
     df_grouped = df.groupby(key_cols).size().to_frame('count').reset_index()
-    ic(df_grouped)
+    ic(df_grouped.head(10))
 
     df["combined_location_designation"] = "none"
 
@@ -1231,7 +1227,7 @@ def make_combined_single_domain_call(df_merge_combined_tax):
            ((df["sample_confidence_marine_inc_biome"] == 'high') | (df[
                                                                        "sample_confidence_marine_inc_biome"] == 'medium')), "combined_location_designation"] = "marine_and_terrestrial"
 
-    df.loc[((df["sample_confidence_marine_inc_biome"] == 'high') |(df["sample_confidence_marine_inc_biome"] == 'medium')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low')\
+    df.loc[((df["sample_confidence_marine_inc_biome"] == 'high') |(df["sample_confidence_marine_inc_biome"] == 'medium')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low')
         | ((df["sample_confidence_terrestrial_inc_biome"] == 'zero') | (df["sample_confidence_terrestrial_inc_biome"] == 'low'))), "combined_location_designation"] = "marine"
     df.loc[df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'high', "combined_location_designation"] = "marine_and_terrestrial"
     df.loc[((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')) & (df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'medium'), "combined_location_designation"] = "marine_and_terrestrial"
@@ -1258,7 +1254,7 @@ def make_combined_single_domain_call(df_merge_combined_tax):
     key_cols.append("combined_location_designation")
     ic(key_cols)
     df_grouped = df.groupby(key_cols).size().to_frame('count').reset_index().sort_values(by=["sample_confidence_marine_and_terrestrial_inc_biome"])
-    ic(df_grouped)
+    ic(df_grouped.head(10))
     ic(df["combined_location_designation"].value_counts())
 
     # tmp_keys = ["scientific_name", "NCBI-to-marine", "NCBI-to-terrestrial-or-freshwater","combined_location_designation"]
@@ -1405,6 +1401,167 @@ def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir,
 
     return df_merge_combined_tax_all_with_confidence
 
+def mini_exploration(df_merge_combined_tax):
+    """
+
+    :param df_merge_combined_tax:
+    :return:
+    """
+    ic()
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+
+    df_mini = df_merge_combined_tax[["lat_dps", "lon_dps", "collection_date", "combined_location_designation"]]
+    df_mini = df_mini[df_mini['lat_dps'].notnull()].query('lat_dps > 0')
+
+    # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+    fig = px.histogram(df_mini, x = "lat_dps", log_y = True, color = "combined_location_designation")
+    fig.update_xaxes(type = 'category')
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+    fig.update_xaxes(categoryorder = 'array',
+                     categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+    out_file = plot_dir + "merged_all_combined_lat_dps." + 'png'
+    ic(out_file)
+    fig.write_image(out_file)
+    #fig.show()
+
+    # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+    fig = px.histogram(df_mini, x = "lon_dps", log_y = True, color = "combined_location_designation")
+    fig.update_xaxes(type = 'category')
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+    fig.update_xaxes(categoryorder = 'array',
+                     categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+    out_file = plot_dir + "merged_all_combined_lon_dps." + 'png'
+    ic(out_file)
+    fig.write_image(out_file)
+    #fig.show()
+
+    df_mini = df_mini[~(df_mini["combined_location_designation"] == 'terrestrial')]
+    fig = px.histogram(df_mini, x = "lat_dps", log_y = True, color = "combined_location_designation")
+    fig.update_xaxes(type = 'category')
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+    fig.update_xaxes(categoryorder = 'array',
+                     categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+    out_file = plot_dir + "merged_all_combined_lat_wo_terrestrial_dps." + 'png'
+    ic(out_file)
+    fig.write_image(out_file)
+    #fig.show()
+
+    fig = px.histogram(df_mini, x = "lon_dps", log_y = True, color = "combined_location_designation")
+    fig.update_xaxes(type = 'category')
+    fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
+    fig.update_xaxes(categoryorder = 'array',
+                     categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
+    out_file = plot_dir + "merged_all_combined_lon_wo_terrestrial_dps." + 'png'
+    ic(out_file)
+    fig.write_image(out_file)
+    #fig.show()
+
+    df_mini = df_mini[df_mini['collection_date'].notnull()]
+
+    # #df_mini["collection_date"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore")
+    # df_mini["collection_date"] = pd.to_datetime(df_mini["collection_date"], errors = 'coerce')
+    # ic(df_mini.dtypes)
+    # df_mini["collection_date"] = df_mini["collection_date"].dt.date
+    # ic(df_mini["collection_date"].head(3))
+    # start_date = pd.to_datetime('2000-01-01').date()
+    # end_date = pd.to_datetime('2024-01-01').date()
+    # df_mini = df_mini[(df_mini["collection_date"] > start_date) & (df_mini["collection_date"] < end_date)]
+    # fig = px.scatter(df_mini, title = "Lat/Lon over time since year=2000", x = "collection_date", y = "lat_dps", width = width,
+    #                  color = "combined_location_designation")
+    # # cat_order = {}
+    # # cat_order[]
+    # # fig.update_layout(category_order= "reversed")
+    # out_file = plot_dir + "merged_all_combined_lat_lon." + 'png'
+    # ic(out_file)
+    # fig.write_image(out_file)
+    # fig.show()
+    # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+    # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "combined_location_designation")
+    # fig.update_xaxes(type = 'category')
+    # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+    # fig.update_xaxes(categoryorder = 'category ascending')
+    # out_file = plot_dir + "merged_all_combined_collection." + 'png'
+    # ic(out_file)
+    # fig.write_image(out_file)
+    # fig.show()
+    #
+    # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
+    # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "lat_dps")
+    # fig.update_xaxes(type = 'category')
+    # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
+    # fig.update_xaxes(categoryorder = 'category ascending')
+    # fig.show()
+
+
+def add_input_stats(stats_dict, df_all_ena_sample_detail, df_tax2env):
+    """
+
+    :param stats_dict:
+    :param df_all_ena_sample_detail:
+    :param df_tax2env:
+    :return:
+    """
+    stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
+    df_tmp = df_tax2env.query('taxonomy_type == "metagenome"')
+    stats_dict["_input_metag_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+    df_tmp = df_tax2env.query('taxonomy_type == "environment"')
+    stats_dict["_input_env_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
+    stats_dict["_input_total_taxa_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
+    ic(stats_dict)
+    return stats_dict
+
+
+def summary_plots(df_merge_combined_tax):
+    """
+
+    :param df_merge_combined_tax:
+    :return:
+    """
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    df_groupby = df_merge_combined_tax.groupby(
+        ["combined_location_designation", "combined_location_designation_score"]).size().to_frame(
+        'count').reset_index()
+    ic(df_groupby.head(10))
+
+    format = 'png'
+    cat = "combined_location_designation"
+    title = cat
+    log_y = False
+    width = 1500
+    other_params = {}
+
+    u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", plot_dir + cat + "_pie." + format)
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y,
+                plot_dir + cat + "_hist." + format, width, format, other_params)
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y,
+                plot_dir + cat + "." + format, width, format, other_params)
+    u_plot_pie(df_merge_combined_tax, cat, "combined_location_designation", title, "value",
+               plot_dir + cat + "_pie." + format)
+
+    log_y = True
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)",
+                log_y,
+                plot_dir + cat + "_score_log." + format, width, format, other_params)
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y,
+                plot_dir + cat + "." + format,
+                width, format, other_params)
+
+
+def get_df_from_pickle(pickle_file):
+    """
+
+    :param pickle_file:
+    :return: df
+    """
+
+    if (os.path.isfile(pickle_file) == True):
+        df = get_pickleObj(pickle_file)
+    else:
+        ic("ERROR, can't read ", pickle_file)
+        sys.exit()
+    return df
+
+
 def main():
     """ main
         __params__:
@@ -1419,240 +1576,85 @@ def main():
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
     # This takes over 20mins to run all the way through with a full ENA dataset os broke into chunks that can be started downstream
-    got_data_testing_down_stream = 2
+    got_data_testing_down_stream = 1
     if got_data_testing_down_stream == 1:
         ic("*********** got_data_testing_down_stream >=1")
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
-
-        # df_outliers = df_merged_all_categories[df_merged_all_categories["location_designation_other"].notna()]
-        # ic(df_outliers)
-
         # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
-        ic()
-        test_status = False
+        test_status = True
         df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
         ic(df_all_ena_sample_detail.head())
         ic(df_all_ena_sample_detail.shape[0])
         ic('-' * 100)
-
-        stats_dict["_input_ena_sample_total_count"] = df_all_ena_sample_detail.shape[0]
-        df_tmp = df_tax2env.query('taxonomy_type == "metagenome"')
-        stats_dict["_input_metag_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
-        df_tmp = df_tax2env.query('taxonomy_type == "environment"')
-        stats_dict["_input_env_tax_id_count"] = df_tmp["NCBI:taxid"].nunique()
-        stats_dict["_input_total_taxa_tax_id_count"] = df_tax2env["NCBI:taxid"].nunique()
-        ic(stats_dict)
-
-        (stats_dict, df_merge_combined_tax) = merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict, \
-                                                               df_all_ena_sample_detail, df_tax2env)
+        stats_dict = add_input_stats(stats_dict,df_all_ena_sample_detail, df_tax2env)
+        (stats_dict, df_merge_combined_tax) = merge_ena_w_taxa(plot_dir, analysis_dir, stats_dict,
+                                                                   df_all_ena_sample_detail, df_tax2env)
         ic(df_merge_combined_tax.shape[0])
         ic(df_merge_combined_tax.head(5))
 
-        df = df_merge_combined_tax.query('scientific_name == "Gasterosteus aculeatus"')
-        ic(df.sample(n=3))
-
         ic('-' * 100)
         df_merge_combined_tax = merge_in_all_categories(df_merge_combined_tax, df_merged_all_categories).reset_index()
-        ic(df_merge_combined_tax.shape[0])
-        ic(df_merge_combined_tax.sample(n=5))
 
-        # ic(df_merge_combined_tax["NCBI term"].value_counts())
-        ic(df_merge_combined_tax.query('scientific_name == "Piscirickettsia salmonis"').shape[0])
         #save save some memory and get rid of some stored structures
         # ic(memory_usage())
-
         out_file = analysis_dir + 'merge_combined_tax.pickle'
         ic(out_file)
-        put_pickleObj2File(df_merge_combined_tax, out_file)
+        put_pickleObj2File(df_merge_combined_tax, out_file, True)
     if got_data_testing_down_stream <= 2:
         ic("*********** got_data_testing_down_stream <=2")
-        pickle_file = analysis_dir + 'merge_combined_tax.pickle'
-        if (os.path.isfile(pickle_file) == True):
-            df_merge_combined_tax = get_pickleObj(pickle_file)
-        else:
-            ic("ERROR, can't read ", pickle_file)
+        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax.pickle')
         ic(df_merge_combined_tax.shape)
         df_groupby = df_merge_combined_tax.groupby(["location_designation"]).size().to_frame('count').reset_index()
         cat = "location_designation"
         out_graph_file = plot_dir + "location_designation_sample_counts_value." + "png"
-        ic(df_groupby)
+        ic(df_groupby.head(10))
         u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", out_graph_file)
         out_graph_file = plot_dir + "location_designation_sample_counts_percent." + "png"
         u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "percent", out_graph_file)
 
-        sys.exit()
-
-        #  debugging the rules!
+        #adding in confidence rules
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
-        # ic("about to quit")
-        # sys.exit()
-        # ic()
         ic(df_merge_combined_tax.columns)
-        out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-        ic(out_file)
-        put_pickleObj2File(df_merge_combined_tax, out_file)
+        put_pickleObj2File(df_merge_combined_tax, analysis_dir + 'merge_combined_tax_all_with_confidence.pickle', True)
         out_file = analysis_dir + 'merge_combined_tax_all_with_confidence.tsv'
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep="\t", index=False)
-        # end of temporary while debugging the rules!
+
     if got_data_testing_down_stream <= 3:
         ic("*********** got_data_testing_down_stream <=3")
-        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-        if (os.path.isfile(pickle_file) == True):
-            df_merge_combined_tax = get_pickleObj(pickle_file)
-        else:
-            ic("ERROR, can't read ", pickle_file)
+        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence.pickle')
         ic(df_merge_combined_tax.shape)
         df_lon_lat_dps = get_lon_lat_dps(sample_dir)
         df_merge_combined_tax = analyse_lon_lat_dps(df_merge_combined_tax, analysis_dir, df_lon_lat_dps)
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
         ic("writing: ", pickle_file)
-        put_pickleObj2File(df_merge_combined_tax, pickle_file)
+        put_pickleObj2File(df_merge_combined_tax, pickle_file, True)
 
     if got_data_testing_down_stream <= 4:
         ic("*********** got_data_testing_down_stream <=4")
-
-        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
-        if (os.path.isfile(pickle_file) == True):
-            df_merge_combined_tax = get_pickleObj(pickle_file)
-        else:
-            ic("ERROR, can't read ", pickle_file)
+        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle')
         ic(df_merge_combined_tax.shape)
-
         df_merge_combined_tax = make_combined_single_domain_call(df_merge_combined_tax)
         ic(df_merge_combined_tax.head(5))
 
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
-        ic("writing: ", pickle_file)
-        put_pickleObj2File(df_merge_combined_tax, pickle_file)
+        put_pickleObj2File(df_merge_combined_tax, pickle_file, True)
         out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
         ic(out_file)
-        df_merge_combined_tax.to_csv(out_file, sep = '\t')
+        df_merge_combined_tax.to_csv(out_file, sep = '\t', index = False)
 
     if got_data_testing_down_stream <= 5:
         ic("*********** got_data_testing_down_stream <=5")
         quicky = False
         if quicky == False:
-            out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
-            pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
-            if (os.path.isfile(pickle_file) == True):
-              df_merge_combined_tax = get_pickleObj(pickle_file)
-            else:
-              ic("ERROR, can't read ", pickle_file)
+            df_merge_combined_tax = get_df_from_pickle(pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle')
         else:
             ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
             df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv" ,sep = "\t", nrows=100000)
         ic(df_merge_combined_tax.shape)
-        df_groupby = df_merge_combined_tax.groupby(["combined_location_designation", "combined_location_designation_score"]).size().to_frame('count').reset_index()
-        ic(df_groupby)
-        format = 'png'
-        cat = "combined_location_designation"
-        title = cat
-
-        log_y = False
-        width = 1500
-        other_params = {}
-
-        df_mini = df_merge_combined_tax[["lat_dps", "lon_dps", "collection_date", "combined_location_designation"]]
-        df_mini = df_mini[df_mini['lat_dps'].notnull()].query('lat_dps > 0')
-
-        #df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        fig = px.histogram(df_mini, x = "lat_dps", log_y=True, color = "combined_location_designation")
-        fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
-        fig.update_xaxes(categoryorder = 'array',
-                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
-        out_file = plot_dir + "merged_all_combined_lat_dps." + 'png'
-        ic(out_file)
-        fig.write_image(out_file)
-        fig.show()
-
-        #df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        fig = px.histogram(df_mini, x = "lon_dps", log_y=True, color = "combined_location_designation")
-        fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
-        fig.update_xaxes(categoryorder = 'array',
-                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
-        out_file = plot_dir + "merged_all_combined_lon_dps." + 'png'
-        ic(out_file)
-        fig.write_image(out_file)
-        fig.show()
-
-        df_mini = df_mini[~(df_mini["combined_location_designation"] == 'terrestrial')]
-        fig = px.histogram(df_mini, x = "lat_dps", log_y = True, color = "combined_location_designation")
-        fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
-        fig.update_xaxes(categoryorder = 'array',
-                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
-        out_file = plot_dir + "merged_all_combined_lat_wo_terrestrial_dps." + 'png'
-        ic(out_file)
-        fig.write_image(out_file)
-        fig.show()
-
-        fig = px.histogram(df_mini, x = "lon_dps", log_y=True, color = "combined_location_designation")
-        fig.update_xaxes(type = 'category')
-        fig.update_xaxes(tickangle = 60, tickfont = dict(size = 18))
-        fig.update_xaxes(categoryorder = 'array',
-                         categoryarray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'])
-        out_file = plot_dir + "merged_all_combined_lon_wo_terrestrial_dps." + 'png'
-        ic(out_file)
-        fig.write_image(out_file)
-        fig.show()
-
-
-        df_mini = df_mini[df_mini['collection_date'].notnull()]
-
-        # #df_mini["collection_date"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore")
-        # df_mini["collection_date"] = pd.to_datetime(df_mini["collection_date"], errors = 'coerce')
-        # ic(df_mini.dtypes)
-        # df_mini["collection_date"] = df_mini["collection_date"].dt.date
-        # ic(df_mini["collection_date"].head(3))
-        # start_date = pd.to_datetime('2000-01-01').date()
-        # end_date = pd.to_datetime('2024-01-01').date()
-        # df_mini = df_mini[(df_mini["collection_date"] > start_date) & (df_mini["collection_date"] < end_date)]
-        # fig = px.scatter(df_mini, title = "Lat/Lon over time since year=2000", x = "collection_date", y = "lat_dps", width = width,
-        #                  color = "combined_location_designation")
-        # # cat_order = {}
-        # # cat_order[]
-        # # fig.update_layout(category_order= "reversed")
-        # out_file = plot_dir + "merged_all_combined_lat_lon." + 'png'
-        # ic(out_file)
-        # fig.write_image(out_file)
-        # fig.show()
-        # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "combined_location_designation")
-        # fig.update_xaxes(type = 'category')
-        # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
-        # fig.update_xaxes(categoryorder = 'category ascending')
-        # out_file = plot_dir + "merged_all_combined_collection." + 'png'
-        # ic(out_file)
-        # fig.write_image(out_file)
-        # fig.show()
-        #
-        # df_mini["collection_year"] = df_mini["collection_date"].astype('datetime64[ns]', errors="ignore").dt.year
-        # fig = px.histogram(df_mini, x = "collection_year", log_y=True, color = "lat_dps")
-        # fig.update_xaxes(type = 'category')
-        # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
-        # fig.update_xaxes(categoryorder = 'category ascending')
-        # fig.show()
-
-        out_graph_file = plot_dir + cat + "_pie." + format
-        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", out_graph_file)
-
-        out_graph_file = plot_dir + cat + "_hist." + format
-        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y, out_graph_file, width, format, other_params)
-        out_graph_file = plot_dir + cat + "." + format
-        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y, out_graph_file, width, format, other_params)
-        u_plot_pie(df_merge_combined_tax, cat, "combined_location_designation", title, out_file)
-
-        log_y = True
-        out_graph_file = plot_dir + cat + "_score_log." + format
-        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)", log_y, out_graph_file,
-                  width, format, other_params)
-        out_graph_file = plot_dir + cat + "." + format
-        u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y, out_graph_file,
-                  width, format, other_params)
+        mini_exploration(df_merge_combined_tax)
+        summary_plots(df_merge_combined_tax)
 
     #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n
 

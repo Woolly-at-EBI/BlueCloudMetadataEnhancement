@@ -2,6 +2,10 @@
    and combine them with the output from analyseHits.py
    to allow one to get analysis of what is marine or terrestrial/freshwater from different methods
 
+   usage: python3 ./waterTaxonomyAnalysis.py [--stage 4] [--verbosity=True]
+   The stage allows one to not run from start, useful when debugging.
+   verbosity support not implemented yet!
+
 ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2022-12-21
 __docformat___ = 'reStructuredText'
@@ -1562,9 +1566,10 @@ def get_df_from_pickle(pickle_file):
     return df
 
 
-def main():
+def main(verbosity, stage, debug_status):
     """ main
-        __params__:
+        __params__: verbosity
+        __params__: stage for data_testing_down_stream
                passed_args
     """
     ic()
@@ -1575,15 +1580,19 @@ def main():
     ic(plot_dir)
     df_tax2env = get_taxonomy_info(taxonomy_dir)
 
-    # This takes over 20mins to run all the way through with a full ENA dataset os broke into chunks that can be started downstream
-    got_data_testing_down_stream = 1
+    # This takes over 20mins to run all the way through with a full ENA dataset as broke into chunks that can be started downstream
+    if stage:
+        got_data_testing_down_stream = int(stage)
+    else:
+        got_data_testing_down_stream = 1
+    ic(got_data_testing_down_stream)
+
     if got_data_testing_down_stream == 1:
         ic("*********** got_data_testing_down_stream >=1")
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
         # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
-        test_status = True
-        df_all_ena_sample_detail = get_all_ena_detailed_sample_info(test_status)
+        df_all_ena_sample_detail = get_all_ena_detailed_sample_info(debug_status)
         ic(df_all_ena_sample_detail.head())
         ic(df_all_ena_sample_detail.shape[0])
         ic('-' * 100)
@@ -1683,12 +1692,13 @@ if __name__ == '__main__':
     # Adding optional argument, n.b. in debugging mode in IDE, had to turn required to false.
     parser.add_argument("-v", "--verbosity", type = int, help = "increase output verbosity", required = False)
     parser.add_argument("-o", "--outfile", help = "Output file", required = False)
+    parser.add_argument("-s", "--stage", help = "The stage to start the build from", required = False)
+    parser.add_argument("-d", "--debug_status", help = "Debug status True or False", required = False)
 
     parser.parse_args()
     args = parser.parse_args()
     ic(args)
     print(args)
-    if args.verbosity:
-        print("verbosity turned on")
-    main()
+
+    main(args.verbosity, args.stage, args.debug_status)
 

@@ -43,9 +43,9 @@ function run_geolocation () {
 geo_crc="EPSG:4326"
 
 #wwf_global200ecoregions
-run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_fw.shp"  "$outdir/g200_fw_hits.shp" "$geo_crc"
-run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_marine.shp"  "$outdir/g200_marine_hits.shp" "$geo_crc"
-run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_terr.shp"  "$outdir/g200_terr_hits.shp" "$geo_crc"
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_fw.shp"  "$outdir/g200_fw_hits.tsv" "$geo_crc"
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_marine.shp"  "$outdir/g200_marine_hits.tsv" "$geo_crc"
+run_geolocation "$shapefile_dir/wwf_global200ecoregions/g200_terr.shp"  "$outdir/g200_terr_hits.tsv" "$geo_crc"
 
 exit
 

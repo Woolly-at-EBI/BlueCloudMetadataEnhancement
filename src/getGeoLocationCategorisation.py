@@ -30,10 +30,10 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 from geopandas.geoseries import *
 from shapely.geometry import Point
-pd.set_option('display.max_columns', None)
 
 import argparse
 import sys
+pd.set_option('display.max_columns', None)
 
 
 def read_shape(shapefile, geo_crs):
@@ -56,6 +56,28 @@ def read_shape(shapefile, geo_crs):
     return my_shape
 
 
+def geo_lon_lat2points_geodf(df, crs_value):
+    """
+        (points_series, points_geodf) = geo_lon_lat2points_geodf(df)
+        :param crs_value:
+        :param df:
+        :return:
+        """
+    ic("create points GeoDeries and then GeoDataFrame")
+    ic(df.head())
+    df["lat"] = df["lat"].astype(float)
+    df["lon"] = df["lon"].astype(float)
+    points_series = geopandas.GeoSeries.from_xy(x = df.lon, y = df.lat)
+    # points_series.drop_duplicates()  is very slow, so did the dropping in the panda data frames.
+    ic(points_series.count())
+    # ic(points_series)
+    # create points GeoDataFrame
+    df['coords'] = list(zip(df['lon'], df['lat']))
+    df['coords'] = df['coords'].apply(Point)
+    points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
+    return points_series, points_geodf
+
+
 def create_points_geoseries(coordfile, debug):
     """ create a geoseries of lat and lon as multiple points
      the CRS version is what the EEZ shape file uses. The CRS of shapes and points etc. need to match.
@@ -76,15 +98,7 @@ def create_points_geoseries(coordfile, debug):
     df = df[['lon', 'lat']]
     df = df.drop_duplicates(keep = 'first', ignore_index = True)
 
-    ic("create points GeoDeries and then GeoDataFrame")
-    points_series = geopandas.GeoSeries.from_xy(x = df.lon, y = df.lat)
-    # points_series.drop_duplicates()  is very slow, so did the dropping in the panda data frames.
-    ic(points_series.count())
-    # ic(points_series)
-    # reate points GeoDataFrame
-    df['coords'] = list(zip(df['lon'], df['lat']))
-    df['coords'] = df['coords'].apply(Point)
-    points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
+    (points_series, points_geodf) = geo_lon_lat2points_geodf(df, crs_value)
 
     return points_series, points_geodf
 
@@ -102,7 +116,7 @@ def plotting_hit_points(my_shape, shape_file_name, points_geodf):
     """
     title = shape_file_name
     base = my_shape.boundary.plot(linewidth = 1, edgecolor = "black")
-    points_geodf.plot(ax = base, linewidth = 1, color = "blue", markersize = 1, aspect = 1, title=title)
+    points_geodf.plot(ax = base, linewidth = 1, color = "blue", markersize = 1, aspect = 1, title = title)
     plt.show()
 
 
@@ -138,12 +152,71 @@ def test_locations(my_shape, points_geodf):
     return df_with_hits
 
 
+def process_line_shapes(shape_line_file, points_geodf):
+    """
+
+    :param shape_line_file:
+    :param points_geodf:
+    :return:
+    """
+    ic()
+
+    ic(shape_line_file)
+    features = geopandas.read_file(shape_line_file)
+    # get rid of superfluous columns
+    columns2drop = [s for s in features.columns if "name_" in s]
+    features = features.drop(columns2drop, axis = 1)
+    # clean up superfluous columns
+    #for col in ['note', 'min_zoom', 'min_label']
+    ic(features.head(2))
+
+    # egrep -Ei '(river|fresh)' merged_all_categories.tsv | head -1001 | cut -f 1-3 > test_freshwater_points.tsv
+    # egrep -Ei '(river|fresh)' merged_all_categories.tsv  | cut -f 1-3 > test_freshwater_points.tsv
+    # test_point_file = "/Users/woollard/projects/bluecloud/analysis/test_freshwater_points.tsv"
+    # df_test_points = geopandas.read_file(test_point_file)
+    # df_test_points.set_crs(geo_crs)
+    # (test_points_series, test_points_geodf) = geo_lon_lat2points_geodf(df_test_points, geo_crs)
+    # test_points['geometry'] = test_points["coords"]
+    # test_points.set_geometry('geometry')
+    # m = test_points_geodf.head(1000)
+    # m = test_points_geodf
+    # ic(m.head(2))
+
+    if points_geodf.crs != features.crs:
+        ic("Warning: the CRS for points and features don't match, so attempting to reproject")
+        ic(points_geodf.crs)
+        ic(features.crs)
+
+
+    # reprojecting to metric as want distance in metres
+    p = points_geodf.to_crs(crs = 3857)
+    features = features.to_crs(crs = 3857)
+    max_distance = 100
+    ic(p.head(2))
+    df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance")
+    #implementation error with max_distance, annoying as this increases the run time
+    #df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance", max_distance = max_distance)
+    #as this is not working manually doing
+    df_hits['distance'] = df_hits['distance'].round(decimals = 2)
+    df_hits = df_hits.query('distance < @max_distance')
+    df_hits = df_hits.to_crs(crs = 4326)
+    # degree_multiplier=111139
+    # hits["distance_metres"] = hits["distance"] * degree_multiplier
+    # hits["distance_metres"] = hits["distance_metres"].astype(int)
+
+    ic(df_hits.head())
+    ic(df_hits.crs.axis_info[0].unit_name)
+
+    return df_hits
+
+
 def main(passed_args):
     """ main
         __params__:
                passed_args
     """
     ic()
+
     debug_status = False
     geo_crc = 'EPSG:4326'
     if passed_args.coordinatesfile:
@@ -159,16 +232,20 @@ def main(passed_args):
         out_dirname = "/Users/woollard/projects/bluecloud/data/tests/"
         out_filename = out_dirname + "eez_hit.tsv"
     my_shape = read_shape(shape_file, geo_crc)
+    (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
 
-    if passed_args.typeofcontents == "point":
-        (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
-        pointInPolys_geodf = test_locations(my_shape, points_geodf)
-        print(f"writing to {out_filename}")
-        pointInPolys_geodf.to_csv(out_filename, sep = "\t", index=False)  # actually is all points, but with hits marked
-        # plotting_hit_points(my_shape, shape_file, points_geodf)
+    if passed_args.typeofcontents == "polygon":
+        df_hits_geodf = test_locations(my_shape, points_geodf)
+    elif passed_args.typeofcontents == "line":
+        # line_shape_file = '/Users/woollard/projects/bluecloud/data/shapefiles/natural_earth_vector/10m_physical/ne_10m_rivers_lake_centerlines.shp'
+        df_hits_geodf = process_line_shapes(shape_file, points_geodf)
     else:
         ic("ERROR: Can't currently work with{passed_args.typeofcontents }")
         sys.exit()
+
+    print(f"writing to {out_filename}")
+    df_hits_geodf.to_csv(out_filename, sep = "\t", index = False)  # actually is all points, but with hits marked
+    # plotting_hit_points(my_shape, shape_file, points_geodf)
 
     # getting all the ena_coordinates including regions in geometry format for the analysis
     # March 2023 don't think this is still being used ANYWHERE, or how if this is called last so commented! And not
@@ -202,7 +279,7 @@ if __name__ == '__main__':
                         required = False)
     parser.add_argument("-g", "--geo_crc", help = "geo_crc of the shapefile format=EPSG:4326",
                         required = False)
-    parser.add_argument("-t", "--typeofcontents", help = "the type of the coordinates file e.g. point, line, polygon",
+    parser.add_argument("-t", "--typeofcontents", help = "the type of the shapefile e.g. point, line, polygon",
                         default = "point", required = False)
     parser.parse_args()
     args = parser.parse_args()

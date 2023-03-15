@@ -366,7 +366,7 @@ def createTotal(df_merged_all_categories, categories, total):
 #     return df1
 
 
-def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
+def categoryPlotting(df_merged_all_categories, plot_dir, my_data, full_rerun):
     """  categoryPlotting
                 plotting using the category column subset
                 is using the scope aspect of plotly, this uses the inbuilt maps rather than the shapefile maps
@@ -394,14 +394,12 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     ic(df_all.describe())
     ic(df_all["counts"].sum())
 
-    all_categories = get_all_categories()
+    all_categories = my_data.get_category_list()
     for cat in all_categories:
         ic(cat)
         ic(df_merged_all_categories[cat].value_counts())
 
 
-
-    sys.exit()
 
     def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format):
         """create_cat_figure
@@ -518,7 +516,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
         ic(df_merged_all_categories["location_designation"].value_counts())
 
         # plot_location_designation() as a pie chart
-        sys.exit()
+
         ic(df_merged_all_categories.columns)
         cat = "eez_iho_intersect_category"
         title = cat
@@ -572,7 +570,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, full_rerun):
     scope = "world"
     marker_size = marker_size_default
 
-    sys.exit()
+
     def eez_iho_intersect_category_scope_plots(plot_dir, width, marker_size, scope, showlegendStatus):
         title_string = 'ENA samples in eez_iho_intersect_category in ' + scope
         format = 'png'
@@ -639,37 +637,6 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
         print(f"{field_name}={stats_dict[field_name]} = {(100 * stats_dict[field_name]/ena_uniq_lat_lon_total):.2f}%")
 
     return
-def get_category_dict():
-    """
-    
-    :return: category_dict
-    """
-    category_dict = {}
-    sea_categories = ['eez_category', 'longhurst_category', 'IHO_category', 'sea_category']
-    land_categories = ['land_category', 'worldAdmin_category', 'feow_category']
-    freshwater_categories = ['g200_fw_category', "g200_marine_category", "g200_terr_category", 'glwd_1_category',
-                                 'glwd_2_category', 'ne_10m_lakes_category', 'feow_category']
-    category_dict['sea'] = sea_categories
-    category_dict['land'] = land_categories
-    category_dict['freshwater'] = freshwater_categories
-    return category_dict
-
-def get_all_categories():
-    """
-      usage: all_categories = get_all_categories()
-
-      return
-    """
-    category_dict = get_category_dict()
-    all_cat_dict = {}
-    for key in category_dict:
-        for cat in category_dict[key]:
-            all_cat_dict[cat]=0
-    cat_list = all_cat_dict.keys()
-    return cat_list
-
-
-
 
 
 def analysis(df_merged_all, analysis_dir, plot_dir, my_data):
@@ -1159,7 +1126,6 @@ def main():
         df_merged_all = mergeAndAnalysis(hit_df_dict, hit_dir, my_data)
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir, my_data)
         ic("got here!")
-        sys.exit()
     else:
         df_merged_all = pd.read_csv(hit_dir + "merged_all.tsv", sep = "\t")
     df_merged_all = clean_merge_all(df_merged_all)
@@ -1177,7 +1143,7 @@ def main():
         Done so that can save the time etc. of re-running the merging
      '''
 
-    categoryPlotting(df_merged_all_categories, plot_dir, full_rerun)
+    categoryPlotting(df_merged_all_categories, plot_dir, my_data, full_rerun)
     if full_rerun == False:
         ic("Aborting early")
         sys.exit()

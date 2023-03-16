@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # BlueCloud
 """Script to get the e.g. EEZ classification for a set of longitude and latitude coordinates
  is using GDAL via geopandas lib see:
@@ -33,6 +34,7 @@ from shapely.geometry import Point
 
 import argparse
 import sys
+import os.path
 pd.set_option('display.max_columns', None)
 
 
@@ -235,6 +237,10 @@ def main(passed_args):
         out_dirname = "/Users/woollard/projects/bluecloud/data/tests/"
         out_filename = out_dirname + "eez_hit.tsv"
         passed_args.typeofcontents = "polygon"
+
+    if os.path.isfile(out_filename):
+        ic(f"skipping processing as {out_filename} exits")
+        sys.exit()
     my_shape = read_shape(shape_file, geo_crc)
     (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
 
@@ -249,7 +255,7 @@ def main(passed_args):
 
     print(f"writing to {out_filename}")
     df_hits_geodf.to_csv(out_filename, sep = "\t", index = False)  # actually is all points, but with hits marked
-    plotting_hit_points(my_shape, shape_file, points_geodf)
+    #plotting_hit_points(my_shape, shape_file, points_geodf)
 
     return ()
 

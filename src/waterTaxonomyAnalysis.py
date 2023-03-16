@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Script of water_taxonomyAnalysis.py is to take the taxonomy environment assignments
    and combine them with the output from analyseHits.py
    to allow one to get analysis of what is marine or terrestrial/freshwater from different methods
@@ -663,16 +664,15 @@ def get_merged_all_categories_file(analysis_dir):
         ic(df.columns)
 
         # attempting to reduce the memory footprint
-        most_cats = ['eez_category', 'longhurst_category', 'IHO_category',
-             'sea_category', 'eez_iho_intersect_category', 'land_category', 'worldAdmin_category', 'feow_category',
-             'location_designation_marine',  'location_designation_terrestrial', 'location_designation_other', 'location_designation',
-             'glwd_1_category', 'glwd_2_category', 'ne_10m_lakes_category', 'location_designation_freshwater', 'location_designation_aquatic']
-        # ic(df.memory_usage())
+        most_cats = ['location_designation_terrestrial', 'location_designation_other', 'location_designation',
+              'location_designation_freshwater', 'location_designation_aquatic']
         for my_cat in most_cats:
             df[my_cat] = df[my_cat].astype("category")
         #and even more, reduction of memory
         my_cols = [match for match in df.columns if "_category" in match]
-        df= df.drop(columns=my_cols)
+        for my_cat in my_cols:
+            df[my_cat] = df[my_cat].astype("category")
+        #df= df.drop(columns=my_cols)
         # ic(df.memory_usage())
         MyDataStuctures[key_name] = df
 

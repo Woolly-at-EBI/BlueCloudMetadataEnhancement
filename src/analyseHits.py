@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # BlueCloud
 """Script to merge, analyse and plot the hits from getGeoLocationCategorisation.py
     directories for the hits, samples, analysis, plot etc. are set in "def get_directory_paths"
@@ -40,20 +41,37 @@ pd.set_option('display.width', 1000)
 
 
 class MyData:
+    """
+    These are a small set of methods for dealing with some of the complexity of dynamically having
+    non-exclusive categories.
+    extensive use is made of dictionaries
+    """
     def __init__(self):
         ic()
 
     def put_category_info_dict(self, category_info_dict):
+        """
+        This has 3 jobs:
+            1) store the category_info_dict
+            2) determine and populate domain_dict[domain], where domain is e.g. freshwater
+            3) determine and populate "shapefile_type"
+        :param category_info_dict:
+        :return:
+        """
         self._category_info_dict = category_info_dict
-
         domain_dict = {}
 
         for key in category_info_dict:
             for domain in category_info_dict[key]["domains"]:
-                ic(domain)
                 if domain not in domain_dict:
+                    ic(domain)
                     domain_dict[domain] = []
                 domain_dict[domain].append(key)
+
+            if "line_hits" in category_info_dict[key]["hitfile"]:
+                self._category_info_dict[key]["shapefile_type"] = "line"
+            else:
+                self._category_info_dict[key]["shapefile_type"] = "polygon"
 
         self._domain_cat_dict = domain_dict
 
@@ -64,6 +82,7 @@ class MyData:
          category_info_dict: { 'eez_category': {'category': 'eez_category',
                                           'domains': ['marine'],
                                           'hitfile': '/Users/woollard/projects/bluecloud/data/hits/eez_hits.tsv',
+                                          'shapefile_type': 'polygon',
                                           'short': 'eez'},
                                           ...
                              }
@@ -87,7 +106,7 @@ class MyData:
                                          'g200_terr_category',
                                          'glwd_1_category',
                                          'glwd_2_category',
-                                         'ne_10m_lakes_category',
+                                         'ne_10m_lake_category',
                                          'feow_category'],
                           'marine': ['IHO_category', 'longhurst', 'eez_category'],
                           'terrestrial': ['feow_category',
@@ -99,6 +118,19 @@ class MyData:
         return self._domain_cat_dict
     def get_freshwater_cats(self):
         return self._domain_cat_dict['freshwater']
+
+    def get_freshwater_cats_narrow(self):
+        """
+        essentially freshwater cats except for hydrosheds
+        :return:
+        """
+        tmp_dict = self._domain_cat_dict['freshwater']
+        key = 'feow_category'
+        if key in tmp_dict:
+            tmp_dict.remove(key)
+        else:
+            ic(f"Warning {key} not found in dict, not crucial, but unexpected")
+        return tmp_dict
 
 
 def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
@@ -218,6 +250,13 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
         elif cat_name == "g200_marine_category":
             df[cat_name] = df['G200_REGIO']
         ic(df[cat_name].value_counts())
+    elif cat_name in ["ne_10m_river_lake_line_category", "ne_10m_river_lake_aus_line_category", "ne_10m_river_eur_line_category",\
+                              "ne_10m_river_nam_line_category", "ne_10m_river_lake_line_category"]:
+        df = df.rename({'index_right': cat_name}, axis = 1)
+        df[cat_name] = df['featurecla']
+    elif cat_name in ["ne_10m_lake_hit.tsv", "ne_50m_lakes_hit.tsv"]:
+        df = df.rename({'index_right': cat_name}, axis = 1)
+        df[cat_name] = df['featurecla']
     elif cat_name in ["glwd_1_category", "glwd_2_category"]:
         df = df.rename({'index_right': cat_name}, axis = 1)
         df[cat_name] = df['TYPE']
@@ -397,6 +436,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, my_data, full_rerun):
     ic(df_all["counts"].sum())
 
     all_categories = my_data.get_category_list()
+    all_categories.append("freshwater_key_combined")
     for cat in all_categories:
         ic(cat)
         ic(df_merged_all_categories[cat].value_counts().rename_axis('unique_values').reset_index(name='counts').head(5))
@@ -555,7 +595,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, my_data, full_rerun):
     format = 'png'
     showlegendStatus = True
     marker_size = 2
-    for cat in ['g200_fw_category', 'glwd_1_category', 'glwd_2_category', 'freshwater_key_combined', 'ne_10m_lakes_category']:
+    for cat in ['freshwater_key_combined']:
         scope = 'europe'
         title_string = "ENA Samples in " + cat + " in " + scope
         color_value = cat
@@ -656,16 +696,16 @@ def extra_cat_merging(my_data, df_merged_all_categories):
     """
     ic()
     ic("freshwater extra merging")
-    ic(my_data.get_freshwater_cats())
-    freshwater_cats = my_data.get_freshwater_cats()
-    matching = [s for s in freshwater_cats if "glwd" in s]
-    matching.append("ne_10m_lakes_category")   #sorry the b$$£@£& would not match
-    for cat in matching:
+    ic(my_data.get_freshwater_cats_narrow())
+    for cat in my_data.get_freshwater_cats_narrow():
         ic(cat)
         df_merged_all_categories.loc[df_merged_all_categories[cat].notnull(), 'freshwater_key_combined'] = df_merged_all_categories[cat]
 
+
     #some basic harmonisation
     df_merged_all_categories.loc[df_merged_all_categories['freshwater_key_combined'] == "Lakes", 'freshwater_key_combined'] = "Lake"
+    df_merged_all_categories.loc[
+        df_merged_all_categories['freshwater_key_combined'] == "Lake Centerline", 'freshwater_key_combined'] = "Lake"
     ic(df_merged_all_categories['freshwater_key_combined'].value_counts())
 
     return df_merged_all_categories
@@ -710,6 +750,106 @@ def choose_location_designations(df_merged_all_categories):
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
     return df_merged_all_categories
+
+def analyseFreshwater():
+    """
+
+    :return:
+    """
+    ic()
+    result_file='/Users/woollard/projects/bluecloud/analysis/merged_all_categories.tsv'
+    df = pd.read_csv(result_file, sep="\t")
+    ic(df.shape)
+    ic(df.sample(n=4))
+
+    category_info_dict = {'feow_category': {'category': 'feow_category',
+                                           'domains': ['freshwater', 'terrestrial'],
+                                           'hitfile': '/Users/woollard/projects/bluecloud/data/hits/feow_hydrosheds_hits.tsv',
+                                           'shapefile_type': 'polygon',
+                                           'short': 'hydrosheds'},
+                         'g200_fw_category': {'category': 'g200_fw_category',
+                                              'domains': ['freshwater'],
+                                              'hitfile': '/Users/woollard/projects/bluecloud/data/hits/g200_fw_hits.tsv',
+                                              'shapefile_type': 'polygon',
+                                              'short': 'g200_fw'},
+                         'g200_marine_category': {'category': 'g200_marine_category',
+                                                  'domains': ['marine'],
+                                                  'hitfile': '/Users/woollard/projects/bluecloud/data/hits/g200_marine_hits.tsv',
+                                                  'shapefile_type': 'polygon',
+                                                  'short': 'g200_marine'},
+                         'g200_terr_category': {'category': 'g200_terr_category',
+                                                'domains': ['terrestrial'],
+                                                'hitfile': '/Users/woollard/projects/bluecloud/data/hits/g200_terr_hits.tsv',
+                                                'shapefile_type': 'polygon',
+                                                'short': 'g200_terr'},
+                         'glwd_1_category': {'category': 'glwd_1_category',
+                                             'domains': ['freshwater'],
+                                             'hitfile': '/Users/woollard/projects/bluecloud/data/hits/glwd_1_hits.tsv',
+                                             'shapefile_type': 'polygon',
+                                             'short': 'g200_terr'},
+                         'glwd_2_category': {'category': 'glwd_2_category',
+                                             'domains': ['freshwater'],
+                                             'hitfile': '/Users/woollard/projects/bluecloud/data/hits/glwd_2_hits.tsv',
+                                             'shapefile_type': 'polygon',
+                                             'short': 'glwd_2'},
+                         'longhurst_category': {'category': 'longhurst_category',
+                                                'domains': ['marine'],
+                                                'hitfile': '/Users/woollard/projects/bluecloud/data/hits/longhurst_v4_hits.tsv',
+                                                'shapefile_type': 'polygon',
+                                                'short': 'longhurst'},
+                         'ne_10m_lake_category': {'category': 'ne_10m_lake_category',
+                                                  'domains': ['freshwater'],
+                                                  'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_10m_lake_hits.tsv',
+                                                  'shapefile_type': 'polygon',
+                                                  'short': 'ne_10m_lake'},
+                         'ne_10m_river_eur_line_category': {'category': 'ne_10m_river_eur_line_category',
+                                                            'domains': ['freshwater'],
+                                                            'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_10m_rivers_europe_line_hits.tsv',
+                                                            'shapefile_type': 'line',
+                                                            'short': 'ne_10m_river_eur_line'},
+                         'ne_10m_river_lake_aus_line_category': {'category': 'ne_10m_river_lake_aus_line_category',
+                                                                 'domains': ['freshwater'],
+                                                                 'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_10m_rivers_australia_line_hits.tsv',
+                                                                 'shapefile_type': 'line',
+                                                                 'short': 'ne_10m_river_aus_line'},
+                         'ne_10m_river_lake_line_category': {'category': 'ne_10m_river_lake_line_category',
+                                                             'domains': ['freshwater'],
+                                                             'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_50m_river_lake_line_hits.tsv',
+                                                             'shapefile_type': 'line',
+                                                             'short': 'ne_50m_river_lake_line'},
+                         'ne_10m_river_nam_line_category': {'category': 'ne_10m_river_nam_line_category',
+                                                            'domains': ['freshwater'],
+                                                            'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_10m_rivers_north_america_line_hits.tsv',
+                                                            'shapefile_type': 'line',
+                                                            'short': 'ne_10m_river_nam_line'},
+                         'ne_50m_lake_category': {'category': 'ne_50m_lake_category',
+                                                  'domains': ['freshwater'],
+                                                  'hitfile': '/Users/woollard/projects/bluecloud/data/hits/ne_50m_lakes_hits.tsv',
+                                                  'shapefile_type': 'polygon',
+                                                  'short': 'ne_50m_lake'},
+                         'worldAdmin_category': {'category': 'worldAdmin_category',
+                                                 'domains': ['terrestrial'],
+                                                 'hitfile': '/Users/woollard/projects/bluecloud/data/hits/world-administrative-boundaries_hits.tsv',
+                                                 'shapefile_type': 'polygon',
+                                                 'short': 'worldAdmin'}}
+    my_data = MyData()
+    my_data.put_category_info_dict(category_info_dict)
+    cols2keep = []
+    other = ["lat", "lon", "location_designation_freshwater", "location_designation_aquatic", "freshwater_key_combined", "freshwater_total"]
+    for col in other:
+        cols2keep.append(col)
+    for col in my_data.get_freshwater_cats():
+        cols2keep.append(col)
+    (df["freshwater_total"].value_counts())
+    df = df[cols2keep].query('freshwater_total > 0')
+    ic(df.shape)
+    ic(df.sample(n=4))
+    ic(df["freshwater_total"].value_counts())
+    ic(df["freshwater_key_combined"].value_counts())
+    ic(df["feow_category"].value_counts())
+    ic(df.count())
+
+
 def analysis(df_merged_all, analysis_dir, plot_dir, my_data):
     """  analysis
          an important method:
@@ -720,6 +860,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir, my_data):
         __returns__:
 
     """
+
     all_columns = df_merged_all.columns
     ic(all_columns)
     categories = my_data.get_category_list()
@@ -739,7 +880,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir, my_data):
     df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['freshwater'], 'freshwater_total')
 
     df_merged_all_categories = choose_location_designations(df_merged_all_categories)
-    df_merged_all_categories = extra_cat_merging(my_data,df_merged_all_categories)
+    df_merged_all_categories = extra_cat_merging(my_data, df_merged_all_categories)
 
     ic(df_merged_all_categories.head(5))
     out_file = analysis_dir + 'merged_all_categories.tsv'
@@ -837,10 +978,10 @@ def processHitFiles(hit_dir, my_data):
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
     (category_info_dict, category) = add_cat(category_info_dict, "g200_marine",  hit_dir, 'g200_marine_hits.tsv',
-                                                  'g200_marine_category',['freshwater'])
+                                                  'g200_marine_category',['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
-    (category_info_dict, category)  = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv', 'g200_terr_category',['freshwater'])
+    (category_info_dict, category)  = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv', 'g200_terr_category',['terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
     (category_info_dict, category)  = add_cat(category_info_dict, "g200_terr", hit_dir, 'glwd_1_hits.tsv', 'glwd_1_category', ['freshwater'])
@@ -849,8 +990,22 @@ def processHitFiles(hit_dir, my_data):
     (category_info_dict, category)  = add_cat(category_info_dict, "glwd_2", hit_dir, 'glwd_2_hits.tsv', 'glwd_2_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', 'glwd_2_category', 'freshwater')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lakes",  hit_dir, 'ne_10m_lakes_hits.tsv', 'ne_10m_lakes_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_lake_line",  hit_dir, 'ne_10m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lake",  hit_dir, 'ne_10m_lake_hits.tsv', 'ne_10m_lake_category',['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_aus_line",  hit_dir, 'ne_10m_rivers_australia_line_hits.tsv', 'ne_10m_river_lake_aus_line_category',['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_eur_line",  hit_dir, 'ne_10m_rivers_europe_line_hits.tsv', 'ne_10m_river_eur_line_category',['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_nam_line",  hit_dir, 'ne_10m_rivers_north_america_line_hits.tsv', 'ne_10m_river_nam_line_category',['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_lake", hit_dir, 'ne_50m_lakes_hits.tsv', 'ne_50m_lake_category', ['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_river_lake_line", hit_dir, 'ne_50m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category', ['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+
+
 
     (category_info_dict, category) = add_cat(category_info_dict, "hydrosheds",  hit_dir, 'feow_hydrosheds_hits.tsv', 'feow_category',
                                              ['freshwater', 'terrestrial'])
@@ -1153,6 +1308,9 @@ def main():
         __params__:
                passed_args
     """
+    analyseFreshwater()
+    sys.exit()
+
     full_rerun = True
 
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
@@ -1177,6 +1335,7 @@ def main():
     df_merged_all_categories = pd.read_csv(merged_all_categories_file, sep = "\t")
 
     get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
+    sys.exit()
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)

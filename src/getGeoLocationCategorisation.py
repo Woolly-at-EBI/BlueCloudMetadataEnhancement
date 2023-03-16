@@ -58,25 +58,24 @@ def read_shape(shapefile, geo_crs):
 
 def geo_lon_lat2points_geodf(df, crs_value):
     """
-        (points_series, points_geodf) = geo_lon_lat2points_geodf(df)
+        (points_series, points_geodf) = geo_lon_lat2points_geodf(df, crs_value)
+        :param df: that contains lat and lon
         :param crs_value:
-        :param df:
-        :return:
+        :return: points_series, points_geodf
         """
-    ic("create points GeoDeries and then GeoDataFrame")
-    ic(df.head())
+    ic(f"creating both points GeoSeries and GeoDataFrame with crs_value = {crs_value}")
+
     df["lat"] = df["lat"].astype(float)
     df["lon"] = df["lon"].astype(float)
     points_series = geopandas.GeoSeries.from_xy(x = df.lon, y = df.lat)
     # points_series.drop_duplicates()  is very slow, so did the dropping in the panda data frames.
-    ic(points_series.count())
     # ic(points_series)
-    # create points GeoDataFrame
     df['coords'] = list(zip(df['lon'], df['lat']))
     df['coords'] = df['coords'].apply(Point)
     points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
+    ic(points_geodf.count())
+    ic(points_geodf.sample(n=3))
     return points_series, points_geodf
-
 
 def create_points_geoseries(coordfile, debug):
     """ create a geoseries of lat and lon as multiple points
@@ -91,13 +90,14 @@ def create_points_geoseries(coordfile, debug):
     crs_value = "EPSG:4326"
     if debug:
         nrow = 10000000
+        ic(f"debug={debug} nrows of point coordinates limited to {nrow}")
         df = pd.read_csv(coordfile, sep = '\t', nrows = nrow)
     else:
         df = pd.read_csv(coordfile, sep = '\t')
+        ic(f"count of point coordinates = {df.shape[0]}")
     # Select just the specific columns and drop the duplicates, dropping duplicates cuts down much searching
     df = df[['lon', 'lat']]
     df = df.drop_duplicates(keep = 'first', ignore_index = True)
-
     (points_series, points_geodf) = geo_lon_lat2points_geodf(df, crs_value)
 
     return points_series, points_geodf
@@ -187,12 +187,13 @@ def process_line_shapes(shape_line_file, points_geodf):
         ic(points_geodf.crs)
         ic(features.crs)
 
-
     # reprojecting to metric as want distance in metres
     p = points_geodf.to_crs(crs = 3857)
+    ic(f"point total = {points_geodf.shape[0]}")
+    ic(p.sample(n = 3))
     features = features.to_crs(crs = 3857)
     max_distance = 100
-    ic(p.head(2))
+
     df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance")
     #implementation error with max_distance, annoying as this increases the run time
     #df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance", max_distance = max_distance)
@@ -203,7 +204,7 @@ def process_line_shapes(shape_line_file, points_geodf):
     # degree_multiplier=111139
     # hits["distance_metres"] = hits["distance"] * degree_multiplier
     # hits["distance_metres"] = hits["distance_metres"].astype(int)
-
+    ic(f"total hits = {df_hits.shape[0]}")
     ic(df_hits.head())
     ic(df_hits.crs.axis_info[0].unit_name)
 
@@ -231,6 +232,7 @@ def main(passed_args):
         shape_file = "/Users/woollard/projects/bluecloud/data/shapefiles/World_EEZ_v11_20191118/eez_v11.shp"
         out_dirname = "/Users/woollard/projects/bluecloud/data/tests/"
         out_filename = out_dirname + "eez_hit.tsv"
+        passed_args.typeofcontents = "polygon"
     my_shape = read_shape(shape_file, geo_crc)
     (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
 

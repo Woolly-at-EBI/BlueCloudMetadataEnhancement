@@ -115,8 +115,10 @@ def plotting_hit_points(my_shape, shape_file_name, points_geodf):
 
     """
     title = shape_file_name
+    ic(title)
+    my_shape.plot()
     base = my_shape.boundary.plot(linewidth = 1, edgecolor = "black")
-    points_geodf.plot(ax = base, linewidth = 1, color = "blue", markersize = 1, aspect = 1, title = title)
+    points_geodf.plot(ax = base, linewidth = 1, color = "blue", markersize = 1, aspect = 1)
     plt.show()
 
 
@@ -247,16 +249,7 @@ def main(passed_args):
 
     print(f"writing to {out_filename}")
     df_hits_geodf.to_csv(out_filename, sep = "\t", index = False)  # actually is all points, but with hits marked
-    # plotting_hit_points(my_shape, shape_file, points_geodf)
-
-    # getting all the ena_coordinates including regions in geometry format for the analysis
-    # March 2023 don't think this is still being used ANYWHERE, or how if this is called last so commented! And not
-    # all_ena_coordinates_file = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_clean.tsv'
-    # all_ena_coordinates_file = coordinates_file
-    # out_filename = '/Users/woollard/projects/bluecloud/data/samples/sample_lat_lon_country_geometry.tsv'
-    # (points_series, points_geodf) = create_points_geoseries(all_ena_coordinates_file)
-    # ic(out_filename)
-    # points_geodf.to_csv(out_filename, sep = "\t")
+    plotting_hit_points(my_shape, shape_file, points_geodf)
 
     return ()
 
@@ -264,13 +257,12 @@ def main(passed_args):
 if __name__ == '__main__':
     """
     mainly handles the command line params
-    typeofcontents - only polygon is currently handled. i.e. comparing points with polygons.
-      lines e.g. for rivers needs to be done
+    typeofcontents - only polygon and line are currently handled. 
     
     """
     ic()
     # Read arguments from command line
-    prog_des = "Script to get the marine zone classification for a set of longitude and latitude coordinates"
+    prog_des = "Script to get any hits to supplied shapefiles for a set of longitude and latitude coordinates"
     parser = argparse.ArgumentParser(description = prog_des)
 
     # Adding optional argument, n.b. in debugging mode in IDE, had to turn required to false.
@@ -286,10 +278,6 @@ if __name__ == '__main__':
     parser.parse_args()
     args = parser.parse_args()
     ic(args)
-    print(args)
     if args.verbosity:
-        print("verbosity turned on")
-
-    # ic(passed_args.coordinatesfile)
-    # ic(passed_args.shapefile)
+        ic("verbosity turned on")
     main(args)

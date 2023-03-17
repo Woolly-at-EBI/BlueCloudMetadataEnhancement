@@ -196,7 +196,8 @@ def process_line_shapes(shape_line_file, points_geodf):
     ic(f"point total = {points_geodf.shape[0]}")
     ic(p.sample(n = 3))
     features = features.to_crs(crs = 3857)
-    max_distance = 100
+    max_distance = 5  # was 100
+    ic(f"FYI: using max_distance from line = {max_distance} metres")
 
     df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance")
     #implementation error with max_distance, annoying as this increases the run time
@@ -238,9 +239,9 @@ def main(passed_args):
         out_filename = out_dirname + "eez_hit.tsv"
         passed_args.typeofcontents = "polygon"
 
-    if os.path.isfile(out_filename):
-        ic(f"skipping processing as {out_filename} exits")
-        sys.exit()
+    # if os.path.isfile(out_filename):
+    #     ic(f"skipping processing as {out_filename} exits")
+    #     sys.exit()
     my_shape = read_shape(shape_file, geo_crc)
     (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
 

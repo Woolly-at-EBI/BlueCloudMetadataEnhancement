@@ -1091,37 +1091,36 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_marine", "sea_total", "taxa_marine"]]
             df_tmp["location_designation_marine_conf"] = False
             df_tmp = df_tmp.query('sea_total > 1')
-            df_species = df_tmp.groupby(["tax_id"]).\
-                size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-            df_species["count"] = df_species["count"].astype(int)
             count_field = "count_of_samples_having_marine_coords"
-            df_species = df_species.rename(columns = {"count": count_field})
         elif(conf_field == "sample_confidence_terrestrial"):
             df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_terrestrial", "land_total", "taxa_terrestrial_or_freshwater"]]
             df_tmp = df_tmp.query('land_total >= 1')
-            df_species = df_tmp.groupby(["tax_id"]).\
-                size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-            df_species["count"] = df_species["count"].astype(int)
             count_field = "count_of_samples_having_terrestrial_coords"
-            df_species = df_species.rename(columns = {"count": count_field})
         elif(conf_field == "sample_confidence_marine_and_terrestrial"):
              df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation"]]
              df_tmp = df_tmp.query('location_designation == "marine and terrestrial"')
-             df_species = df_tmp.groupby(["tax_id"]).\
-                 size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
-             df_species["count"] = df_species["count"].astype(int)
              count_field = "count_of_samples_having_marine_and_terrestrial_coords"
-             df_species = df_species.rename(columns={"count": count_field})
+        elif(conf_field == "sample_confidence_freshwater"):
+            df_tmp = df_merge_combined_tax[["tax_id", "scientific_name", "location_designation_terrestrial", "freshwater_total", "taxa_terrestrial_or_freshwater"]]
+            df_tmp = df_tmp.query('freshwater_total >= 1')
+            count_field = "count_of_samples_having_freshwater_coords"
         else:
             ic("ERROR: conf_field is unknown: " + conf_field)
             sys.exit()
+        df_species = df_tmp.groupby(["tax_id"]). \
+            size().to_frame('count').reset_index().fillna(False).set_index("tax_id")
+        df_species["count"] = df_species["count"].astype(int)
+        df_species = df_species.rename(columns = {"count": count_field})
 
         ic(df_species.head())
         ic(f"about to do pd.merge for: {count_field}")
         df = pd.merge(df_merge_combined_tax, df_species, on="tax_id", how="left")
         df[count_field] = df[count_field].fillna(0).astype(int)
-        ic(df.sample(n=10))
+        ic(df.sample(n=3))
         ic(df.environment_biome_hl.value_counts())
+
+        if conf_field == "sample_confidence_freshwater":
+            sys.exit()
 
         if (conf_field == "sample_confidence_marine"):
             dom_type = "marine"
@@ -1309,7 +1308,7 @@ def make_combined_single_domain_call(df_merge_combined_tax):
 def addConfidence(df_merge_combined_tax):
     """addConfidence
         adding confidence for metadata assignments
-        want to try and separate into 3 categories
+        want to try and separate into 3 categories: "marine, marine and terrestrial and terrestrial"
     :param df_merge_combined_tax:
     :return:
     """
@@ -1340,10 +1339,12 @@ def addConfidence(df_merge_combined_tax):
     ic(df_merge_combined_tax.shape)
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_terrestrial", "sample_confidence_terrestrial_inc_biome")
+    df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict,
+                                           "sample_confidence_freshwater", "sample_confidence_terrestrial_inc_freshwater")
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
 
-    ic(df_merge_combined_tax.sample(n = 5))  #taxa marine etc.mix of True and False s oall good
+    ic(df_merge_combined_tax.sample(n = 5))  #taxa marine etc.mix of True and False
 
     ic(df_merge_combined_tax.head())
     ic(df_merge_combined_tax.query('(sample_confidence_marine_inc_biome == "high") & (sample_confidence_terrestrial_inc_biome == "high")').head())
@@ -1385,11 +1386,11 @@ def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir,
 
     :return: df_merge_combined_tax_all_with_confidence
     """
+    ic()
     df_merge_combined_tax_all_with_confidence = pd.merge(df_merge_combined_tax_all_with_confidence,df_lon_lat_dps,how="left", on="accession")
     df_merge_combined_tax_all_with_confidence["lat_dps"] = df_merge_combined_tax_all_with_confidence["lat_dps"].fillna(0).astype(int)
     df_merge_combined_tax_all_with_confidence["lon_dps"] = df_merge_combined_tax_all_with_confidence["lon_dps"].fillna(0).astype(int)
     # ic(df_merge_combined_tax_all_with_confidence.head())
-
     df = df_merge_combined_tax_all_with_confidence
     ic(df.sample(n=3))
     my_cols = ["accession","sample_confidence_marine_inc_biome", "sample_confidence_terrestrial_inc_biome", "sample_confidence_marine_and_terrestrial_inc_biome","lat_dps","lon_dps"]
@@ -1400,8 +1401,8 @@ def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir,
     ic(df_group.head())
     ic(df_group.shape)
     out_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps_analysis.tsv'
-    ic(out_file)
-    df_group.to_csv(out_file, sep="\t", index=False)
+    # ic(out_file)
+    # df_group.to_csv(out_file, sep="\t", index=False)
 
     return df_merge_combined_tax_all_with_confidence
 
@@ -1612,8 +1613,9 @@ def main(verbosity, stage, debug_status):
         put_pickleObj2File(df_merge_combined_tax, out_file, True)
     if got_data_testing_down_stream <= 2:
         ic("*********** got_data_testing_down_stream <=2")
-        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax.pickle')
-        ic(df_merge_combined_tax.shape)
+        if got_data_testing_down_stream >= 2:
+            df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax.pickle')
+            ic(df_merge_combined_tax.shape)
         df_groupby = df_merge_combined_tax.groupby(["location_designation"]).size().to_frame('count').reset_index()
         cat = "location_designation"
         out_graph_file = plot_dir + "location_designation_sample_counts_value." + "png"
@@ -1632,8 +1634,9 @@ def main(verbosity, stage, debug_status):
 
     if got_data_testing_down_stream <= 3:
         ic("*********** got_data_testing_down_stream <=3")
-        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence.pickle')
-        ic(df_merge_combined_tax.shape)
+        if got_data_testing_down_stream >= 3:
+            df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence.pickle')
+            ic(df_merge_combined_tax.shape)
         df_lon_lat_dps = get_lon_lat_dps(sample_dir)
         df_merge_combined_tax = analyse_lon_lat_dps(df_merge_combined_tax, analysis_dir, df_lon_lat_dps)
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle'
@@ -1642,8 +1645,9 @@ def main(verbosity, stage, debug_status):
 
     if got_data_testing_down_stream <= 4:
         ic("*********** got_data_testing_down_stream <=4")
-        df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle')
-        ic(df_merge_combined_tax.shape)
+        if got_data_testing_down_stream >= 4:
+            df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle')
+            ic(df_merge_combined_tax.shape)
         df_merge_combined_tax = make_combined_single_domain_call(df_merge_combined_tax)
         ic(df_merge_combined_tax.head(5))
 
@@ -1655,8 +1659,8 @@ def main(verbosity, stage, debug_status):
 
     if got_data_testing_down_stream <= 5:
         ic("*********** got_data_testing_down_stream <=5")
-        quicky = False
-        if quicky == False:
+        quickie = False
+        if quickie == False and got_data_testing_down_stream >= 5:
             df_merge_combined_tax = get_df_from_pickle(pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle')
         else:
             ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
@@ -1693,7 +1697,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbosity", type = int, help = "increase output verbosity", required = False)
     parser.add_argument("-o", "--outfile", help = "Output file", required = False)
     parser.add_argument("-s", "--stage", help = "The stage to start the build from", required = False)
-    parser.add_argument("-d", "--debug_status", help = "Debug status True or False", required = False)
+    parser.add_argument("-d", "--debug_status", help = "Debug status True or False, if True just runs on a subset of the samples", required = False)
 
     parser.parse_args()
     args = parser.parse_args()

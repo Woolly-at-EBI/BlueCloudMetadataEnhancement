@@ -250,24 +250,29 @@ def mergeDFs(data_frames, out_filename):
     return df_merged
 
 
-def createTotal(df_merged_all_categories, categories, total):
+def createTotal(df_merged_all_categories, categories, total_key_to_be):
     """  createTotal
             Sums up the occurrences of evidence from different sources(essentially the categories)
             i.e. count the none null values.
             The solution in the end was simple, but took me 2 hours to work out!
         __params__:
-            df_merged_all_categories, categories, total
+            df_merged_all_categories, categories, total_key_to_be
         __returns__:
             df_merged_all_categories
 
     """
+    ic()
     # was getting warnings about working on a copy of slice, this turns this off
     pd.options.mode.chained_assignment = None  # default='warn'
-    ic(total)
+    ic(total_key_to_be)
 
     df_just_cats = df_merged_all_categories[categories]
     number_of_cats = len(categories)
-    df_merged_all_categories[total] = number_of_cats - df_just_cats.isnull().sum(axis = 1)
+    df_merged_all_categories[total_key_to_be] = number_of_cats - df_just_cats.isnull().sum(axis = 1)
+
+    ic(df_merged_all_categories[total_key_to_be].value_counts())
+
+    pd.options.mode.chained_assignment = 'warn'
 
     return df_merged_all_categories
 
@@ -632,6 +637,7 @@ def choose_location_designations(df_merged_all_categories):
 
     :return: df_merged_all_categories
     """
+    pd.options.mode.chained_assignment = None  # default='warn'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] > 0),
         'location_designation_marine'] = True
@@ -666,6 +672,7 @@ def choose_location_designations(df_merged_all_categories):
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
+    pd.options.mode.chained_assignment = 'warn'
     return df_merged_all_categories
 
 def analyseFreshwater():
@@ -712,14 +719,14 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
     """
 
     all_columns = df_merged_all.columns
-    ic(all_columns)
+    #ic(all_columns)
     categories = hit_cats_info.get_category_list()
-    ic(categories)
+    #ic(categories)
     #columns2keep = ['lat', 'lon', 'coords', 'ena_country', 'ena_region'] + categories
     columns2keep = ['lat', 'lon', 'coords'] + categories
-    ic(columns2keep)
+    #ic(columns2keep)
     df_merged_all_categories = df_merged_all[columns2keep]
-    ic(df_merged_all_categories.head(2))
+    #ic(df_merged_all_categories.head(2))
 
     category_dict = hit_cats_info.get_domain_cat_dict()
     ic(category_dict)

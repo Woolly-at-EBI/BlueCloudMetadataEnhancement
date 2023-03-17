@@ -600,6 +600,7 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
     stats_dict["total_uniq_GPS_coords"] = ena_uniq_lat_lon_total
     ic(stats_dict)
 
+    ic(df_merged_all_categories.count())
     print(f"ena_total_sample_count = {ena_total_sample_count}")
     field_name: str
     for field_name in stats_dict:
@@ -637,6 +638,8 @@ def choose_location_designations(df_merged_all_categories):
 
     :return: df_merged_all_categories
     """
+    ic()
+
     pd.options.mode.chained_assignment = None  # default='warn'
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] > 0),
@@ -651,12 +654,8 @@ def choose_location_designations(df_merged_all_categories):
     df_merged_all_categories.loc[
         (df_merged_all_categories['freshwater_total'] > 0),
         'location_designation_freshwater'] = True
-    df_merged_all_categories.loc[
-        (df_merged_all_categories['location_designation_marine'] | df_merged_all_categories[
-            'location_designation_freshwater']),
-        'location_designation_aquatic'] = True
 
-    # NOT preferentially choosing marine
+    # NOTE preferentially choosing marine
     df_merged_all_categories.loc[
         (df_merged_all_categories['land_total'] > 0),
         'location_designation'] = 'terrestrial'
@@ -672,6 +671,10 @@ def choose_location_designations(df_merged_all_categories):
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
+    df_merged_all_categories.loc[df_merged_all_categories['location_designation_marine'] == True,
+        'location_designation_aquatic'] = True
+    df_merged_all_categories.loc[df_merged_all_categories['location_designation_freshwater'] == True,
+         'location_designation_aquatic'] = True
     pd.options.mode.chained_assignment = 'warn'
     return df_merged_all_categories
 
@@ -864,34 +867,32 @@ def processHitFiles(hit_dir, hit_cats_info):
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
 
 
-
     (category_info_dict, category) = add_cat(category_info_dict, "hydrosheds",  hit_dir, 'feow_hydrosheds_hits.tsv', 'feow_category',
                                              ['freshwater', 'terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'hydroshed')
 
-    # (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho",  hit_dir, 'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['terrestrial'])
-    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category, 'eez_iho_intersect')
-    # #
-    # (category_info_dict, category) = add_cat(category_info_dict, "seawater",  hit_dir, 'seawater_polygons_hits.tsv', 'sea_category', ['terrestrial'])
-    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'seawater')
-    # #
-    # (category_info_dict, category) = add_cat(category_info_dict, "land",  hit_dir, 'land_polygons_hits.tsv', 'land_category', ['terrestrial'])
-    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'land')
-    # #
+    (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho",  hit_dir, 'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['terrestrial'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category, 'eez_iho_intersect')
+    #
+    (category_info_dict, category) = add_cat(category_info_dict, "seawater",  hit_dir, 'seawater_polygons_hits.tsv', 'sea_category', ['terrestrial'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'seawater')
+    #
+    (category_info_dict, category) = add_cat(category_info_dict, "land",  hit_dir, 'land_polygons_hits.tsv', 'land_category', ['terrestrial'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'land')
+    #
     (category_info_dict, category) = add_cat(category_info_dict, "worldAdmin",  hit_dir, 'world-administrative-boundaries_hits.tsv', 'worldAdmin_category', ['terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'region', category, 'land')
-    # #
-    # (category_info_dict, category) = add_cat(category_info_dict, "seaIHO",  hit_dir, 'World_Seas_IHO_v3_hits.tsv', 'IHO_category', ['marine'])
-    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MRGID', category, 'sea')
-    # #
+    #
+    (category_info_dict, category) = add_cat(category_info_dict, "seaIHO",  hit_dir, 'World_Seas_IHO_v3_hits.tsv', 'IHO_category', ['marine'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MRGID', category, 'sea')
+    #
     (category_info_dict, category) = add_cat(category_info_dict, "longhurst",  hit_dir, 'longhurst_v4_hits.tsv', 'longhurst_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'ProvCode', category, 'blank')
-    # #
-    # (category_info_dict, category) = add_cat(category_info_dict, "eez",  hit_dir, 'eez_hits.tsv', 'eez_category', ['marine'])
-    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'GEONAME', category, 'EEZ')
+    #
+    (category_info_dict, category) = add_cat(category_info_dict, "eez",  hit_dir, 'eez_hits.tsv', 'eez_category', ['marine'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'GEONAME', category, 'EEZ')
 
     hit_cats_info.put_category_info_dict(category_info_dict)
-
     ic(hit_cats_info.get_category_list())
 
     return (hit_df_dict)
@@ -1181,12 +1182,15 @@ def main():
     # get all the files processed
     if full_rerun:
         #df_ena = get_all_ena_lat_lon_geo(sample_dir)
-        pickle_file = analysis_dir + "in_analysis_df_merged_all.pickleMESS"
-        if not os.path.isfile(pickle_file):
+        fast_run = True
+        pickle_file = analysis_dir + "in_analysis_df_merged_all.pickle"
+        if not os.path.isfile(pickle_file) or (fast_run is False):
             hit_df_dict = processHitFiles(hit_dir, hit_cats_info)
             df_merged_all = mergeAndAnalysis(hit_df_dict, hit_dir, hit_cats_info)
             put_pickleObj2File(df_merged_all, pickle_file, True)
-        df_merged_all = get_pickleObj(pickle_file)
+        else:
+            df_merged_all = get_pickleObj(pickle_file)
+        ic(df_merged_all.columns)
         ic(hit_cats_info.get_freshwater_cats())
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info)
         ic("Finished full_rerun, including generation of ", merged_all_categories_file)
@@ -1200,7 +1204,7 @@ def main():
     get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
 
     analyseFreshwater()
-    sys.exit()
+    #sys.exit()
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)
@@ -1212,7 +1216,7 @@ def main():
 
     categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rerun)
     ic("Aborting early")
-    sys.exit()
+    #sys.exit()
     if full_rerun == False:
         ic("Aborting early")
         sys.exit()

@@ -36,7 +36,6 @@ global MyDataStuctures
 MyDataStuctures = {}
 
 
-
 def get_taxonomy_info(taxonomy_dir):
     """ get_taxonomy_info
      read in the relevant marine taxonomic terms.

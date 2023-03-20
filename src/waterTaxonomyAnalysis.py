@@ -21,6 +21,7 @@ import pandas as pd
 from icecream import ic
 import sys  # system specific parameters and names
 import gc   # garbage collector interface
+import re
 
 import json
 import plotly.express as px
@@ -1073,6 +1074,30 @@ def scores2categories(df, conf_score, conf_field):
         df[conf_field] = np.select(condlist, choicelist, default = "zero")
         ic(df[conf_field].value_counts())
         return df
+def dom_confidence_special(df, marine_NCBI_to_marine_dict, special_dom):
+    """
+
+    :param df_merge_combined_tax:
+    :param marine_NCBI_to_marine_dict:
+    :param special_dom:
+    :return:
+
+    usage:  dom_confidence_special(df_merge_combined_tax, marine_NCBI_to_marine_dict, "freshwater")
+    """
+    ic()
+    if (special_dom == "freshwater"):
+        # sample_confidence_freshwater_score  sample_confidence_freshwater_score_inc_biome sample_confidence_freshwater
+        # sample_confidence_terrestrial_inc_freshwater,count_of_samples_having_freshwater_coords
+        cols2keep = ["accession", "scientific_name", "environment_biome", "freshwater_total", "sample_confidence_freshwater_score", "sample_confidence_freshwater_score_inc_biome", "sample_confidence_freshwater", "sample_confidence_terrestrial_inc_freshwater", "count_of_samples_having_freshwater_coords"]
+        df_tmp = df[cols2keep]
+        df_tmp = df_tmp.query('freshwater_total > 0')
+        df_tmp = df_tmp[df_tmp['environment_biome'].str.len() > 3]
+        ic(df_tmp["scientific_name"].value_counts())
+        ic(df_tmp["environment_biome"].value_counts())
+        ic(df_tmp.sample(n = 10))
+
+    sys.exit()
+    return df
 
 def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field, conf_field_inc_biome):
         """dom_confidence
@@ -1118,8 +1143,9 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         ic(df.sample(n=3))
         ic(df.environment_biome_hl.value_counts())
 
-        if conf_field == "sample_confidence_freshwater":
-            sys.exit()
+        # if conf_field == "sample_confidence_freshwater":
+        #
+        #     sys.exit()
 
         if (conf_field == "sample_confidence_marine"):
             dom_type = "marine"
@@ -1342,6 +1368,7 @@ def addConfidence(df_merge_combined_tax):
                                            "sample_confidence_freshwater", "sample_confidence_terrestrial_inc_freshwater")
     ic("*********************************************************")
     df_merge_combined_tax = dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, "sample_confidence_marine_and_terrestrial", "sample_confidence_marine_and_terrestrial_inc_biome")
+    df_merge_combined_tax = dom_confidence_special(df_merge_combined_tax, marine_NCBI_to_marine_dict, "freshwater")
 
     ic(df_merge_combined_tax.sample(n = 5))  #taxa marine etc.mix of True and False
 
@@ -1353,7 +1380,6 @@ def addConfidence(df_merge_combined_tax):
     ic(df_merge_combined_tax.query(
         '(sample_confidence_marine_inc_biome == "low") & (sample_confidence_terrestrial_inc_biome == "medium")').sample(
         n = 5, replace = True))
-
 
     # do a confidence:  conflict matrix, first. and the share with Josie and Stephane
     # do as numeric, + or - for pieces of evidence and then use threshold for the H/M/L/Zero   - look for missing rules
@@ -1404,6 +1430,105 @@ def analyse_lon_lat_dps(df_merge_combined_tax_all_with_confidence, analysis_dir,
     # df_group.to_csv(out_file, sep="\t", index=False)
 
     return df_merge_combined_tax_all_with_confidence
+
+def get_ordered_score_dict():
+    """
+    usage: (ordered_score_array,ordered_score_dict) = get_ordered_score_array()
+    """
+    choicelist = ["zero", "low", "medium", "high"]
+    ordered_score_dict = {}
+
+    for i in range(4):
+        ordered_score_dict[choicelist[i]] = i
+
+    return choicelist, ordered_score_dict
+
+def make_blue_domain_call(df_merge_combined_tax):
+    """make_blue_domain_call
+
+    :param df_merge_combined_tax:
+    :return: df_merge_combined_tax
+
+    usage: df_merge_combined_tax = make_blue_domain_call(df_merge_combined_tax)
+    """
+    ic(df_merge_combined_tax.columns)
+
+    def determine_blue_dom_vector(df,ordered_score_dict):
+        """
+
+        :param df:
+        :param ordered_score_dict:
+        :return:
+        """
+
+        df["blue_partition"] = "False"
+        df["blue_partition_confidence"] = "zero"
+        df.loc[(df["combined_location_designation"] == "marine") | (df["combined_location_designation"] == "marine_and_terrestrial"), \
+            "blue_partition"] = df["combined_location_designation"]
+        df.loc[(df["combined_location_designation"] == "marine") | (df["combined_location_designation"] == "marine_and_terrestrial"), \
+            "blue_partition_confidence"] = df["combined_location_designation_score"]
+
+        df.loc[(df["combined_location_designation"] == "terrestrial") & (df["location_designation_freshwater"] == True), \
+            "blue_partition"] = "freshwater"
+        df.loc[(df["combined_location_designation"] == "terrestrial") | (df["location_designation_freshwater"] == True), \
+            "blue_partition_confidence"] = df["combined_location_designation_score"]
+
+
+        ic(df.query('blue_partition == "freshwater"').sample(n=3))
+        sys.exit()
+
+        return df
+
+    # def determine_blue_dom(row,  ordered_score_dict):
+    #     """
+    #     Did as an apply. Considered vector approach, as faster, but the conditionals seemed a little too complex
+    #     :param row:
+    #     :param  ordered_score_dict:
+    #     :return: value
+    #     """
+    #     blue_partition_assignment = "False"
+    #     terrestrial_confidence = marine_comb_confidence = blue_partition_confidence = "zero"
+    #
+    #     if row["combined_location_designation"] == "marine" or row["combined_location_designation"] == "marine_and_terrestrial":
+    #         blue_partition_assignment = row["combined_location_designation"]
+    #         marine_comb_confidence = row["combined_location_designation_score"]
+    #         blue_partition_confidence = marine_comb_confidence
+    #     elif row["combined_location_designation"] == "terrestrial":
+    #         if row["location_designation_freshwater"] == True:
+    #             blue_partition_assignment = "freshwater"
+    #
+    #     if blue_partition_assignment != "False":
+    #         # coping with cases where freshwater and marine combinations occur and using the highest confidence
+    #         if ordered_score_dict[terrestrial_confidence] > ordered_score_dict[marine_comb_confidence]:
+    #                if row["location_designation_freshwater"] == True:
+    #                     blue_partition_assignment = "freshwater"
+    #                     blue_partition_confidence = ordered_score_dict[terrestrial_confidence]
+    #     row['blue_partition'] = blue_partition_assignment
+    #     row['blue_partition_confidence'] = blue_partition_confidence
+    #
+    #     return row
+
+    (ordered_score_array, ordered_score_dict) = get_ordered_score_dict()
+    ic(ordered_score_dict)
+
+    #pattern = r"marine"
+    #matches = re.search(pattern, df_merge_combined_tax.columns)
+    matches = [s for s in df_merge_combined_tax.columns if "water" in s]
+    ic(matches)
+
+    ic(df_merge_combined_tax.query('sample_confidence_marine_score_inc_biome > 0').sample(n=5))
+    ic(df_merge_combined_tax["combined_location_designation"].value_counts())
+    ic(df_merge_combined_tax.query('combined_location_designation == "marine"').sample(n = 5))
+    ic(ordered_score_dict)
+    #df_merge_combined_tax = df_merge_combined_tax.apply(determine_blue_dom, osd=ordered_score_dict, axis=1)
+    df_merge_combined_tax = determine_blue_dom_vector(df_merge_combined_tax, ordered_score_dict)
+    ic(df_merge_combined_tax.query('blue_partition !=  "False"').sample(n = 5))
+    ic(df_merge_combined_tax["blue_partition"].value_counts())
+    ic(df_merge_combined_tax["blue_partition_confidence"].value_counts())
+
+
+    sys.exit()
+    return df_merge_combined_tax
 
 def mini_exploration(df_merge_combined_tax):
     """
@@ -1588,7 +1713,7 @@ def main(verbosity, stage, debug_status):
     ic(got_data_testing_down_stream)
 
     if got_data_testing_down_stream == 1:
-        ic("*********** got_data_testing_down_stream >=1")
+        ic("*********** got_data_testing_down_stream >=1 combine GPS and evidence columns")
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
         # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
@@ -1611,7 +1736,7 @@ def main(verbosity, stage, debug_status):
         ic(out_file)
         put_pickleObj2File(df_merge_combined_tax, out_file, True)
     if got_data_testing_down_stream <= 2:
-        ic("*********** got_data_testing_down_stream <=2")
+        ic("*********** got_data_testing_down_stream <=2 individual domain confidence calling")
         if got_data_testing_down_stream >= 2:
             df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax.pickle')
             ic(df_merge_combined_tax.shape)
@@ -1632,7 +1757,7 @@ def main(verbosity, stage, debug_status):
         df_merge_combined_tax.to_csv(out_file, sep="\t", index=False)
 
     if got_data_testing_down_stream <= 3:
-        ic("*********** got_data_testing_down_stream <=3")
+        ic("*********** got_data_testing_down_stream <=3 doing lat/lon DPS analysis")
         if got_data_testing_down_stream >= 3:
             df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence.pickle')
             ic(df_merge_combined_tax.shape)
@@ -1643,7 +1768,7 @@ def main(verbosity, stage, debug_status):
         put_pickleObj2File(df_merge_combined_tax, pickle_file, True)
 
     if got_data_testing_down_stream <= 4:
-        ic("*********** got_data_testing_down_stream <=4")
+        ic("*********** got_data_testing_down_stream <=4 making combined domain call on location: marine, terrestrial or m+t")
         if got_data_testing_down_stream >= 4:
             df_merge_combined_tax = get_df_from_pickle(analysis_dir + 'merge_combined_tax_all_with_confidence_dps.pickle')
             ic(df_merge_combined_tax.shape)
@@ -1652,18 +1777,28 @@ def main(verbosity, stage, debug_status):
 
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
         put_pickleObj2File(df_merge_combined_tax, pickle_file, True)
-        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv"
+
+    if got_data_testing_down_stream <= 5:
+        ic("*********** got_data_testing_down_stream <=5 is the Blue Partition")
+        quickie = False
+        df_merge_combined_tax = get_df_from_pickle(
+                pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle')
+        df_merge_combined_tax = make_blue_domain_call(df_merge_combined_tax)
+
+        pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete_blue.pickle'
+        put_pickleObj2File(df_merge_combined_tax, pickle_file, True)
+        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_complete_blue.tsv"
         ic(out_file)
         df_merge_combined_tax.to_csv(out_file, sep = '\t', index = False)
 
-    if got_data_testing_down_stream <= 5:
-        ic("*********** got_data_testing_down_stream <=5")
+    if got_data_testing_down_stream <= 6:
+        ic("*********** got_data_testing_down_stream <=6 mini exploring")
         quickie = False
-        if quickie == False and got_data_testing_down_stream >= 5:
-            df_merge_combined_tax = get_df_from_pickle(pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle')
+        if quickie == False:
+            df_merge_combined_tax = get_df_from_pickle(pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete_blue.pickle')
         else:
             ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
-            df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete.tsv" ,sep = "\t", nrows=100000)
+            df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete_blue.tsv" ,sep = "\t", nrows=100000)
         ic(df_merge_combined_tax.shape)
         mini_exploration(df_merge_combined_tax)
         summary_plots(df_merge_combined_tax)

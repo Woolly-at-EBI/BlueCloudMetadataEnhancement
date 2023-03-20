@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """ generate_clearinghouse_submissions.py
     from merge of shape hit files and also from waterTaxonomyAnalysis.p
      see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
@@ -58,14 +59,18 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
                 my_evidence_string += "True (marine and terrestrial)"
             else:
                 my_evidence_string += "False"
-            my_evidence_string += "; taxa_evidence:" + ("True" if row[tax_dom_field] else "False")
+            # re-implement when taxa columns reincluded!
+            # my_evidence_string += "; taxa_evidence:" + ("True" if row[tax_dom_field] else "False")
+            my_evidence_string += "; taxa_evidence:"
             my_record.assertionAdditionalInfo = my_evidence_string
             my_record.emptyAssertionEvidence()
             my_record.addAutoAssertionEvidence("combinatorial")
         #print(my_record.get_filled_json())
         return my_record.get_filled_json()
 
-    inc_cols = ['accession', 'marine (ocean connected)', 'freshwater (land enclosed)','location_designation',
+    # inc_cols = ['accession', 'marine (ocean connected)', 'freshwater (land enclosed)', 'location_designation',
+    #            'sample_confidence_marine_inc_biome', 'sample_confidence_terrestrial_inc_biome']
+    inc_cols = ['accession', 'location_designation',
                 'sample_confidence_marine_inc_biome', 'sample_confidence_terrestrial_inc_biome']
     df_merge_combined_tax_res = df_merge_combined_tax[inc_cols]
     ic("collect marine high confidence")
@@ -231,7 +236,9 @@ def main():
 
     pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     df_merge_combined_tax = get_pickleObj(pickle_file)
-    df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
+    ic(df_merge_combined_tax.head())
+    #df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
+    df_merge_combined_tax = df_merge_combined_tax.head(100000)
     # put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle", True)
     #
     # df_merge_combined_tax = get_pickleObj("./tmp.pickle")

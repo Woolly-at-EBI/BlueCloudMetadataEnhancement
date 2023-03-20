@@ -245,12 +245,14 @@ def main():
     df_processed = pd.DataFrame.from_dict(my_dict, orient = 'index').reset_index()
     df_processed.columns = ['environment_biome', 'environment_biome_hl']
     ic(df_processed.sample(n=3))
+    ic(df_processed['environment_biome_hl'].value_counts())
 
     df_processed = df_processed[["environment_biome", "environment_biome_hl"]]
     df_processed = addSubCats(df_processed)
     df_processed = df_processed.drop_duplicates()
     ic(df_processed.shape)
     ic(df_processed.sample(n=3))
+    ic(df_processed["environment_biome_hl2"].value_counts())
 
     out_file = "environment_biome_mapping.tsv"
     ic(out_file)

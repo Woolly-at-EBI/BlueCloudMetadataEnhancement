@@ -103,6 +103,7 @@ def clean_up_df_tax2env(df):
     my_regex2 = r"\]"
     for col in my_cols:
         df[col] = df[col].replace(regex = [my_regex1, my_regex2], value = '')
+        df[col] = df[col].astype('category')
         ic(col, df[col].value_counts())
 
 
@@ -856,6 +857,7 @@ def taxonomic_environment_assignment(df_mega):
     values = ["marine and freshwater", "taxa_marine", "taxa_terrestrial_or_freshwater", "undetermined"]
     df_mega['taxonomic_environment'] = np.select(conditions, values, default = "undetermined")
     ic(df_mega['taxonomic_environment'].value_counts())
+    df_mega['taxonomic_environment'] = df_mega['taxonomic_environment'].astype('category')
 
     return df_mega
 
@@ -1059,6 +1061,7 @@ def scores2categories(df, conf_score, conf_field):
         :param conf_score:
         :param conf_field:
         :return: df
+        usage: df = scores2categories(df, conf_score, conf_field)
         """
         ic()
         ic(conf_score, conf_field)
@@ -1072,6 +1075,7 @@ def scores2categories(df, conf_score, conf_field):
         ]
         choicelist = ["zero", "low", "medium", "high"]
         df[conf_field] = np.select(condlist, choicelist, default = "zero")
+        df[conf_field] = df[conf_field].astype('category')
         ic(df[conf_field].value_counts())
         return df
 def dom_confidence_special(df, marine_NCBI_to_marine_dict, special_dom):
@@ -1088,15 +1092,64 @@ def dom_confidence_special(df, marine_NCBI_to_marine_dict, special_dom):
     if (special_dom == "freshwater"):
         # sample_confidence_freshwater_score  sample_confidence_freshwater_score_inc_biome sample_confidence_freshwater
         # sample_confidence_terrestrial_inc_freshwater,count_of_samples_having_freshwater_coords
-        cols2keep = ["accession", "scientific_name", "environment_biome", "freshwater_total", "sample_confidence_freshwater_score", "sample_confidence_freshwater_score_inc_biome", "sample_confidence_freshwater", "sample_confidence_terrestrial_inc_freshwater", "count_of_samples_having_freshwater_coords"]
+        cols2keep = ["accession", "scientific_name", "environment_biome", "environment_biome_hl", "environment_biome_hl2", "freshwater_total", "sample_confidence_freshwater_score", "sample_confidence_freshwater_score_inc_biome", "sample_confidence_freshwater", "sample_confidence_terrestrial_inc_freshwater", "count_of_samples_having_freshwater_coords"]
         df_tmp = df[cols2keep]
-        df_tmp = df_tmp.query('freshwater_total > 0')
+        df_tmp = df_tmp.query('freshwater_total > 1')
         df_tmp = df_tmp[df_tmp['environment_biome'].str.len() > 3]
         ic(df_tmp["scientific_name"].value_counts())
         ic(df_tmp["environment_biome"].value_counts())
+        ic(df_tmp["environment_biome_hl2"].value_counts())
         ic(df_tmp.sample(n = 10))
 
-    sys.exit()
+        df.sample_confidence_freshwater_score = 0
+
+        df.loc[(df.freshwater_total > 0), 'sample_confidence_freshwater_score'] = 1
+        df.loc[(df.freshwater_total > 1), 'sample_confidence_freshwater_score'] = 1.5
+        df.loc[(df.freshwater_total > 2) & (df.location_designation == "terrestrial"), 'sample_confidence_freshwater_score'] = 2
+        df.loc[(df.freshwater_total > 2) & (df.taxa_terrestrial_or_freshwater == True), 'sample_confidence_freshwater_score'] = 2.5
+        df.loc[(df.freshwater_total > 3), 'sample_confidence_freshwater_score'] = 3
+
+        pattern = r'freshwater|lake|river'
+        df.loc[(df.scientific_name.str.contains(pattern)), 'sample_confidence_freshwater_score'] += 1
+        pattern = r'soil|mouse|fungus'
+        df.loc[(df.scientific_name.str.contains(pattern)), 'sample_confidence_freshwater_score'] -= 0.5
+        df['sample_confidence_freshwater_score_inc_biome'] = df['sample_confidence_freshwater_score']
+        df.loc[(df.environment_biome_hl2 == "freshwater"), 'sample_confidence_freshwater_score_inc_biome'] += 1
+        df.loc[(df.environment_biome_hl2 == "other_terrestrial_water"), 'sample_confidence_freshwater_score_inc_biome'] += 0.5
+        df.loc[(df.environment_biome_hl2 == "land"), 'sample_confidence_freshwater_score_inc_biome'] -=1
+        df.loc[(df.environment_biome_hl == "marine"), 'sample_confidence_freshwater_score_inc_biome'] -= 0.5
+        # having to be careful, not many species have taxa designation
+        df.loc[(df.taxa_terrestrial_or_freshwater == False), 'sample_confidence_freshwater_score_inc_biome'] -= 0.5
+
+        df = scores2categories(df, 'sample_confidence_freshwater_score_inc_biome', 'sample_confidence_freshwater_confidence_inc_biome')
+
+        ic(df.query('sample_confidence_freshwater_score_inc_biome > 2').sample(n=10))
+        # cols2keep = ["accession", "scientific_name", "taxa_terrestrial_or_freshwater", "NCBI-to-terrestrial-or-freshwater", "environment_biome", "environment_biome_hl",
+        #              "environment_biome_hl2", "freshwater_total", "sample_confidence_freshwater_score",
+        #              "sample_confidence_freshwater_score_inc_biome", 'sample_confidence_freshwater_confidence_inc_biome',
+        #              "sample_confidence_freshwater",
+        #              "sample_confidence_terrestrial_inc_freshwater", "count_of_samples_having_freshwater_coords"]
+        #
+        # df_tmp = df[cols2keep]
+        # df_tmp = df_tmp.query('sample_confidence_freshwater_score_inc_biome > 1')
+        # ic(df_tmp["scientific_name"].value_counts())
+        # sys.exit()
+        # ic(df_tmp.query('sample_confidence_freshwater_score_inc_biome > 2').sample(n=20))
+        # # df_tmp = df_tmp.query('freshwater_total > 1')
+        # # df_tmp = df_tmp[df_tmp['environment_biome'].str.len() > 3]
+        # df_tmp = df_tmp.query('sample_confidence_freshwater_score_inc_biome > 1 & sample_confidence_freshwater_score_inc_biome <= 2')
+        # ic(df_tmp["scientific_name"].value_counts())
+        # ic(df_tmp["environment_biome"].value_counts())
+        # ic(df_tmp["environment_biome_hl2"].value_counts())
+        #
+        # ic(df_tmp["environment_biome_hl2"].value_counts())
+        #
+        # ic(df_tmp.sample(n = 10))
+        # ic(df_tmp["taxa_terrestrial_or_freshwater"].value_counts())
+        # ic(df_tmp["NCBI-to-terrestrial-or-freshwater"].value_counts())
+        #
+        # sys.exit()
+
     return df
 
 def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field, conf_field_inc_biome):
@@ -1170,11 +1223,11 @@ def dom_confidence(df_merge_combined_tax, marine_NCBI_to_marine_dict, conf_field
         df = scores2categories(df, conf_score_inc_biome, conf_field_inc_biome)
         #df_selected = ~df[df[conf_field_inc_biome] == df[conf_field]]
         ic(conf_field_inc_biome, conf_field)
-        df_selected = df.query('`{0}` != `{1}`'.format(conf_field_inc_biome, conf_field))
-        if df_selected.shape[0] > 0:
-            ic(df_selected.sample(n=5, replace=True))
-        else:
-            ic("sorry: no rows")
+        # df_selected = df.query('`{0}` != `{1}`'.format(conf_field_inc_biome, conf_field))
+        # if df_selected.shape[0] > 0:
+        #     ic(df_selected.sample(n=5, replace=True))
+        # else:
+        #     ic("sorry: no rows")
 
         df_grouped = df.groupby([conf_field_inc_biome, conf_field]).size().to_frame('count').reset_index()
         ic(df_grouped.head(10))

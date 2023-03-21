@@ -65,13 +65,14 @@ def get_all_ena_detailed_sample_info(test_bool):
             # df = df.query('(scientific_name == "Piscirickettsia salmonis")')
             del table
 
+
         #reduce memory
         df["tax_id"] = df["tax_id"].astype(int)
-        #df["lat"] = df["lat"].astype(np.float32)
-        #df["lon"] = df["lon"].astype(np.float32)
+        df["scientific_name"] = df["scientific_name"].astype('category')
 
         #df = df.query(
         #   '(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis") or (scientific_name == "Equisetum")')
+        ic(df.head(3))
 
         MyDataStuctures[key_name] = df
 

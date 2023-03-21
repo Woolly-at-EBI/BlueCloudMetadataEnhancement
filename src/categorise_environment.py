@@ -88,18 +88,15 @@ def process_environment_biome(df):
 
     (df_hl2_processed, sub_cat_dict) = addSubCats(df)
     df, my_hl2_lookup_dict = lookup_process_environment_biome(df, sub_cat_dict, lookup_col, lookup_hl2_value_col)
-    ic(df.query('environment_biome_hl2 == "freshwater"').sample(n=10))
-
-
-
-    ic()
-    sys.exit()
+    ic(df.query('environment_biome_hl2 == "freshwater"').sample(n=2))
 
 
     return df
 def lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_value_col):
     """ lookup_process_environment_biome
          looks up the hl mapping in a dictionary
+         returns the dataframe
+         adds the new column as a categorical
     :param df:
     :param lookup_col:
     :param lookup_term:
@@ -107,6 +104,7 @@ def lookup_process_environment_biome(df, my_lookup_dict, lookup_col, lookup_valu
     """
     ic()
     df[lookup_value_col] = df[lookup_col].map(my_lookup_dict)
+    df[lookup_value_col] = df[lookup_value_col].astype('category')
     ic(df[lookup_value_col].value_counts())
 
     return df, my_lookup_dict
@@ -236,14 +234,13 @@ def addSubCats(df):
     """
     ic()
     df["environment_biome_hl2"] = "unclassified"
-    pattern = r'water|Water|sewage|marsh|creek|river|pond|watershed|wetland|Wetland|bog|lake|swampy pool|stream|brackish'
+    pattern = r'water|Water|sewage|marsh|creek|river|pond|watershed|wetland|Wetland|bog|lake|swampy pool|stream|brackish|aquatic|Aquatic'
     stop_pattern = r'sea|oil'
     df.loc[(df["environment_biome_hl"] == "terrestrial") & (df["environment_biome"].str.contains(pattern)) & (df["environment_biome"].str.contains(stop_pattern) == False),"environment_biome_hl2"] = "other_terrestrial_water"
     #ic(df["environment_biome_hl2"].value_counts())
     #and at a lower std, not asking for a terrestrial designation
     df.loc[(df["environment_biome_hl2"] == "unclassified") & (df["environment_biome"].str.contains(pattern)) & (df["environment_biome"].str.contains(stop_pattern) == False), "environment_biome_hl2"] = "other_terrestrial_water"
     #ic(df["environment_biome_hl2"].value_counts())
-
 
     #cat ~/envo_tmp.txt | grep ENVO: | sed -E 's/.*(ENVO:[0-9]*)/\1/' | tr '\t' '|'
     pattern = r'water and sediment in basin|headwater|Aquatic|aquatic|well|headwater|lake|Lake|resh Water|resh water|reshwater|\bstream|River|river\b|RIVER|riverine|headwater|reservoir|reservoir|Reservoir|pond\b|ponds|stream|ENVO:00000021|ENVO:00000053|ENVO:00000243|ENVO:00000873|ENVO:01000252|ENVO:01000253|ENVO:01000297|ENVO:01000306|ENVO:01000409|ENVO:01000598|ENVO:01001253|ENVO:01001344|ENVO:01001511|ENVO:01001515|ENVO:01001789|ENVO:2000005|ENVO:00000891|ENVO:00000892|ENVO:01000394|ENVO:01000398|ENVO:01001028|ENVO:04000005'
@@ -255,10 +252,10 @@ def addSubCats(df):
 
     #ic(df.query('environment_biome_hl2 != "freshwater"')['environment_biome'])
     stop_pattern = r'water|river|Aquatic|aquatic|lake'
-    pattern = r'(^vine|^urban|terrestial|^tea|^sugarcane|^subsahelian|highland|barley|spruce|vegetable|fairy ring|arable|crop|^shrub|^silkworm|^shelterbelt|cactus|pricklr pear|^sawdust|^salt mine|^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|lowland|island|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|greenhouse|horse|grasses|plain|rice|rose|rural|tree|silage|deer|vinegar|soybean|oak)'
+    pattern = r'^vine|^urban|terrestial|^tea|^sugarcane|^subsahelian|highland|barley|spruce|vegetable|fairy ring|arable|crop|^shrub|^silkworm|^shelterbelt|cactus|pricklr pear|^sawdust|^salt mine|^sheep|grassland|grasses|^field|^chic|herdsmen|orchard|dense settlement|^indoor|temperate land|agricultur|^pika|^earthworm|rumen|ground|^solanum|^cow|salad|developed space|pampa|paramo|^bamboo|termite|taiga|^monkey|^area of developed open space|green house|terrestirial|^farm$|panda|^amazon|^bovine|^broccoli|pepper|^city|ferment|glacial soil|peanut|^irrigated|deciduous|wood|wetland|forest|tundra|savannah|shrubland|xeric|wine|tomato|tobacco|bee|wheat|zoo|whey|blood|marsh|water-logged|village|lowland|island|vinyard|terrestrial|farmland|truffle|desert|arid|poplar|snow|pig|pasture soil|savanna|hill|compost|paddy|maize|meadow|steppe|peat|permafrost|atomosphere|basil|boreal|^Bos|^brassica|buffalo|canis|cattle|chicken|plantation|church|coffee|cropland|crop land|cultivate|dairy|^dog|dune|greenhouse|horse|grasses|plain|rice|rose|rural|tree|silage|deer|vinegar|soybean|oak'
     df.loc[((df["environment_biome_hl"] == "terrestrial") & (df["environment_biome"].str.contains(pattern)) & (df["environment_biome"].str.contains(stop_pattern) == False)),"environment_biome_hl2"] = "land"
 
-    pattern = r'(potato|poultry|prairie|land|land|^sauerkraut|continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|shower hose|mine|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory)'
+    pattern = r'potato|poultry|prairie|land|land|^sauerkraut|continental|grass|^rat|human|Homo sapiens|soil|murine|mouse|mosue|mice|reactor|shower hose|mine|Rhizosphere|Vagina|digester|built environment|^ferment|laboratory'
     df.loc[((df["environment_biome_hl"] == "terrestrial_probable") & (
         df["environment_biome"].str.contains(pattern)) & (df["environment_biome"].str.contains(pattern)) & (df["environment_biome"].str.contains(stop_pattern) == False)), "environment_biome_hl2"] = "land"
     sub_cat_dict = dict(zip(df.environment_biome, df.environment_biome_hl2))

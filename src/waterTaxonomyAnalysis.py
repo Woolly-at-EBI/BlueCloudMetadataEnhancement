@@ -1086,6 +1086,9 @@ def dom_confidence_special(df, marine_NCBI_to_marine_dict, special_dom):
     :param special_dom:
     :return:
 
+    for freshwater population 
+    'sample_confidence_freshwater_score_inc_biome', 'sample_confidence_freshwater_confidence_inc_biome'
+
     usage:  dom_confidence_special(df_merge_combined_tax, marine_NCBI_to_marine_dict, "freshwater")
     """
     ic()
@@ -1246,38 +1249,38 @@ def add_combined_single_domain_call_score(df_merge_combined_tax):
     """
     ic()
     df = df_merge_combined_tax
-    df["combined_location_designation_score"] = "low"
-    df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_marine_inc_biome"] == 'high') & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')),  "combined_location_designation_score"] = "high"
+    df["combined_location_designation_confidence"] = "low"
+    df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_marine_inc_biome"] == 'high') & ((df["sample_confidence_terrestrial_inc_biome"] == 'low') | (df["sample_confidence_terrestrial_inc_biome"] == 'zero')),  "combined_location_designation_confidence"] = "high"
 
     df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium'),
-    "combined_location_designation_score"] = "medium"
+    "combined_location_designation_confidence"] = "medium"
 
     df.loc[(df["combined_location_designation"] == "marine") & (df["sample_confidence_marine_inc_biome"] == 'medium') & (df["sample_confidence_terrestrial_inc_biome"] == 'zero'),
-            "combined_location_designation_score"] = "high"
+            "combined_location_designation_confidence"] = "high"
     #############################################
 
     df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'high') & \
            ((df["sample_confidence_marine_inc_biome"] == 'low') | (df["sample_confidence_marine_inc_biome"] == 'zero')),\
-    "combined_location_designation_score"] = "high"
+    "combined_location_designation_confidence"] = "high"
 
     df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium'),\
-            "combined_location_designation_score"] = "medium"
+            "combined_location_designation_confidence"] = "medium"
 
     df.loc[(df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_terrestrial_inc_biome"] == 'medium') & \
-            (df["sample_confidence_marine_inc_biome"] == 'zero'), "combined_location_designation_score"] = "high"
+            (df["sample_confidence_marine_inc_biome"] == 'zero'), "combined_location_designation_confidence"] = "high"
    #############################################
 
     df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & \
            (df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'high'),\
-           "combined_location_designation_score"] = "high"
+           "combined_location_designation_confidence"] = "high"
     df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (
                 df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'medium'),\
-                "combined_location_designation_score"] = "medium"
+                "combined_location_designation_confidence"] = "medium"
     df.loc[(df["combined_location_designation"] == "marine_and_terrestrial") & (
                 df["sample_confidence_marine_and_terrestrial_inc_biome"] == 'low') \
            & ((df["sample_confidence_marine_inc_biome"] == 'high') | (df["sample_confidence_marine_inc_biome"] == 'medium')) & \
             ((df["sample_confidence_terrestrial_inc_biome"] == 'high') | (df["sample_confidence_terrestrial_inc_biome"] == 'medium')), \
-            "combined_location_designation_score"] = "high"
+            "combined_location_designation_confidence"] = "high"
 
     return df
 
@@ -1513,21 +1516,36 @@ def make_blue_domain_call(df_merge_combined_tax):
         :param ordered_score_dict:
         :return:
         """
-
+        ic()
         df["blue_partition"] = "False"
-        df["blue_partition_confidence"] = "zero"
+        #will overwrite this
+        df["blue_partition_confidence"] = df["combined_location_designation_confidence"]
+        df.loc[(df["combined_location_designation"] != "marine_and_terrestrial") | \
+               (df["combined_location_designation"] != "marine"), "blue_partition_confidence"] = "zero"
+        df.loc[(df["combined_location_designation"] == "marine"), "blue_partition"] = "marine"
+        df.loc[(df["combined_location_designation"] == "marine_and_terrestrial"), "blue_partition"] = "marine_and_terrestrial"
         df.loc[(df["combined_location_designation"] == "marine") | (df["combined_location_designation"] == "marine_and_terrestrial"), \
-            "blue_partition"] = df["combined_location_designation"]
-        df.loc[(df["combined_location_designation"] == "marine") | (df["combined_location_designation"] == "marine_and_terrestrial"), \
-            "blue_partition_confidence"] = df["combined_location_designation_score"]
+            "blue_partition_confidence"] = df["combined_location_designation_confidence"]
 
-        df.loc[(df["combined_location_designation"] == "terrestrial") & (df["location_designation_freshwater"] == True), \
+        ic(df["combined_location_designation"].value_counts())
+
+        df.loc[((df["combined_location_designation"] == "terrestrial") & (df["sample_confidence_freshwater_confidence_inc_biome"] == "high")), \
             "blue_partition"] = "freshwater"
-        df.loc[(df["combined_location_designation"] == "terrestrial") | (df["location_designation_freshwater"] == True), \
-            "blue_partition_confidence"] = df["combined_location_designation_score"]
+        df.loc[((df["combined_location_designation"] == "terrestrial") & (
+                    df["sample_confidence_freshwater_confidence_inc_biome"] == "high")), \
+            "blue_partition_confidence"] = "high"
+        df.loc[((df["combined_location_designation"] == "terrestrial") & (
+                    df["sample_confidence_freshwater_confidence_inc_biome"] == "medium")), \
+            "blue_partition"] = "freshwater"
+        df.loc[((df["combined_location_designation"] == "terrestrial") & (
+                df["sample_confidence_freshwater_confidence_inc_biome"] == "medium")), \
+            "blue_partition_confidence"] = "medium"
 
 
-        ic(df.query('blue_partition == "freshwater"').sample(n=3))
+        ic(df.query('blue_partition == "freshwater"').sample(n=20))
+        ic(df["sample_confidence_freshwater_confidence_inc_biome"].value_counts())
+        ic(df["blue_partition"].value_counts())
+        ic(df["blue_partition_confidence"].value_counts())
         sys.exit()
 
         return df
@@ -1544,7 +1562,7 @@ def make_blue_domain_call(df_merge_combined_tax):
     #
     #     if row["combined_location_designation"] == "marine" or row["combined_location_designation"] == "marine_and_terrestrial":
     #         blue_partition_assignment = row["combined_location_designation"]
-    #         marine_comb_confidence = row["combined_location_designation_score"]
+    #         marine_comb_confidence = row["combined_location_designation_confidence"]
     #         blue_partition_confidence = marine_comb_confidence
     #     elif row["combined_location_designation"] == "terrestrial":
     #         if row["location_designation_freshwater"] == True:
@@ -1579,8 +1597,7 @@ def make_blue_domain_call(df_merge_combined_tax):
     ic(df_merge_combined_tax["blue_partition"].value_counts())
     ic(df_merge_combined_tax["blue_partition_confidence"].value_counts())
 
-
-    sys.exit()
+    ic()
     return df_merge_combined_tax
 
 def mini_exploration(df_merge_combined_tax):
@@ -1701,7 +1718,7 @@ def summary_plots(df_merge_combined_tax):
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     df_groupby = df_merge_combined_tax.groupby(
-        ["combined_location_designation", "combined_location_designation_score"]).size().to_frame(
+        ["combined_location_designation", "combined_location_designation_confidence"]).size().to_frame(
         'count').reset_index()
     ic(df_groupby.head(10))
 
@@ -1713,7 +1730,7 @@ def summary_plots(df_merge_combined_tax):
     other_params = {}
 
     u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", plot_dir + cat + "_pie." + format)
-    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score", log_y,
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_confidence", title + "+score", log_y,
                 plot_dir + cat + "_hist." + format, width, format, other_params)
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y,
                 plot_dir + cat + "." + format, width, format, other_params)
@@ -1721,7 +1738,7 @@ def summary_plots(df_merge_combined_tax):
                plot_dir + cat + "_pie." + format)
 
     log_y = True
-    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_score", title + "+score" + " (log scale)",
+    u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_confidence", title + "+score" + " (log scale)",
                 log_y,
                 plot_dir + cat + "_score_log." + format, width, format, other_params)
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y,
@@ -1833,9 +1850,9 @@ def main(verbosity, stage, debug_status):
 
     if got_data_testing_down_stream <= 5:
         ic("*********** got_data_testing_down_stream <=5 is the Blue Partition")
-        quickie = False
-        df_merge_combined_tax = get_df_from_pickle(
-                pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle')
+        if got_data_testing_down_stream >= 5:
+            pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete.pickle'
+            df_merge_combined_tax = get_df_from_pickle(pickle_file)
         df_merge_combined_tax = make_blue_domain_call(df_merge_combined_tax)
 
         pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete_blue.pickle'

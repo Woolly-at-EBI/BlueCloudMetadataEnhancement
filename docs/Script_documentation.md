@@ -40,14 +40,14 @@ Get the latest data from the ENA portal by running
 * get_ena_ws_data.sh 
 Run the coordinates against all the shapefiles
 * run_all.sh 
-and get the biome regex's all run
+and in parallel get the biome regex's all run
 * rm $analysis_dir/environment_biome.pickle
-* python3 ./categorise_environment.py  
+* ./categorise_environment.py  
 
 Then run these scripts
-* python3 ./analyseHits.py
-* python3 ./waterTaxonomyAnalysis.py
-* python3 ./extra_comparisons.py 
+* /analyseHits.py
+* ./waterTaxonomyAnalysis.py
+* ./extra_comparisons.py 
 
 ## Notes about the scripts
 Many of the scripts e.g. get_directory_paths.py are utility scripts

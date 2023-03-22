@@ -1517,7 +1517,7 @@ def make_blue_domain_call(df_merge_combined_tax):
         :return:
         """
         ic()
-        df["blue_partition"] = "False"
+        df["blue_partition"] = "land_or_unknown"
         #will overwrite this
         df["blue_partition_confidence"] = df["combined_location_designation_confidence"]
         df.loc[(df["combined_location_designation"] != "marine_and_terrestrial") | \
@@ -1546,7 +1546,6 @@ def make_blue_domain_call(df_merge_combined_tax):
         ic(df["sample_confidence_freshwater_confidence_inc_biome"].value_counts())
         ic(df["blue_partition"].value_counts())
         ic(df["blue_partition_confidence"].value_counts())
-        sys.exit()
 
         return df
 
@@ -1557,7 +1556,7 @@ def make_blue_domain_call(df_merge_combined_tax):
     #     :param  ordered_score_dict:
     #     :return: value
     #     """
-    #     blue_partition_assignment = "False"
+    #     blue_partition_assignment = "land_or_unknown"
     #     terrestrial_confidence = marine_comb_confidence = blue_partition_confidence = "zero"
     #
     #     if row["combined_location_designation"] == "marine" or row["combined_location_designation"] == "marine_and_terrestrial":
@@ -1568,7 +1567,7 @@ def make_blue_domain_call(df_merge_combined_tax):
     #         if row["location_designation_freshwater"] == True:
     #             blue_partition_assignment = "freshwater"
     #
-    #     if blue_partition_assignment != "False":
+    #     if blue_partition_assignment != "land_or_unknown":
     #         # coping with cases where freshwater and marine combinations occur and using the highest confidence
     #         if ordered_score_dict[terrestrial_confidence] > ordered_score_dict[marine_comb_confidence]:
     #                if row["location_designation_freshwater"] == True:
@@ -1593,7 +1592,7 @@ def make_blue_domain_call(df_merge_combined_tax):
     ic(ordered_score_dict)
     #df_merge_combined_tax = df_merge_combined_tax.apply(determine_blue_dom, osd=ordered_score_dict, axis=1)
     df_merge_combined_tax = determine_blue_dom_vector(df_merge_combined_tax, ordered_score_dict)
-    ic(df_merge_combined_tax.query('blue_partition !=  "False"').sample(n = 5))
+    ic(df_merge_combined_tax.query('blue_partition !=  "land_or_unknown"').sample(n = 5))
     ic(df_merge_combined_tax["blue_partition"].value_counts())
     ic(df_merge_combined_tax["blue_partition_confidence"].value_counts())
 
@@ -1690,6 +1689,8 @@ def mini_exploration(df_merge_combined_tax):
     # fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
     # fig.update_xaxes(categoryorder = 'category ascending')
     # fig.show()
+    ic()
+    return
 
 
 def add_input_stats(stats_dict, df_all_ena_sample_detail, df_tax2env):
@@ -1717,6 +1718,7 @@ def summary_plots(df_merge_combined_tax):
     :return:
     """
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    ic(df_merge_combined_tax.columns)
     df_groupby = df_merge_combined_tax.groupby(
         ["combined_location_designation", "combined_location_designation_confidence"]).size().to_frame(
         'count').reset_index()
@@ -1729,13 +1731,13 @@ def summary_plots(df_merge_combined_tax):
     width = 1500
     other_params = {}
 
-    u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", plot_dir + cat + "_pie." + format)
+    u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", plot_dir + cat + "_pie." + format, other_params)
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_confidence", title + "+score", log_y,
                 plot_dir + cat + "_hist." + format, width, format, other_params)
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title, log_y,
                 plot_dir + cat + "." + format, width, format, other_params)
     u_plot_pie(df_merge_combined_tax, cat, "combined_location_designation", title, "value",
-               plot_dir + cat + "_pie." + format)
+               plot_dir + cat + "_pie." + format, other_params)
 
     log_y = True
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation_confidence", title + "+score" + " (log scale)",
@@ -1744,6 +1746,46 @@ def summary_plots(df_merge_combined_tax):
     u_plot_hist(df_merge_combined_tax, cat, "combined_location_designation", title + " (log scale)", log_y,
                 plot_dir + cat + "." + format,
                 width, format, other_params)
+
+    """ Plots about the blue partition specifically"""
+    other_params = {}
+    title = cat = "blue_partition"
+    colour = "blue_partition_confidence"
+    log_y = False
+    other_params["color_discrete_map"] = { "land_or_unknown": "green",
+                                           "freshwater": 'blue',
+                                          "marine_and_terrestrial": 'aqua',
+                                          "marine": 'aquamarine'
+                                           }
+
+    fig = u_plot_hist(df_merge_combined_tax, cat, colour, title, log_y,
+                plot_dir + cat + "." + format,
+                width, format, other_params)
+    fig.show()
+
+
+    log_y = True
+    fig = u_plot_hist(df_merge_combined_tax, cat, colour, title + " (log scale)", log_y,
+                plot_dir + cat + "." + format,
+                width, format, other_params)
+    min_cols = ["blue_partition_confidence", "blue_partition"]
+
+    """ getting rid of titles for pie charts as in the way!"""
+    title = cat = "blue_partition"
+    df_tmp = df_merge_combined_tax[min_cols].query('blue_partition != "land_or_unknown"')
+    df_tmp = df_tmp.groupby(min_cols).size().to_frame('count').reset_index()
+    ic(df_tmp.head())
+    type = "value+percent"
+    format = 'png'
+    atype = "label_text"
+    fig = u_plot_pie(df_tmp, cat, "count", "", type, plot_dir + title + "_" + atype + "_pie." + format, other_params)
+    fig.show()
+
+
+    df_tmp = df_merge_combined_tax.groupby(min_cols).size().to_frame('count').reset_index()
+    type = "'value+percent'"
+    fig = u_plot_pie(df_tmp, cat, "count", "", type, plot_dir + title + "_" + type + "full_pie." + format, other_params)
+    fig.show()
 
 
 def get_df_from_pickle(pickle_file):
@@ -1814,9 +1856,9 @@ def main(verbosity, stage, debug_status):
         cat = "location_designation"
         out_graph_file = plot_dir + "location_designation_sample_counts_value." + "png"
         ic(df_groupby.head(10))
-        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", out_graph_file)
+        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "value", out_graph_file, {})
         out_graph_file = plot_dir + "location_designation_sample_counts_percent." + "png"
-        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "percent", out_graph_file)
+        u_plot_pie(df_groupby, cat, "count", cat + " sample counts", "percent", out_graph_file, {})
 
         #adding in confidence rules
         df_merge_combined_tax = addConfidence(df_merge_combined_tax)
@@ -1864,14 +1906,18 @@ def main(verbosity, stage, debug_status):
     if got_data_testing_down_stream <= 6:
         ic("*********** got_data_testing_down_stream <=6 mini exploring")
         quickie = False
-        if quickie == False:
+        if (got_data_testing_down_stream < 6) and (quickie == False):
+           ic("no need to read in pickle")
+        elif quickie == False:
             df_merge_combined_tax = get_df_from_pickle(pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence_complete_blue.pickle')
         else:
             ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
             df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete_blue.tsv" ,sep = "\t", nrows=100000)
         ic(df_merge_combined_tax.shape)
         mini_exploration(df_merge_combined_tax)
+        ic()
         summary_plots(df_merge_combined_tax)
+        ic()
 
     #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n
 

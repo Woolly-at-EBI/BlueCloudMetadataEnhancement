@@ -94,24 +94,41 @@ def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, oth
     #fig.show()
     return fig
 
-def u_plot_pie(df, cat, value_column, title, type, out_file):
+def u_plot_pie(df, cat, value_column, title, value_type, out_file, other_params):
     """
 
     :param df:
     :param cat:
     :param value_column:
-    :param type:  is value or percent
+    :param type:  is value or percent or 'value+percent'
     :param out_file:
+    :param other_params:
     :return: fig
     """
+    textinfo = value_type
+    if '+' in textinfo:
+        ic("found: +")
+        textinfo = 'value+percent'
+    ic(other_params)
 
-    fig = px.pie(df,
+    if len(other_params) ==0:
+        ic("no params")
+        fig = px.pie(df,
                  values = value_column,
                  names = df[cat], title = title)
-    fig.update_traces(hoverinfo = 'label+percent', textinfo = type)
+    else:
+        if "color_discrete_map" in other_params:
+            ic("adding: color_discrete_map params")
+            fig = px.pie(df,
+                         values = value_column,
+                         names = df[cat],
+                         color = df[cat],
+                         title = title,
+                         color_discrete_map = other_params["color_discrete_map"])
+    fig.update_traces(hoverinfo = 'label+percent', textinfo = textinfo)
     fig.update_layout(title_text = title, title_x = 0.5)
     fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
     ic(out_file)
     fig.write_image(out_file)
-    #fig.show()
+    # fig.show()
     return fig

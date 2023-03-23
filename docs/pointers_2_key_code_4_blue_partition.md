@@ -73,6 +73,6 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
       * highest if sample has coastal/estuarine coordinates and taxonomy rules are true for it being marine and terrestrial
   * Do a combined call to select a single domain, pick the one with the highest confidence. If a tie, preferred marine.
   * Do a score and confidence for freshwater sub-domain (a subset of terrestrial domain as above)
-  * Do Blue Partition call where ( combined_call in "marine" or "marine&terrestrial" ) or ("freshwater")
+  * Do Blue Partition call where ( combined_call in "marine" or "marine&terrestrial" ) inclusive or ("freshwater")
     * Decision on which domain/sub-domain based on the confidence, if ALL equal preference to "marine&terrestrial", 
     else preference to "marine"

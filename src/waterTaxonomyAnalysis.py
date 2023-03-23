@@ -1107,14 +1107,16 @@ def dom_confidence_special(df, marine_NCBI_to_marine_dict, special_dom):
         df.sample_confidence_freshwater_score = 0
 
         df.loc[(df.freshwater_total > 0), 'sample_confidence_freshwater_score'] = 1
-        df.loc[(df.freshwater_total > 1), 'sample_confidence_freshwater_score'] = 1.5
-        df.loc[(df.freshwater_total > 2) & (df.location_designation == "terrestrial"), 'sample_confidence_freshwater_score'] = 2
+        df.loc[(df.freshwater_total > 0) & (df.taxa_terrestrial_or_freshwater == True), 'sample_confidence_freshwater_score'] = 1
+        df.loc[(df.freshwater_total > 1) & (df.taxa_terrestrial_or_freshwater == True), 'sample_confidence_freshwater_score'] = 1.5
+        df.loc[(df.freshwater_total > 1) & (df.location_designation == "terrestrial"), 'sample_confidence_freshwater_score'] = 1.5
+        df.loc[(df.freshwater_total > 0) & (df.taxa_terrestrial_or_freshwater == False), 'sample_confidence_freshwater_score'] = 1
         df.loc[(df.freshwater_total > 2) & (df.taxa_terrestrial_or_freshwater == True), 'sample_confidence_freshwater_score'] = 2.5
-        df.loc[(df.freshwater_total > 3), 'sample_confidence_freshwater_score'] = 3
+        df.loc[(df.freshwater_total > 3) & (df.taxa_terrestrial_or_freshwater == True), 'sample_confidence_freshwater_score'] = 3
 
         pattern = r'freshwater|lake|river'
-        df.loc[(df.scientific_name.str.contains(pattern)), 'sample_confidence_freshwater_score'] += 1
-        pattern = r'soil|mouse|fungus'
+        df.loc[(df.scientific_name.str.contains(pattern)), 'sample_confidence_freshwater_score'] += 0.5
+        pattern = r'soil|mouse'
         df.loc[(df.scientific_name.str.contains(pattern)), 'sample_confidence_freshwater_score'] -= 0.5
         df['sample_confidence_freshwater_score_inc_biome'] = df['sample_confidence_freshwater_score']
         df.loc[(df.environment_biome_hl2 == "freshwater"), 'sample_confidence_freshwater_score_inc_biome'] += 1
@@ -1517,7 +1519,9 @@ def make_blue_domain_call(df_merge_combined_tax):
         :return:
         """
         ic()
-        df["blue_partition"] = "land_or_unknown"
+        df["blue_partition"] = "unclassified"
+        df.loc[(df["combined_location_designation"] == "terrestrial"), "blue_partition"] = "land"
+
         #will overwrite this
         df["blue_partition_confidence"] = df["combined_location_designation_confidence"]
         df.loc[(df["combined_location_designation"] != "marine_and_terrestrial") | \
@@ -1752,40 +1756,40 @@ def summary_plots(df_merge_combined_tax):
     title = cat = "blue_partition"
     colour = "blue_partition_confidence"
     log_y = False
-    other_params["color_discrete_map"] = { "land_or_unknown": "green",
-                                           "freshwater": 'blue',
+    other_params["color_discrete_map"] = {"freshwater": 'blue',
                                           "marine_and_terrestrial": 'aqua',
-                                          "marine": 'aquamarine'
-                                           }
+                                          "marine": 'aquamarine',
+                                          "land": "green",
+                                          "unclassified": "orange"
+                                          }
 
     fig = u_plot_hist(df_merge_combined_tax, cat, colour, title, log_y,
                 plot_dir + cat + "." + format,
                 width, format, other_params)
-    fig.show()
-
+    #fig.show()
 
     log_y = True
     fig = u_plot_hist(df_merge_combined_tax, cat, colour, title + " (log scale)", log_y,
-                plot_dir + cat + "." + format,
+                plot_dir + cat + "_log." + format,
                 width, format, other_params)
+    fig.show()
     min_cols = ["blue_partition_confidence", "blue_partition"]
 
     """ getting rid of titles for pie charts as in the way!"""
     title = cat = "blue_partition"
-    df_tmp = df_merge_combined_tax[min_cols].query('blue_partition != "land_or_unknown"')
+    df_tmp = df_merge_combined_tax[min_cols].query('(blue_partition != "land") and (blue_partition != "unclassified")')
     df_tmp = df_tmp.groupby(min_cols).size().to_frame('count').reset_index()
     ic(df_tmp.head())
     type = "value+percent"
     format = 'png'
     atype = "label_text"
     fig = u_plot_pie(df_tmp, cat, "count", "", type, plot_dir + title + "_" + atype + "_pie." + format, other_params)
-    fig.show()
-
+    #fig.show()
 
     df_tmp = df_merge_combined_tax.groupby(min_cols).size().to_frame('count').reset_index()
     type = "'value+percent'"
     fig = u_plot_pie(df_tmp, cat, "count", "", type, plot_dir + title + "_" + type + "full_pie." + format, other_params)
-    fig.show()
+    #fig.show()
 
 
 def get_df_from_pickle(pickle_file):
@@ -1916,8 +1920,12 @@ def main(verbosity, stage, debug_status):
         ic(df_merge_combined_tax.shape)
         mini_exploration(df_merge_combined_tax)
         ic()
+
+        ic()
         summary_plots(df_merge_combined_tax)
         ic()
+
+
 
     #exploring cat merge_combined_tax_all_with_confidence_complete.tsv |  awk -F '\t' 'NR==1 || $46 == "marine" {print}' | head -10 | awk -f ~/bin/transpose.awk | cat -n
 

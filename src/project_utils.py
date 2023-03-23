@@ -17,6 +17,22 @@ import plotly
 import plotly.io as pio
 pio.renderers.default = "browser"
 
+
+# creating a class by inhering the threading.Thread base class
+class MultiTask(threading.Thread):
+   def __init__(self, message, filename):
+      # invoking the Base class
+      threading.Thread.__init__(self)
+      # initializing the variables to class
+      self.message = message
+      self.filename = filename
+   # run method that invokes in background
+   def run(self):
+      # opening the file in write mode
+      with open(filename, 'w+') as file:
+         file.write(message)
+      print("Finished writing to a file in background")
+
 def put_pickleObj2File(obj, pickle_file, verbose):
     """
 
@@ -84,8 +100,18 @@ def u_plot_hist(df, cat, color, title, log_y, out_graph_file, width, format, oth
     :param other_params:  miscellaneous optional parameters passed in as dict - future proofing
     :return: fig
     """
-    fig = px.histogram(df, title = title, x = cat,
-                       width = width, color = color, log_y = log_y)
+
+
+    if "color_discrete_map" in other_params:
+        ic("adding: color_discrete_map params")
+        fig = px.histogram(df, title = title, x = cat,
+                       width = width, color = color, log_y = log_y,
+                         color_discrete_map = other_params["color_discrete_map"])
+    else:
+        fig = px.histogram(df, title = title, x = cat,
+                           width = width, color = color, log_y = log_y)
+
+
     fig.update_xaxes(categoryorder = "total descending")
     fig.update_xaxes(tickangle = 60, tickfont = dict(size = 12))
     # fig.show()

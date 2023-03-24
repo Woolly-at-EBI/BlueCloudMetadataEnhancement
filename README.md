@@ -5,6 +5,7 @@ This is  additional sample metadata to that which the submitter provided.
 
 The metadata will be added to the contextual portal rather than amending the archived copy for data integrity etc. reasons.
 
+![BluePartition](./docs/BluePartitionImage.png)
 
 ## GPS coordinates and Shapefiles
 
@@ -42,8 +43,6 @@ These are low in the priority list for this project, but we have gathered much m
 ### The Blue Partition
 A key deliverable for the BlueCloud is the Blue Partition: samples that are aquatic related = marine, coastal and freshwater. 
 This exploratory coding is helping to lead to a production instance.
-![BluePartition](./BluePartitionImage.png)
-
 
 ## Enhanced Sample Annotation
 
@@ -51,7 +50,7 @@ The GPS coordinates and Shapefiles provide a reliable way of getting enhanced me
 Shapefiles for EEZ(exclusive economic zones) and other political boundaries are very useful. This metadata will be associated with the samples via the Clearing House.
 
 ## Script documentation
-[a relative link](docs/Script_documentation.md)
+[a relative link](docs/script_documentation.md)
 
 ## Contributors
 * Main author so far: Peter Woollard

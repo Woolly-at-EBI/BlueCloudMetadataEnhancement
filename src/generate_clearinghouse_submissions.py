@@ -15,6 +15,7 @@ import os.path
 import pickle
 import sys
 import numpy as np
+import argparse
 
 import pandas as pd
 pd.set_option('display.max_rows', 1000)
@@ -94,9 +95,10 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
 
     return local_list
 
-def process_eez_fields(df_merge_sea_ena, analysis_dir):
+def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
     """process_eez_fields
         process all the EEZ relevant fields and return a list of sample curations in JSON format to make.
+        and print to file
     :param df_gps:
     :return: curation_list
     """
@@ -160,8 +162,8 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
             #ic(local_list)
             local_list = [i for i in local_list if i]
             #ic(local_list)
-            out_file = analysis_dir + "curation_submissions:" + field + '.txt'
-            ic()
+            out_file = clearinghouse_data_dir + "curation_submissions:" + field + '.txt'
+            ic(out_file)
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
             # ic(len(curation_list))
@@ -169,19 +171,38 @@ def process_eez_fields(df_merge_sea_ena, analysis_dir):
     ic()
     return curation_list
 
-def merge_sea_ena(hit_dir):
+def merge_sea_ena(debug_status, hit_dir):
     """merge_sea_ena
         merge the sea hits from the shape files with ENA
         only selecting those ENA samples that intersect with EEZ
     :param hit_dir:
     :return: df_merge_sea_ena
     """
-    test_status = True
-    df_ena_detail = get_all_ena_detailed_sample_info(test_status)
+
+    df_ena_detail = get_all_ena_detailed_sample_info(debug_status)
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep='\t')
-    for mrg in ['MRGID', 'MRGID_TER1', 'MRGID_TER2', 'MRGID_SOV1', 'MRGID_SOV2']:
-        df_sea_hits[mrg] = df_sea_hits[mrg].fillna(0).astype(int)
-    df_merge_sea_ena = pd.merge(df_ena_detail,df_sea_hits, on=["lat", "lon"], how="inner")
+    int_cols = ['MRGID', 'MRGID_TER1', 'MRGID_TER2', 'MRGID_SOV1', 'MRGID_SOV2', 'MRGID_IHO', 'MRGID_EEZ']
+    for mrg in int_cols:
+        df_sea_hits[mrg] = df_sea_hits[mrg].fillna(0).astype(np.int32)
+    cat_cols = []
+    pats = ["UN_", "TERR", "SOVER", "_category", "ECOREGION", "ISO", "GEONAME", "POL_TYPE", 'NAME']
+    # ic(df_sea_hits.columns)
+    for col_name in df_sea_hits.columns:
+        for pat in pats:
+            if pat in col_name:
+                cat_cols.append(col_name)
+    # ic(cat_cols)
+    for col in cat_cols:
+        df_sea_hits[col] = df_sea_hits[col].fillna(0).astype("category")
+    # ic(df_sea_hits.dtypes)
+    # sys.exit()
+
+    df_merge_sea_ena = pd.merge(df_ena_detail, df_sea_hits, on=["lat", "lon"], how="inner")
+
+    if debug_status:
+        ic(df_merge_sea_ena.shape)
+        ic(df_merge_sea_ena.dtypes)
+        ic(df_merge_sea_ena.head(3))
 
     return df_merge_sea_ena
 
@@ -218,36 +239,88 @@ def create_submit_curations_file(full_curation_list, out_file):
 
     return
 
-def main():
-    test_status = True
-    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, clearinghouse_data_dir):
+    """
+    
+    :return: 
+    """
+    df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
+    ic(df_merged_ena_sea.shape)
 
-    df_merged_ena_sea = merge_sea_ena(hit_dir)
-    df_merged_ena_sea = df_merged_ena_sea.query('eez_category == "EEZ"')
+    annotation_list = ["EEZ"]
+
+    for annotation_type in annotation_list:
+        if annotation_type == 'EEZ':
+            df_merged_ena_sea = df_merged_ena_sea.query('eez_category == "EEZ"')
+            local_curation_list = process_eez_fields(df_merged_ena_sea, clearinghouse_data_dir)
+        else:
+            print(f"ERROR: annotation_type: {annotation_type} is unknown")
+            sys.exit()
+        ic(len(local_curation_list))
     full_curation_list = []
 
-    #demo_format(test_status)
+
+    # demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'
     # df_gps = pd.read_csv(in_file, sep='\t', nrows =100)
-    local_curation_list = process_eez_fields(df_merged_ena_sea,analysis_dir)
-    full_curation_list.extend(local_curation_list)
 
-    #sys.exit()
 
-    pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
-    df_merge_combined_tax = get_pickleObj(pickle_file)
-    ic(df_merge_combined_tax.head())
-    #df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
-    df_merge_combined_tax = df_merge_combined_tax.head(100000)
-    # put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle", True)
-    #
-    # df_merge_combined_tax = get_pickleObj("./tmp.pickle")
-    local_curation_list = process_confidence_fields(df_merge_combined_tax, analysis_dir)
-    full_curation_list.extend(local_curation_list)
+
+    sys.exit()
+
+    # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
+    # df_merge_combined_tax = get_pickleObj(pickle_file)
+    # ic(df_merge_combined_tax.head())
+    # # df_merge_combined_tax = df_merge_combined_tax.head(100000).query('taxonomic_source == "metagenome"')
+    # df_merge_combined_tax = df_merge_combined_tax.head(100000)
+    # # put_pickleObj2File(df_merge_combined_tax, "./tmp.pickle", True)
+    # #
+    # # df_merge_combined_tax = get_pickleObj("./tmp.pickle")
+
+
+def main(args):
+    """
+
+    :param args:
+    :return:
+    """
+    test_status = True
+    (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
+    clearinghouse_data_dir = "/Users/woollard/projects/bluecloud/clearinghouse/submission_data/"
+
+    ic(args.generate_specific_submissions)
+    if args.generate_specific_submissions:
+        ic("yipee")
+        generate_marine_related_annotations(args.debug_status, hit_dir, analysis_dir, clearinghouse_data_dir)
+    else:
+        ic("nah")
+
+    sys.exit()
+
+
 
     #submit_curations(full_curation_list, analysis_dir)
 
 if __name__ == '__main__':
     ic()
+    # Read arguments from command line
+    prog_des = "Script to get the marine zone classification for a set of longitude and latitude coordinates\n" +\
+                "Typical usage: ./ generate_clearinghouse_submissions.py - d True -s"
+    parser = argparse.ArgumentParser(description = prog_des)
 
-    main()
+    # Adding optional argument, n.b. in debugging mode in IDE, had to turn required to false.
+    parser.add_argument("-d", "--debug_status",
+                        help = "Debug status True or False, if True just runs on a subset of the samples",
+                        required = True)
+    parser.add_argument("-s", "--generate_specific_submissions",
+                        help = "Generate specific submissions",
+                        required = False,
+                        action="store_true"
+                        )
+
+    parser.parse_args()
+    args = parser.parse_args()
+    ic(args)
+    print(args)
+
+    main(args)

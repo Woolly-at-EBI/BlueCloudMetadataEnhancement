@@ -1917,6 +1917,13 @@ def main(verbosity, stage, debug_status):
         else:
             ic("*** WARNING DEBUGGING SO RESTRICTED ROWS BEING USED")
             df_merge_combined_tax = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_complete_blue.tsv" ,sep = "\t", nrows=100000)
+        ic(df_merge_combined_tax.columns)
+        df_tmp = df_merge_combined_tax[['accession', 'tax_id', 'scientific_name', 'lat', 'lon',
+            'environment_biome', 'taxa_marine', 'taxa_terrestrial_or_freshwater', 'NCBI-to-marine', 'NCBI-to-terrestrial-or-freshwater',
+            'combined_location_designation', 'combined_location_designation_confidence', 'blue_partition', 'blue_partition_confidence']]
+        out_file = analysis_dir + "merge_combined_tax_all_with_confidence_narrow_blue.tsv"
+        df_tmp.to_csv(out_file, sep = "\t", index=False)
+        del df_tmp
         ic(df_merge_combined_tax.shape)
         mini_exploration(df_merge_combined_tax)
         ic()

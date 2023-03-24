@@ -12,6 +12,7 @@ __docformat___ = 'reStructuredText'
 """
 
 import pandas as pd
+import numpy as np
 import pyarrow as pa
 from pyarrow import parquet as pq
 from pyarrow.parquet import ParquetFile
@@ -67,8 +68,11 @@ def get_all_ena_detailed_sample_info(test_bool):
 
 
         #reduce memory
-        df["tax_id"] = df["tax_id"].astype(int)
-        df["scientific_name"] = df["scientific_name"].astype('category')
+        df["tax_id"] = df["tax_id"].astype(np.int32)
+        df["collection_date"] = pd.to_datetime(df['collection_date'], errors='coerce')
+        for cat in ["scientific_name", "environment_biome"]:
+            df[cat] = df[cat].astype('category')
+
 
         #df = df.query(
         #   '(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis") or (scientific_name == "Equisetum")')

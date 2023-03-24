@@ -51,7 +51,7 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
  * categorise_environment.py - a set of functions to do high level mappings of the rather variable environment_biome
    * input is a unique list 
    * process_environment_biome(df) - calculate and return a dataframe with 2 new fields: environment_biome_hl and environment_biome_hl2
-     * N.B. the regex for doing the high-level(hl) took about 20mins (my implementation is not the most efficient),
+     * N.B. the regex for doing the high-level(hl) took about 20 mins (my implementation is not the most efficient),
      * So I pickled a data frame of every environment_biome to hl, for each new release of ENA samples, if the pickle file is deleted, it will regenerated itself from scratch
      * The mapping of the terms that mapped tp to hl=="terrestrial" to the subcategories of "land" and "freshwater" is done on the fly.
    * Notes:
@@ -76,3 +76,6 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
   * Do Blue Partition call where ( combined_call in "marine" or "marine&terrestrial" ) inclusive or ("freshwater")
     * Decision on which domain/sub-domain based on the confidence, if ALL equal preference to "marine&terrestrial", 
     else preference to "marine"
+
+# Testing
+[link to the testing sample documentation - albeit testing is limited](./testing_samples.md)

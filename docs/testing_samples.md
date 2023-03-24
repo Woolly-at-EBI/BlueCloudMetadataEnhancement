@@ -3,7 +3,7 @@
 
 ## Introduction
 In the BlueCloud exploratory project different types of metadata evidence were investigated. 
-Automatic calls were made as to whether ENA samples were part of the Blue Partition or not. Information from this will be useful for 
+Automatic calls were made as to whether, ENA samples were part of the Blue Partition or not. Information from this will be useful for 
 developing and testing the BlueCloud partition production.
 
 N.B. These are not gold standard, so there may be some slippage with assignments, but it would be rather surprising if it s very wrong.

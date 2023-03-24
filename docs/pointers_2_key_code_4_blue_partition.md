@@ -66,18 +66,18 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
  * categorise_environment.py - a set of functions to do high level mappings of the rather variable environment_biome
    * input is a unique list 
    * process_environment_biome(df) - calculate and return a dataframe with 2 new fields: environment_biome_hl and environment_biome_hl2
-     * N.B. the regex for doing the high-level(hl) took about 20 mins (my implementation is not the most efficient),
-     * So I pickled a data frame of every environment_biome to hl, for each new release of ENA samples, if the pickle file is deleted, it will regenerated itself from scratch
+     * N.B. the regex for doing the high-level(hl) took about 20 mains (my implementation is not the most efficient),
+     * So I pickled a data frame of every environment_biome to hl, for each new release of ENA samples, if the pickle file is deleted, it will regenerate itself from scratch
      * The mapping of the terms that mapped tp to hl=="terrestrial" to the subcategories of "land" and "freshwater" is done on the fly.
    * Notes:
      * The above process is hierarchical in that one looks for marine first, then marine&terrestrial and then terrestrial. Partly done that as there is the most variability for terrestrial so more patterns to match.
-     * What was helping me with hl2(the sub-categorisation) was to use patterns(e.g. pond|stream) and stop patterns(e.g. |\bsea|sea\b|gulf), as it it provided more specificity. May be worth revisiting for the first hl too,
+     * What was helping me with hl2(the sub-categorisation) was to use patterns(e.g. pond|stream) and stop patterns(e.g. |\bsea|sea\b|gulf), as it is provided more specificity. May be worth revisiting for the first hl too,
        * Still limits e.g. after be careful with small substrings so worth using word boundaries e.g. "rock pool" is almost certainly marine&terrestrial, but having "rock" as a stop word for terrestrial only, is obviously wrong.
 
 ## Comparison Rules
   * waterTaxonomyAnalysis.py
   * The majority of these rules were done using conditional vector operators for speed.
-    * if done conditionally per row that gives more sensitivity and control. Also probably simpler to maintain. Although will be slower, could be mitigated by parallelisation.
+    * if the rules are applied by row that would provide more sensitivity and control. Also, it is probably simpler to maintain, although it will be slower, could be mitigated by parallelisation.
   * individually for each major domain: marine, marine&terrestrial and terrestrial a call is made
     * done by creating a score, e.g. for marine
       * highest if sample has marine coordinates + taxonomy rules are true for it being marine
@@ -87,9 +87,9 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
     * e.g. marine&terrestrial
       * highest if sample has coastal/estuarine coordinates and taxonomy rules are true for it being marine and terrestrial
   * Do a combined call to select a single domain, pick the one with the highest confidence. If a tie, preferred marine.
-  * Do a score and confidence for freshwater sub-domain (a subset of terrestrial domain as above)
-  * Do Blue Partition call where ( combined_call in "marine" or "marine&terrestrial" ) inclusive or ("freshwater")
-    * Decision on which domain/sub-domain based on the confidence, if ALL equal preference to "marine&terrestrial", 
+  * Do a score and confidence for freshwater subdomain (a subset of terrestrial domain as above)
+  * Do Blue Partition call where ( combined_call in "marine" or "marine&terrestrial" ) [inclusive] or ("freshwater")
+    * Decision on which domain/subdomain based on the confidence, if ALL equal preference to "marine&terrestrial", 
     else preference to "marine"
 
 # Testing

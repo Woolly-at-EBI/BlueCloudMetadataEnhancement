@@ -50,7 +50,8 @@ The GPS coordinates and Shapefiles provide a reliable way of getting enhanced me
 Shapefiles for EEZ(exclusive economic zones) and other political boundaries are very useful. This metadata will be associated with the samples via the Clearing House.
 
 ## Script documentation
-[a relative link](docs/script_documentation.md)
+* [link to the script docs](docs/script_documentation.md)
+* [link to overview of aspects needed for BluePartion](docs/pointers_2_key_code_4_blue_partition.md)
 
 ## Contributors
 * Main author so far: Peter Woollard

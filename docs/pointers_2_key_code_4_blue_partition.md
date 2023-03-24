@@ -3,7 +3,7 @@
 **Contents:**
 <!-- TOC -->
 * [Pointers to Key Code needed for Productionising Blue Partition Aspect](#pointers-to-key-code-needed-for-productionising-blue-partition-aspect)
-  * [General](#general)
+  * [Related Documentation](#related-documentation)
   * [Preparation](#preparation)
     * [get the ENA_sample metadata and in particular lat and lons](#get-the-enasample-metadata-and-in-particular-lat-and-lons)
   * [Lat and Lon Coordinates mapping to shapefile](#lat-and-lon-coordinates-mapping-to-shapefile)
@@ -14,8 +14,9 @@
   * [Comparison Rules](#comparison-rules)
 * [Testing](#testing)
 <!-- TOC -->
-## General
-[script docs](script_documentation.md)
+## Related Documentation
+* [Overview documentation covering all the scripts](script_documentation.md)
+* [Testing sample documentation - albeit testing is limited](./testing_samples.md)
 
 
 ## Preparation
@@ -92,4 +93,4 @@ NCBI taxID,NCBI taxID Name,rule set description,marine,terrestrial or freshwater
     else preference to "marine"
 
 # Testing
-[link to the testing sample documentation - albeit testing is limited](./testing_samples.md)
+* [link to the testing sample documentation - albeit testing is limited](./testing_samples.md)

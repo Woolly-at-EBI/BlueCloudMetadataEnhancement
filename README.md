@@ -19,23 +19,36 @@ The GPS coordinates can be rapidly searched against the polygons and mapped to t
 The computational geometry that underlies the polygon searching with coordinates is now straight forwards thanks to decades of work in the field by many people. Here we are using GDAL (C++) via GEOPANDAS https://geopandas.org/en/stable/docs/user_guide/data_structures.html . It can search 1/3 million coordinates against about hundred polygon shapefile in less than 20 seconds on my laptop, which is rather impressive.
 
 
-## Additionally marine samples can be determined by organism taxonomy too 
+## Additionally marine and terrestrial/freshwater samples can be determined by organism taxonomy too 
 
 The metagenome information for marine and freshwater organisms was prepared. This is merged in with metadata above.
 
-It is complementary. The shape and taxonomic information do broadly agree, but there are many points of analysis needed.
+The shape and taxonomic information do broadly agree, but there are many points of analysis needed. It is complementary.
 
 ## Sample Types
 
 ### Marine samples
-Samples from the sea and coast are the current focus
+Samples from the sea, estuaries and other coastal feature were a key focus.
 
 ### Fresh water samples
-Currently there are limited polygons in shapefiles to determine if a sample is freshwater.
-The hydroshed shapefile is available. 
+Currently, there are limited polygons in shapefiles to determine if a sample is freshwater.
+* The hydroshed and wetland shapefiles have the most coverage, but it has to determine which locations are actually freshwater. 
+* Large freshwater bodies, be them lakes, reservoirs and rivers are well covered too. 
+* Smaller rivers, lakes/ponds and rivers can be determined by distance to centre lines. Although we have been getting lowet 
 
 ### Land samples
-These are low in the priority list for this project, but we have gathered much metadata in the course of the marine and fresh water metadata. So we may add this as a freeby.
+These are low in the priority list for this project, but we have gathered much metadata in the course of the marine and fresh water metadata. 
+
+### The Blue Partition
+A key deliverable for the BlueCloud is the Blue Partition: samples that are aquatic related = marine, coastal and freshwater. 
+This exploratory coding is helping to lead to a production instance.
+![BluePartition](./BluePartitionImage.png)
+
+
+## Enhanced Sample Annotation
+
+The GPS coordinates and Shapefiles provide a reliable way of getting enhanced metadata.
+Shapefiles for EEZ(exclusive economic zones) and other political boundaries are very useful. This metadata will be associated with the samples via the Clearing House.
 
 ## Script documentation
 [a relative link](docs/Script_documentation.md)

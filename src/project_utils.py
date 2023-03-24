@@ -17,22 +17,6 @@ import plotly
 import plotly.io as pio
 pio.renderers.default = "browser"
 
-
-# creating a class by inhering the threading.Thread base class
-class MultiTask(threading.Thread):
-   def __init__(self, message, filename):
-      # invoking the Base class
-      threading.Thread.__init__(self)
-      # initializing the variables to class
-      self.message = message
-      self.filename = filename
-   # run method that invokes in background
-   def run(self):
-      # opening the file in write mode
-      with open(filename, 'w+') as file:
-         file.write(message)
-      print("Finished writing to a file in background")
-
 def put_pickleObj2File(obj, pickle_file, verbose):
     """
 
@@ -126,7 +110,7 @@ def u_plot_pie(df, cat, value_column, title, value_type, out_file, other_params)
     :param df:
     :param cat:
     :param value_column:
-    :param type:  is value or percent or 'value+percent'
+    :param value_type:  is value or percent or 'value+percent'
     :param out_file:
     :param other_params:
     :return: fig

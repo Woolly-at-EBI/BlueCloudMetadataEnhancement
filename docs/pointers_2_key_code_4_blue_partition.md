@@ -1,5 +1,19 @@
 # Pointers to Key Code needed for Productionising Blue Partition Aspect
 
+**Contents:**
+<!-- TOC -->
+* [Pointers to Key Code needed for Productionising Blue Partition Aspect](#pointers-to-key-code-needed-for-productionising-blue-partition-aspect)
+  * [General](#general)
+  * [Preparation](#preparation)
+    * [get the ENA_sample metadata and in particular lat and lons](#get-the-enasample-metadata-and-in-particular-lat-and-lons)
+  * [Lat and Lon Coordinates mapping to shapefile](#lat-and-lon-coordinates-mapping-to-shapefile)
+  * [Taxonomy](#taxonomy)
+    * [Taxonomy Integration](#taxonomy-integration)
+    * [Taxonomy Rules](#taxonomy-rules)
+  * [Environment Biome](#environment-biome)
+  * [Comparison Rules](#comparison-rules)
+* [Testing](#testing)
+<!-- TOC -->
 ## General
 [script docs](script_documentation.md)
 

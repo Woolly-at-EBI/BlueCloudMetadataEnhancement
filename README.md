@@ -1,5 +1,23 @@
 # README for the BlueCloud Metadata Enhancement Project
 
+**Contents**
+<!-- TOC -->
+* [README for the BlueCloud Metadata Enhancement Project](#readme-for-the-bluecloud-metadata-enhancement-project)
+  * [Introduction](#introduction)
+  * [GPS coordinates and Shapefiles](#gps-coordinates-and-shapefiles)
+    * [Polygon Searching](#polygon-searching)
+  * [Additionally marine and terrestrial/freshwater samples can be determined by organism taxonomy too](#additionally-marine-and-terrestrialfreshwater-samples-can-be-determined-by-organism-taxonomy-too)
+  * [Sample Types](#sample-types)
+    * [Marine samples](#marine-samples)
+    * [Fresh water samples](#fresh-water-samples)
+    * [Land samples](#land-samples)
+    * [The Blue Partition](#the-blue-partition)
+  * [Enhanced Sample Annotation](#enhanced-sample-annotation)
+  * [Script documentation](#script-documentation)
+  * [Contributors](#contributors)
+<!-- TOC -->
+
+## Introduction
 The main purpose of this is to add useful contextual sample metadata for ENA samples at EMBL-EBI.
 This is  additional sample metadata to that which the submitter provided.  
 

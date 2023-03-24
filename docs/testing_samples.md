@@ -1,6 +1,13 @@
 
 # Testing Samples
 
+<!-- TOC -->
+* [Testing Samples](#testing-samples)
+  * [Introduction](#introduction)
+  * [Description](#description)
+  * [Example sample JSON](#example-sample-json)
+<!-- TOC -->
+
 ## Introduction
 In the BlueCloud exploratory project different types of metadata evidence were investigated. 
 Automatic calls were made as to whether, ENA samples were part of the Blue Partition or not. Information from this will be useful for 

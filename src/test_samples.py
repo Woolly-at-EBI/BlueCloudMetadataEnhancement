@@ -42,7 +42,7 @@ def get_narrow_blue(analysis_dir):
         'blue_partition_confidence': 'category'
 
     }
-    df = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_narrow_blue.tsv", dtype = dtype_dict, sep="\t", nrows =50000)
+    df = pd.read_csv(analysis_dir + "merge_combined_tax_all_with_confidence_narrow_blue.tsv", dtype = dtype_dict, sep="\t")
     int_cols = ['tax_id', 'lat', 'lon']
     df[int_cols] = df[int_cols].fillna(0).applymap(np.int32)
     ic(df.columns)
@@ -58,7 +58,7 @@ def generate_test_samples(analysis_dir,test_dir):
     :return: 
     """
     df_narrow_blue = get_narrow_blue(analysis_dir)
-    sample_size = 3
+    sample_size = 100
 
     my_test_samples_dict = {}
     my_test_samples_dict['blue_partition_category'] = {}

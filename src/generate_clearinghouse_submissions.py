@@ -90,7 +90,7 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
     # remove empty list items
     local_list = [i for i in local_list if i]
 
-    out_file = analysis_dir + "curation_submissions:" + "domain.txt"
+    out_file = analysis_dir + "curation_submissions:" + "domain.json"
     create_submit_curations_file(local_list, out_file)
 
     return local_list
@@ -162,7 +162,7 @@ def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
             #ic(local_list)
             local_list = [i for i in local_list if i]
             #ic(local_list)
-            out_file = clearinghouse_data_dir + "curation_submissions:" + field + '.txt'
+            out_file = clearinghouse_data_dir + "curation_submissions:" + field + '.json'
             ic(out_file)
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)

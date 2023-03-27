@@ -65,18 +65,14 @@ class NewSampleCuration:
 
     def addAutoAssertionEvidence(self, extra_evidence):
         """addAutoAssertionEvidence adds the identifier and label for the evidence.
-        the identifier and label are from https://www.ebi.ac.uk/ols/ontologies/eco
+        the identifier and label are from https://www.ebi.ac.uk/ols/ontologies/eco native=https://www.evidenceontology.org/
         multiple of these pairs are allowed per curation
         :return:
         """
         ic()
-        ic(extra_evidence)
-        if extra_evidence == "combinatorial":
-            # for the marine/terrestrial
-            #         - as using GPS coordinates
-            identifier = "ECO:0007653"
-            label = "automatically integrated combinatorial computational evidence used in automatic assertion"
-            self.putAssertionEvidence(identifier, label)
+        identifier = "ECO:0000203"
+        label = "An assertion method that does not involve human review."
+        self.putAssertionEvidence(identifier, label)
 
         # currently all evidence is based on GPS coordinate hits to shapefiles or taxonomy inference
         # it would be useful if there was evidence code from spatial coordinates
@@ -84,6 +80,15 @@ class NewSampleCuration:
         label = "A type of evidence based on logical inference from an automatically curated annotation that is used in an automatic assertion."
         self.putAssertionEvidence(identifier, label)
         ic(self.get_filled_dict)
+
+
+        ic(extra_evidence)
+        if extra_evidence == "combinatorial":
+            # for the marine/terrestrial
+            #         - as using GPS coordinates
+            identifier = "ECO:0007653"
+            label = "automatically integrated combinatorial computational evidence used in automatic assertion"
+            self.putAssertionEvidence(identifier, label)
 
         #sys.exit()
 

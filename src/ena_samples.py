@@ -22,18 +22,19 @@ MyDataStuctures = {}
 
 from get_directory_paths import get_directory_paths
 
-def get_all_ena_detailed_sample_info(test_bool):
+def get_all_ena_detailed_sample_info(debug_status):
     """ get_all_ena_detailed_sample_info
          This is using ALL ENA samples whether they have GPS coordinates (lat lons) or not.
          It contains many, but not all columns of sample metadata
          refactored to both use a parquet and to check if this df has already been called and to reuse that
         __params__:
                passed_args:
-                  test_bool
+                  debug_status=test_bool
         __return__:
             df_all_ena_sample_detail
     """
     ic()
+    ic(f"debug_status={debug_status}")
     key_name = 'df_all_ena_detailed_sample_info'
     if key_name in MyDataStuctures:
         df = MyDataStuctures[key_name]
@@ -52,14 +53,16 @@ def get_all_ena_detailed_sample_info(test_bool):
         specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date", "environment_biome"]
 
         # was useful to limit number of rows, and alternatively focus on specific species
-        if test_bool:
+        if debug_status == True:
             nrows = 100000
+            #ic(f"restricted to {nrows}")
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
             ic(df.head())
             df = df[specific_columns_needed]
             del first_nrows
         else:
+            ic("all ENA")
             table = pq.read_table(infile, columns=specific_columns_needed)
             df = table.to_pandas()
             # df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')

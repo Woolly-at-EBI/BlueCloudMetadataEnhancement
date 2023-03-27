@@ -13,7 +13,7 @@ from icecream import ic
 import os.path
 import sys
 
-
+# ic.disable()
 
 class NewSampleCuration:
     """ NewSampleCuration
@@ -69,7 +69,6 @@ class NewSampleCuration:
         multiple of these pairs are allowed per curation
         :return:
         """
-        ic()
         identifier = "ECO:0000203"
         label = "An assertion method that does not involve human review."
         self.putAssertionEvidence(identifier, label)
@@ -79,10 +78,8 @@ class NewSampleCuration:
         identifier = "ECO:0000366"
         label = "A type of evidence based on logical inference from an automatically curated annotation that is used in an automatic assertion."
         self.putAssertionEvidence(identifier, label)
-        ic(self.get_filled_dict)
 
-
-        ic(extra_evidence)
+        # ic(extra_evidence)
         if extra_evidence == "combinatorial":
             # for the marine/terrestrial
             #         - as using GPS coordinates
@@ -90,7 +87,7 @@ class NewSampleCuration:
             label = "automatically integrated combinatorial computational evidence used in automatic assertion"
             self.putAssertionEvidence(identifier, label)
 
-        #sys.exit()
+        return
 
     def get_filled_dict(self):
         """get_filled_dict

@@ -18,6 +18,8 @@ import numpy as np
 import argparse
 
 import pandas as pd
+from pandas.api.types import is_string_dtype
+from pandas.api.types import is_numeric_dtype
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
 pd.set_option('display.width', 1000)
@@ -105,6 +107,7 @@ def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
     ic()
     ic(df_merge_sea_ena.sample(n=10))
     ic(df_merge_sea_ena.columns)
+    super_category = 'EEZ'
 
     curation_list = []
 
@@ -116,7 +119,7 @@ def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
         my_record.valuePost = row[field]
         my_record.assertionAdditionalInfo = assertionAdditionalInfo
         my_record.emptyAssertionEvidence()
-        my_record.addAutoAssertionEvidence("EEZ")
+        my_record.addAutoAssertionEvidence(super_category)
         #print(my_record.get_filled_json())
         return my_record.get_filled_json()
 
@@ -130,45 +133,30 @@ def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
     df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(2)
     assertionAdditionalInfo = "confidence:high; evidence:GPS coordinate in EEZ shapefile"
     for dom_type in curation_types2add:
-        (dummy, field) = dom_type.split(":")
-        ic(field)
+        (super_cat, field) = dom_type.split(":")
+        ic(super_cat + " " + field)
 
         if(df_specific[field].isnull().all() ):
             ic("field all values null or 0")
             # or is_unique(df_specific[field])
             #thus do not need
         else:
-            ic()
+            ic(df_specific[field].dtype)
             #during the below some empty "" values are created in json_col
-            if field in ['GEONAME', 'TERRITORY1', 'TERRITORY2', 'SOVEREIGN1', 'SOVEREIGN2']:
-                df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis=1)
-                df_specific.loc[df_specific[field].isnull(), 'json_col'] = ""
-            else:
-                df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis=1)
-                #earlier code filled in empty MRGID values to 0. Could not see an efficient way to stop doing an apply
-                # on those, hence the below is necessary.
-
-                #ic(df_specific[field].value_counts())
+            df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis = 1)
+            if is_numeric_dtype(df_specific[field]):
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
-                #ic(df_specific['json_col'].value_counts())
-
-            ic()
-            #to do, capture valid curation, from json_col each time
-            #ic(df_specific.head())
-            #ic(df_specific['json_col'].head(3))
+            else:
+                df_specific.loc[df_specific[field].isnull(), 'json_col'] = ""
             local_list = df_specific['json_col'].values.tolist()
-
             #remove empty list items
-            #ic(local_list)
             local_list = [i for i in local_list if i]
             #ic(local_list)
-            out_file = clearinghouse_data_dir + "curation_submissions:" + field + '.json'
+            out_file = clearinghouse_data_dir + dom_type + '.json'
             ic(out_file)
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
             # ic(len(curation_list))
-    # ic(len(curation_list))
-    ic()
     return curation_list
 
 def merge_sea_ena(debug_status, hit_dir):

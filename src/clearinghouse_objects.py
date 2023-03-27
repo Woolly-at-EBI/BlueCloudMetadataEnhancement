@@ -13,8 +13,6 @@ from icecream import ic
 import os.path
 import sys
 
-# ic.disable()
-
 class NewSampleCuration:
     """ NewSampleCuration
         a class for preparing new annotation for submission to the Clearing house

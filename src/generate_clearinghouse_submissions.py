@@ -97,8 +97,8 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
 
     return local_list
 
-def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
-    """process_eez_fields
+def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data_dir):
+    """process_supercat_fields
         process all the EEZ relevant fields and return a list of sample curations in JSON format to make.
         and print to file
     :param df_gps:
@@ -107,51 +107,79 @@ def process_eez_fields(df_merge_sea_ena, clearinghouse_data_dir):
     ic()
     ic(df_merge_sea_ena.sample(n=10))
     ic(df_merge_sea_ena.columns)
-    super_category = 'EEZ'
+    #super_category = 'EEZ'
 
     curation_list = []
 
     def createSubmissionsJson(row):
+        """
+            returns valid JSON if there is a hit,
+        :param row:
+        :return:
+        """
         ic()
-        my_record = NewSampleCuration(useENAAutoCurationValues = True)
-        my_record.recordId = row["accession"]
-        my_record.attributePost = dom_type
-        my_record.valuePost = row[field]
-        my_record.assertionAdditionalInfo = assertionAdditionalInfo
-        my_record.emptyAssertionEvidence()
-        my_record.addAutoAssertionEvidence(super_category)
-        #print(my_record.get_filled_json())
-        return my_record.get_filled_json()
+        if row[field] == "" or row[field] == 0:
+            return
+        else:
+            my_record = NewSampleCuration(useENAAutoCurationValues = True)
+            my_record.recordId = row["accession"]
+            my_record.attributePost = dom_type
+            my_record.valuePost = row[field]
+            my_record.assertionAdditionalInfo = assertionAdditionalInfo
+            my_record.emptyAssertionEvidence()
+            my_record.addAutoAssertionEvidence(super_category)
+            #print(my_record.get_filled_json())
+            return my_record.get_filled_json()
 
     #comparing the first value with the rest, as want to know if all values are the same
     def is_unique(s):
         a = s.to_numpy()  # s.values (pandas<0.24)
         return (a[0] == a).all()
 
-    curation_types2add = ['EEZ:GEONAME', 'EEZ:TERRITORY1', 'EEZ:TERRITORY2', 'EEZ:SOVEREIGN1', 'EEZ:SOVEREIGN2',\
-                     'EEZ:MRGID', 'EEZ:MRGID_TER1', 'EEZ:MRGID_TER2', 'EEZ:MRGID_SOV1', 'EEZ:MRGID_SOV2']
-    df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(2)
-    assertionAdditionalInfo = "confidence:high; evidence:GPS coordinate in EEZ shapefile"
-    for dom_type in curation_types2add:
-        (super_cat, field) = dom_type.split(":")
-        ic(super_cat + " " + field)
+    curation_types2add = []
 
-        if(df_specific[field].isnull().all() ):
+    if super_category == "EEZ":
+        curation_types2add = ['GEONAME', 'POL_TYPE', 'TERRITORY1', 'TERRITORY2', 'TERRITORY3', 'SOVEREIGN1',
+                'SOVEREIGN2', 'SOVEREIGN3', 'MRGID']
+        #curation_types2add = ['SOVEREIGN2']
+        #ic(df_merge_sea_ena["SOVEREIGN2"].value_counts())
+        #df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(100)
+        df_specific = df_merge_sea_ena.query('SOVEREIGN2 != ""').head(100)
+        ic(df_specific["SOVEREIGN2"].value_counts())
+        ic(df_specific.shape)
+        ic(df_specific.head())
+        assertion_additional_info = "confidence:high; evidence:sample coordinates within EEZ shapefile"
+        ic(df_specific['POL_TYPE'].value_counts())
+
+    assertionAdditionalInfo = assertion_additional_info
+
+    for field in curation_types2add:
+        dom_type = (":").join([super_category, field])
+        ic(dom_type)
+        ic(super_category + " " + field)
+
+        #if(df_specific[field].isnull().all() or (df_specific.loc[0,field] == 0 and is_unique(df_specific[field]))):
+        if super_category == "lion":
             ic("field all values null or 0")
             # or is_unique(df_specific[field])
-            #thus do not need
+            ic("thus do not need")
         else:
             ic(df_specific[field].dtype)
+            ic(df_specific[field].value_counts())
             #during the below some empty "" values are created in json_col
             df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis = 1)
             if is_numeric_dtype(df_specific[field]):
+                ic(f"{field} is numeric!")
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             else:
+                ic(f"{field} is not numeric!")
                 df_specific.loc[df_specific[field].isnull(), 'json_col'] = ""
+                df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             local_list = df_specific['json_col'].values.tolist()
             #remove empty list items
             local_list = [i for i in local_list if i]
-            #ic(local_list)
+            #ic("============", local_list)
+
             out_file = clearinghouse_data_dir + dom_type + '.json'
             ic(out_file)
             create_submit_curations_file(local_list, out_file)
@@ -166,8 +194,12 @@ def merge_sea_ena(debug_status, hit_dir):
     :param hit_dir:
     :return: df_merge_sea_ena
     """
+    ic()
+    ic(debug_status)
 
     df_ena_detail = get_all_ena_detailed_sample_info(debug_status)
+    ic(df_ena_detail.shape)
+
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep='\t')
     int_cols = ['MRGID', 'MRGID_TER1', 'MRGID_TER2', 'MRGID_SOV1', 'MRGID_SOV2', 'MRGID_IHO', 'MRGID_EEZ']
     for mrg in int_cols:
@@ -181,7 +213,7 @@ def merge_sea_ena(debug_status, hit_dir):
                 cat_cols.append(col_name)
     # ic(cat_cols)
     for col in cat_cols:
-        df_sea_hits[col] = df_sea_hits[col].fillna(0).astype("category")
+        df_sea_hits[col] = df_sea_hits[col].fillna("").astype("category")
     # ic(df_sea_hits.dtypes)
     # sys.exit()
 
@@ -193,7 +225,6 @@ def merge_sea_ena(debug_status, hit_dir):
         ic(df_merge_sea_ena.head(3))
 
     return df_merge_sea_ena
-
 
 
 def create_submit_curations_file(full_curation_list, out_file):
@@ -229,32 +260,30 @@ def create_submit_curations_file(full_curation_list, out_file):
 
 def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, clearinghouse_data_dir):
     """
-    
-    :return: 
+     generate_marine_related_annotations
+
+     :param debug_status:
+     :param hit_dir:
+     :param analysis_dir:
+     :param clearinghouse_data_dir:
+     :return:
     """
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
-
     annotation_list = ["EEZ"]
 
     for annotation_type in annotation_list:
         if annotation_type == 'EEZ':
             df_merged_ena_sea = df_merged_ena_sea.query('eez_category == "EEZ"')
-            local_curation_list = process_eez_fields(df_merged_ena_sea, clearinghouse_data_dir)
+            ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
+            local_curation_list = process_supercat_fields(df_merged_ena_sea, annotation_type, clearinghouse_data_dir)
         else:
             print(f"ERROR: annotation_type: {annotation_type} is unknown")
-            sys.exit()
         ic(len(local_curation_list))
     full_curation_list = []
-
-
     # demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'
     # df_gps = pd.read_csv(in_file, sep='\t', nrows =100)
-
-
-
-    sys.exit()
 
     # pickle_file = analysis_dir + 'merge_combined_tax_all_with_confidence.pickle'
     # df_merge_combined_tax = get_pickleObj(pickle_file)
@@ -279,6 +308,8 @@ def main(args):
     ic(args.generate_specific_submissions)
     if args.generate_specific_submissions:
         ic("yipee")
+        ic(args.debug_status)
+        ic(type(args.debug_status))
         generate_marine_related_annotations(args.debug_status, hit_dir, analysis_dir, clearinghouse_data_dir)
     else:
         ic("nah")
@@ -298,12 +329,12 @@ if __name__ == '__main__':
 
     # Adding optional argument, n.b. in debugging mode in IDE, had to turn required to false.
     parser.add_argument("-d", "--debug_status",
-                        help = "Debug status True or False, if True just runs on a subset of the samples",
-                        required = True)
+                        help = "Debug status=True, if True just runs on a subset of the samples",
+                        required = True, action = "store_true")
     parser.add_argument("-s", "--generate_specific_submissions",
                         help = "Generate specific submissions",
                         required = False,
-                        action="store_true"
+                        action = "store_true"
                         )
 
     parser.parse_args()

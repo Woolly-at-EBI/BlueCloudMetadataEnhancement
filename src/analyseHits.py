@@ -519,8 +519,8 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         width = 1500
         create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    ic("early abort")
-    sys.exit()
+    #ic("early abort")
+    #sys.exit()
 
     title_string = 'ENA samples in Sea category (water polygons)'
     color_value = "sea_category"
@@ -871,7 +871,7 @@ def processHitFiles(hit_dir, hit_cats_info):
                                              ['freshwater', 'terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'hydroshed')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho",  hit_dir, 'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['terrestrial'])
+    (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho",  hit_dir, 'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category, 'eez_iho_intersect')
     #
     (category_info_dict, category) = add_cat(category_info_dict, "seawater",  hit_dir, 'seawater_polygons_hits.tsv', 'sea_category', ['terrestrial'])

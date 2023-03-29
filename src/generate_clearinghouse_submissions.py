@@ -16,6 +16,7 @@ import pickle
 import sys
 import numpy as np
 import argparse
+import re
 
 import pandas as pd
 from pandas.api.types import is_string_dtype
@@ -83,7 +84,7 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
         field = "sample_confidence_marine_inc_biome"
         tax_dom_field = 'marine (ocean connected)'
 
-    df_specific = df_merge_combined_tax_res.query('sample_confidence_marine_inc_biome == "high"').head(1)
+    df_specific = df_merge_combined_tax_res.query('sample_confidence_marine_inc_biome == "high"').sample(n=1)
     df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis=1)
     ic(df_specific.head(5))
     ic(df_specific['json_col'].head())
@@ -96,6 +97,30 @@ def process_confidence_fields(df_merge_combined_tax, analysis_dir):
     create_submit_curations_file(local_list, out_file)
 
     return local_list
+
+def get_multi_field_dict():
+    """
+    dictionary for providing which fields are associated together and to thus provide together in the submission JSON
+    :return: multi_field_dict
+    """
+    multi_field_dict = {
+        'EEZ': {
+                'GEONAME': ['GEONAME', 'MRGID'],
+                'TERRITORY1': ['TERRITORY1', 'MRGID_TER1', 'ISO_TER1', 'UN_TER1'],
+                'TERRITORY2': ['TERRITORY2', 'MRGID_TER2', 'ISO_TER2', 'UN_TER2'],
+                'TERRITORY3': ['TERRITORY3', 'MRGID_TER3', 'ISO_TER3', 'UN_TER3'],
+                'SOVEREIGN1': ['SOVEREIGN1', 'MRGID_SOV1', 'ISO_SOV1', 'UN_SOV1'],
+                'SOVEREIGN2': ['SOVEREIGN2', 'MRGID_SOV2', 'ISO_SOV2', 'UN_SOV2'],
+                'SOVEREIGN3': ['SOVEREIGN3', 'MRGID_SOV3', 'ISO_SOV3', 'UN_SOV3'],
+               },
+        'IHO-EEZ': {
+                 'intersect_MARREGION': ['intersect_MARREGION', 'intersect_MRGID', 'intersect_MRGID_IHO', 'intersect_IHO_SEA', 'intersect_EEZ']
+               }
+
+    }
+
+    return multi_field_dict
+
 
 def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data_dir):
     """process_supercat_fields
@@ -128,10 +153,62 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
             my_record.recordId = row["accession"]
             my_record.attributePost = ":".join([super_category, lc_field])
             my_record.valuePost = row[field]
-            my_record.assertionAdditionalInfo = assertionAdditionalInfo
+            my_record.assertionAdditionalInfo = assertion_additional_infoVal
             my_record.emptyAssertionEvidence()
             my_record.addAutoAssertionEvidence(super_category)
             #print(my_record.get_filled_json())
+            return my_record.get_filled_json()
+
+    def createMultiSubmissionsJson(row):
+        """
+            returns valid JSON if there is a hit,
+            Notes:
+                the attributePost format is super_category + : + lower_case(field) as lower case is the preferred INSDC format
+        :param row:
+        :return:
+        """
+        ic()
+        if row[field] == "" or row[field] == 0:
+            return
+        else:
+            my_record = NewSampleCuration(useENAAutoCurationValues = True)
+            my_record.recordId = row["accession"]
+            my_record.attributePost = attributePostVal
+            value_array = []
+            extra_array = []
+            if "TERRITORY" in field or "SOVEREIGN" in field or "GEONAME" in field:
+                count =0
+                for component_field in multi_field_dict[super_category][field]:
+                    if row[component_field] == "" or row[component_field] == 0:
+                        continue
+                    else:
+                        ic(f"component:{row[component_field]}<---")
+                    field_name = component_field.lower()
+                    if (count == 0):
+                        value_array.append(str(row[component_field]) + " (")
+                    else:
+                        if "mrgid" in field_name:
+                            extra_array.append("mrgid:" + str(row[component_field]))
+                        elif "iso" in field_name:
+                            extra_array.append("ISO3166-1 alpha-3:" + str(row[component_field]))
+                        elif "un" in field_name:
+                            extra_array.append("ISO3166-1 num:" + str(row[component_field]))
+
+                    count += 1
+                value_array.append("; ".join(extra_array) + ")")
+                ic(value_array)
+                my_record.valuePost = "".join(value_array)
+
+            else:
+                for component_field in multi_field_dict[super_category][field]:
+                     field_name = component_field.lower().removeprefix('intersect_')
+                     value_array.append(":".join([field_name, str(row[component_field])]))
+                my_record.valuePost = "; ".join(value_array)
+            my_record.assertionAdditionalInfo = assertion_additional_infoVal
+            my_record.emptyAssertionEvidence()
+            my_record.addAutoAssertionEvidence(super_category)
+            # print(my_record.get_filled_json())
+            # sys.exit()
             return my_record.get_filled_json()
 
     #comparing the first value with the rest, as want to know if all values are the same
@@ -140,23 +217,32 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
         return (a[0] == a).all()
 
     curation_types2add = []
-
+    assertion_additional_infoVal = ""
+    super_category_name = super_category
     if super_category == "EEZ":
-        curation_types2add = ['GEONAME', 'POL_TYPE', 'TERRITORY1', 'TERRITORY2', 'TERRITORY3', 'SOVEREIGN1',
-                'SOVEREIGN2', 'SOVEREIGN3', 'MRGID']
-        curation_types2add = ['TERRITORY1']
-        #curation_types2add = ['SOVEREIGN2']
-        #ic(df_merge_sea_ena["SOVEREIGN2"].value_counts())
+        curation_types2add = ['GEONAME', 'TERRITORY1', 'TERRITORY2', 'TERRITORY3', 'SOVEREIGN1',
+                'SOVEREIGN2', 'SOVEREIGN3']
+        curation_types2add = ['TERRITORY1', 'TERRITORY2', 'TERRITORY3']
+        curation_types2add = ['SOVEREIGN1','SOVEREIGN2', 'SOVEREIGN3']
+        curation_types2add = ['GEONAME']
+        # curation_types2add = ['TERRITORY1']
         #df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(100)
-        df_specific = df_merge_sea_ena.query('TERRITORY1 != ""').head(2)
-        ic(df_specific["SOVEREIGN2"].value_counts())
-        ic(df_specific.shape)
-        ic(df_specific.head())
-        assertion_additional_info = "confidence:high; evidence:sample coordinates within EEZ shapefile"
-        ic(df_specific['POL_TYPE'].value_counts())
+        df_specific = df_merge_sea_ena.query('UN_TER3 != None & UN_TER2 != 0', engine='python').head(1)
+        ic(df_specific[["TERRITORY1", "MRGID_TER1", "UN_TER1", "ISO_TER1", "UN_TER2", "UN_TER3"]].head(1))
+        #sys.exit()
 
-    assertionAdditionalInfo = assertion_additional_info
+        assertion_additional_infoVal = "confidence:high; evidence:sample coordinates within EEZ shapefile"
+    elif super_category == "IHO-EEZ":
+        curation_types2add = ['intersect_MARREGION']
+        df_specific = df_merge_sea_ena.query('intersect_UN_TER3 != None').head(1)
+        assertion_additional_infoVal = "confidence:high; evidence:sample coordinates within IHO-EEZ intersect shapefile"
+        super_category_name = "IHO-EEZ_intersect"
+    else:
+        ic("WARNING: {super_category} not recognised")
+        sys.exit()
 
+
+    multi_field_dict = get_multi_field_dict()
     for field in curation_types2add:
         dom_type = (":").join([super_category, field])
         ic(dom_type)
@@ -170,9 +256,31 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
             ic("thus do not need")
         else:
             ic(df_specific[field].dtype)
-            ic(df_specific[field].value_counts())
+            #ic(df_specific[field].value_counts())
             #during the below some empty "" values are created in json_col
-            df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
+            attributePostVal = ":".join([super_category_name, lc_field.removeprefix('intersect_')])
+            if "TERRITORY" in field:
+                result = re.search(r"(\d+)$", field)
+                attributePostVal = "EEZ-territory-level-" + result.group(1)
+
+                #Stephane's wish
+                # "EEZ-territory-level-1"
+                #"Japan (mrgid:2121) (ISO3166-1 alpha-3:JPN) (ISO3166-1 num-3:392)"
+
+                ic(attributePostVal)
+            elif "SOVEREIGN" in field:
+                result = re.search(r"(\d+)$", field)
+                attributePostVal = "EEZ-sovereign-level-" + result.group(1)
+            elif "GEONAME" in field:
+                attributePostVal = "EEZ-name"
+            else:
+                next
+
+            if field in multi_field_dict[super_category]:
+                ic(f"{field} in {multi_field_dict[super_category][field]}")
+                df_specific['json_col'] = df_specific.apply(createMultiSubmissionsJson, axis = 1)
+            else:
+                df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
             if is_numeric_dtype(df_specific[field]):
                 ic(f"{field} is numeric!")
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
@@ -195,7 +303,7 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
 def merge_sea_ena(debug_status, hit_dir):
     """merge_sea_ena
         merge the sea hits from the shape files with ENA
-        only selecting those ENA samples that intersect with EEZ
+        currently only selecting those ENA samples that intersect with EEZ
     :param hit_dir:
     :return: df_merge_sea_ena
     """
@@ -206,11 +314,19 @@ def merge_sea_ena(debug_status, hit_dir):
     ic(df_ena_detail.shape)
 
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep='\t')
-    int_cols = ['MRGID', 'MRGID_TER1', 'MRGID_TER2', 'MRGID_SOV1', 'MRGID_SOV2', 'MRGID_IHO', 'MRGID_EEZ']
+    ic(df_sea_hits.columns)
+
+    #'intersect_MRGID', 'intersect_MARREGION', 'intersect_MRGID_IHO', 'intersect_IHO_SEA'
+
+    int_cols = ['MRGID', 'intersect_MRGID', 'intersect_MRGID_IHO', 'MRGID_TER1', 'MRGID_TER2', 'MRGID_TER3', 'MRGID_SOV1', 'MRGID_SOV2', 'MRGID_IHO', 'MRGID_EEZ', \
+                'UN_TER1', 'UN_TER2', 'UN_TER3', 'UN_SOV1', 'UN_SOV2', 'UN_SOV3']
     for mrg in int_cols:
-        df_sea_hits[mrg] = df_sea_hits[mrg].fillna(0).astype(np.int32)
+        if mrg in df_sea_hits.columns:
+            df_sea_hits[mrg] = df_sea_hits[mrg].fillna(0).astype(np.int32)
+        else:
+            ic(f"Warning: did not find {mrg} in df_sea_hits")
     cat_cols = []
-    pats = ["UN_", "TERR", "SOVER", "_category", "ECOREGION", "ISO", "GEONAME", "POL_TYPE", 'NAME']
+    pats = ["TERR", "SOVER", "_category", "ECOREGION", "ISO", "GEONAME", "POL_TYPE", 'NAME']
     # ic(df_sea_hits.columns)
     for col_name in df_sea_hits.columns:
         for pat in pats:
@@ -275,11 +391,19 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     """
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
+    #annotation_list = ["EEZ", 'IHO-EEZ']
+    annotation_list = ['IHO-EEZ']
     annotation_list = ["EEZ"]
+
+    ic(df_merged_ena_sea.columns)
 
     for annotation_type in annotation_list:
         if annotation_type == 'EEZ':
             df_merged_ena_sea = df_merged_ena_sea.query('eez_category == "EEZ"')
+            ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
+            local_curation_list = process_supercat_fields(df_merged_ena_sea, annotation_type, clearinghouse_data_dir)
+        elif annotation_type == 'IHO-EEZ':
+            df_merged_ena_sea = df_merged_ena_sea.query('intersect_MARREGION != ""')
             ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
             local_curation_list = process_supercat_fields(df_merged_ena_sea, annotation_type, clearinghouse_data_dir)
         else:

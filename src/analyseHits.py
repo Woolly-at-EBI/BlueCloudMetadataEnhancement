@@ -177,7 +177,7 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
             df = df.drop(['x', 'y'], axis = 1)
         df[filter_field] = filter_swap_value
         df = df.rename({'index_right': cat_name}, axis = 1)
-    elif filter_field == "MARREGION":
+    elif filter_field == "intersect_MARREGION":
         if 'X_1' in df.columns:
             df = df.drop(['X_1', 'Y_1'], axis = 1)
         df = df.rename({'index_right': cat_name}, axis = 1)

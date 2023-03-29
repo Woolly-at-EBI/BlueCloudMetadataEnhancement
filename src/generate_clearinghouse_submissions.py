@@ -111,9 +111,12 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
 
     curation_list = []
 
-    def createSubmissionsJson(row):
+
+    def createIndividualSubmissionsJson(row):
         """
             returns valid JSON if there is a hit,
+            Notes:
+                the attributePost format is super_category + : + lower_case(field) as lower case is the preferred INSDC format
         :param row:
         :return:
         """
@@ -123,7 +126,7 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
         else:
             my_record = NewSampleCuration(useENAAutoCurationValues = True)
             my_record.recordId = row["accession"]
-            my_record.attributePost = dom_type
+            my_record.attributePost = ":".join([super_category, lc_field])
             my_record.valuePost = row[field]
             my_record.assertionAdditionalInfo = assertionAdditionalInfo
             my_record.emptyAssertionEvidence()
@@ -141,10 +144,11 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
     if super_category == "EEZ":
         curation_types2add = ['GEONAME', 'POL_TYPE', 'TERRITORY1', 'TERRITORY2', 'TERRITORY3', 'SOVEREIGN1',
                 'SOVEREIGN2', 'SOVEREIGN3', 'MRGID']
+        curation_types2add = ['TERRITORY1']
         #curation_types2add = ['SOVEREIGN2']
         #ic(df_merge_sea_ena["SOVEREIGN2"].value_counts())
         #df_specific = df_merge_sea_ena.query('eez_category == "EEZ"').head(100)
-        df_specific = df_merge_sea_ena.query('SOVEREIGN2 != ""').head(100)
+        df_specific = df_merge_sea_ena.query('TERRITORY1 != ""').head(2)
         ic(df_specific["SOVEREIGN2"].value_counts())
         ic(df_specific.shape)
         ic(df_specific.head())
@@ -157,6 +161,7 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
         dom_type = (":").join([super_category, field])
         ic(dom_type)
         ic(super_category + " " + field)
+        lc_field = field.lower()
 
         #if(df_specific[field].isnull().all() or (df_specific.loc[0,field] == 0 and is_unique(df_specific[field]))):
         if super_category == "lion":
@@ -167,7 +172,7 @@ def process_supercat_fields(df_merge_sea_ena, super_category, clearinghouse_data
             ic(df_specific[field].dtype)
             ic(df_specific[field].value_counts())
             #during the below some empty "" values are created in json_col
-            df_specific['json_col'] = df_specific.apply(createSubmissionsJson, axis = 1)
+            df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
             if is_numeric_dtype(df_specific[field]):
                 ic(f"{field} is numeric!")
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""

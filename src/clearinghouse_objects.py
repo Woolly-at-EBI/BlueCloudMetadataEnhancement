@@ -98,7 +98,7 @@ class NewSampleCuration:
         my_dict['assertionEvidences'] = self.assertionEvidences
         my_dict['assertionAdditionalInfo'] = self.assertionAdditionalInfo
         my_dict['assertionSource'] = self.assertionSource
-        my_dict['assertionSource'] = self.assertionMethod
+        my_dict['assertionMethod'] = self.assertionMethod
         my_dict['attributePost'] = self.attributePost
         my_dict['valuePost'] = self.valuePost
         my_dict['providerName'] = self.providerName

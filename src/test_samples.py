@@ -27,7 +27,7 @@ def get_narrow_blue(analysis_dir):
 
     dtype_dict = {
         'accession': 'object',
-        'tax_id' : 'float32',
+        'tax_id': 'float32',
         'scientific_name': 'object',
         'lat': 'float32',
         'lon': 'float32',
@@ -83,7 +83,7 @@ def generate_test_samples(analysis_dir,test_dir):
         for blue_cat_conf in df_tmp["blue_partition_confidence"].unique():
             ic(blue_cat_conf)
             cat_dict['confidence_level'][blue_cat_conf] = {}
-            df_test = df_tmp.query('blue_partition_confidence == @blue_cat_conf')
+            df_test = df_tmp.query('blue_partition_confidence == @blue_cat_conf & lat > 0')
             # may only be a limited number of rows...
             actual_sample_size = sample_size if (sample_size <= df_test.shape[0]) else df_test.shape[0]
             df_test = df_test.sample(n=actual_sample_size)

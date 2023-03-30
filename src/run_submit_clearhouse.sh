@@ -4,17 +4,39 @@ source ~/.ayup
 url="https://www.ebi.ac.uk/ena/clearinghouse/api/curations"
 url="https://wwwdev.ebi.ac.uk/ena/clearinghouse/api/curations"
 # if meed to renew the bearer ( the below is for the test):
-# curl 'https://explore.api.aai.ebi.ac.uk/auth'  -u $aai_test2_creds > aai_test2_bearer
-export aai_test2_bearer_val=`cat /Users/woollard/projects/bluecloud/clearinghouse/docs/aai_test2_bearer`
+bearer_file="bearer_file"
+curl 'https://explore.api.aai.ebi.ac.uk/auth'  -u $aai_test2_creds 1> bearer_file 2>/dev/null
+export bearerkey=`cat $bearer_file`
+#echo $bearerkey
 
-bearer="Authorization: Bearer $aai_test2_bearer_val"
-curation_json_file="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/EEZ:TERRITORY1.json"
+submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/"
+submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/test/"
 
-echo "bearer: " $bearer
+function submit_2_clearinghouse () {
 
-# would not run bre
-cmd=`echo curl -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -d @${curation_json_file}`
-echo $cmd
-echo $cmd > run_me.sh
-sh ./run_me.sh
+  export curation_json_file=$1
+  echo $curation_json_file
+  export bearer="Authorization: Bearer $bearerkey"
+  #echo $bearer
+
+  # would not run bre
+  cmd=`echo curl -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -T ${curation_json_file}`
+  # cmd=`echo echo "ayup"`
+  echo $cmd
+  echo $cmd > run_me.sh
+  time sh ./run_me.sh
+  echo ""
+
+}
+
+for file in $submission_dir*.json
+do
+echo $file
+echo $bearer
+submit_2_clearinghouse $file
+done
+
+
+curation_json_file="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/IHO-EEZ:intersect_MARREGION.json"
+
 

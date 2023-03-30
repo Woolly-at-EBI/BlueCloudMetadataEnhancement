@@ -96,12 +96,6 @@ def generate_test_samples(analysis_dir,test_dir):
     json.dump(my_test_samples_dict, out_file, indent = 4)
     out_file.close()
 
-
-
-
-
-
-
     ic()
 
 def main():

@@ -10,3 +10,5 @@ docs/Tara_paper_info/
 /src/environment_biome_mapping.tsv
 /src/environment_biome_mapping.csv
 /clearinghouse/
+/src/aai_test2_bearer
+/src/run_me.sh

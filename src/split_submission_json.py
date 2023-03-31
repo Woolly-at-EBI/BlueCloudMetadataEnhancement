@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Script of 'split_json.py' is to split large Clearinghouse submission JSON files with records into smaller chunks
+"""Script of 'split_submission_json.py' is to split large Clearinghouse submission JSON files with records into smaller chunks
+If a directory is provided it will process the immediate child JSON files.
 
-python3 split_json.py --help
+python3 split_submission_json.py --help
+
+usage: ./split_submission_json.py -i /Users/woollard/projects/bluecloud/clearinghouse/submission_data/full -o /Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/
 
 ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2023-03-30
@@ -50,8 +53,34 @@ def split_json(full_file_name, file_name, batch_size, out_dir):
             local_count = 0
 
 
-def main():
+def main(args):
+    """
 
+    :param args:
+    :return:
+    """
+
+    def split_helper(in_file, batch_size, out_dir):
+        json_file_name = os.path.basename(in_file)
+        split_json(in_file, json_file_name, batch_size, out_dir)
+
+    if os.path.isfile(args.in_file):
+        split_helper(args.in_file, int(args.batch_size), args.out_dir)
+    elif os.path.isdir(args.in_file):
+        print(f"You have provided a directory: {args.in_file}, so the JSON files in that will be processed")
+        for json_file_name in os.listdir(args.in_file):
+            ic(json_file_name)
+            if json_file_name.endswith(".json"):
+                full_path = os.path.join(args.in_file, json_file_name)
+                ic(full_path)
+                split_json(full_path, json_file_name, int(args.batch_size), args.out_dir)
+    else:
+        print(f"ERROR: unknown file object {args.in_file}")
+
+
+
+if __name__ == '__main__':
+    ic()
     # Read arguments from command line
     prog_des = "Script to split large Clearinghouse submission JSON files with records into smaller chunks"
     print(prog_des)
@@ -62,12 +91,12 @@ def main():
                         help = "Debug status i.e.True if selected, is verbose",
                         required = False, action = "store_true")
     parser.add_argument("-b", "--batch_size",
-                        help = "Batch size, if note specified default is 100",
+                        help = "Batch size, if note specified default is 1000",
                         required = False,
-                        default = 100
+                        default = 1000
                         )
     parser.add_argument("-i", "--in_file",
-                        help = "full path of json input file",
+                        help = "full path of json input file. If instead of a file a directory is provided, all the JSON files in that directory are processed.",
                         required = True
                         )
     parser.add_argument("-o", "--out_dir",
@@ -76,7 +105,6 @@ def main():
                         default = ""
 
                         )
-
     parser.parse_args()
     args = parser.parse_args()
     if args.debug_status == True:
@@ -84,9 +112,5 @@ def main():
     else:
         ic.disable()
     ic(args)
-    json_file_name = os.path.basename(args.in_file)
-    split_json(args.in_file, json_file_name, int(args.batch_size), args.out_dir)
 
-if __name__ == '__main__':
-    ic()
-    main()
+    main(args)

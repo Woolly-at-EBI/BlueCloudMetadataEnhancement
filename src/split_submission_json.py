@@ -22,7 +22,7 @@ def get_empty_curation_dict():
     curation_dict['curations'] = []
     return curation_dict
 def split_json(full_file_name, file_name, batch_size, out_dir):
-    ic(f"processing {full_file_name}")
+    ic(f"processing {full_file_name} {batch_size}")
     f = open(full_file_name)
     data = json.load(f)
     #ic(data)
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--batch_size",
                         help = "Batch size, if note specified default is 1000",
                         required = False,
-                        default = 1000
+                        default = 10000
                         )
     parser.add_argument("-i", "--in_file",
                         help = "full path of json input file. If instead of a file a directory is provided, all the JSON files in that directory are processed.",

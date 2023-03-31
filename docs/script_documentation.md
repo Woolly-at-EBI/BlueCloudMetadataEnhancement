@@ -28,10 +28,12 @@ These scripts were also used to explore the data and space, hence there were dea
 | get_directory_paths.py                       | python   | takes a base directory, checks this exists              also sets the directory paths for analysis and plots etc. and checks that these all exist                                                                                                                                                                |
 | parseTrawl.py                                | python   | Script to extra long and lat coordinates from sample xml     this has start and end coords                                                                                                                                                                                                                       |
 | project_utils.py                             | python   | some utilities needed in several projects                                                                                                                                                                                                                                                                        |
+| split_submission_json.py                     | python   | split large Clearinghouse submission JSON files with records into smaller chunks                                                                                                                                                                                                                                 |
 | waterTaxonomyAnalysis.py                     | python   | Script to take the taxonomy environment assignments    and combine them with the output from analyseHits.py    to allow one to get analysis of what is marine or terrestrial/freshwater from different methods                                                                                                   |
 | general_analysis.sh                          | bash     | script to get answers to questions best done with bash e.g. latitude and longitude granularity, as panda converts numbers                                                                                                                                                                                        |
 | get_ena_ws_data.sh                           | bash     | script to run ENA web services to get the data for much of the analysis #The data is returned as TSV files in the "sample_dir"                                                                                                                                                                                   |
 | run_all.sh                                   | bash     | script to run the lat lon coordinates against various shapefiles, using geopandas - the script automatically re-projects if different coordinate reference systems(CRS) are used. # it returns a file one row per coordinate. Additionally annotation from the shapefile is only added if a hit else nowt (NaN). |
+| run_submit_clearhouse.sh                     | bash     | script to submit curation submissions jsons to the clearinghouse                                                                                                                                                                                                                                                 |
 | empty_clearinghouse_submission_template.json | json     | empty_clearinghouse_submission_template                                                                                                                                                                                                                                                                          |
 
 
@@ -49,5 +51,11 @@ Then run these scripts
 * ./waterTaxonomyAnalysis.py
 * ./extra_comparisons.py 
 
-## Notes about the scripts
+## to generate and submit 
+See each scripts help for the details 
+* generate_clearinghouse_submissions.py
+* split_submission_json.py - split a curation submission JSON file into batches e.g. of 100 curations 
+* run_submit_clearhouse.sh - script to curation submission JSON files to the clearinghouse
+
+## General notes about the scripts
 Many of the scripts e.g. get_directory_paths.py are utility scripts

@@ -26,3 +26,5 @@ do
 
 	((index++))
 done
+
+# /bin/zsh /Users/woollard/projects/bluecloud/src/review_clearinghouse_examples.sh > temp.sh

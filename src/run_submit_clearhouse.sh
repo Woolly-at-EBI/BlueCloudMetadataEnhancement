@@ -8,7 +8,7 @@ echo "script to run submit the clearinghouse submissions"
 # set environment variables and credentials up - this is my local bash (only readable by me), suggest you doing something similar
 source ~/.ayup
 
-TEST=1
+TEST=0
 if [ $TEST -eq 1 ]; then
   echo "using test credentials and setup"
   url="https://wwwdev.ebi.ac.uk/ena/clearinghouse/api/curations"
@@ -24,7 +24,7 @@ else
   creds=$aai_prod_creds
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
 fi
-
+export bearer_file="bearer_file"
 # echo $creds
 # if meed to renew the bearer ( the below is for the test):
 #curl 'https://explore.api.aai.ebi.ac.uk/auth'  -u $aai_test2_creds 1> bearer_file 2>/dev/null
@@ -37,7 +37,8 @@ echo "submission_dir: "$submission_dir
 function re_run_bearer_file () {
   auth_url=$1
   credentials=$2
-  #echo "curl $auth_url" -u "$credentials"
+  echo "curl $auth_url" -u "$credentials"
+  echo $bearer_file
   curl "$auth_url" -u "$credentials" 1> $bearer_file 2>/dev/null
   bearerkey=`cat $bearer_file`
   len=${#bearerkey}

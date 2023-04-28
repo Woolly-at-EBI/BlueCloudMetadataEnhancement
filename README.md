@@ -9,11 +9,13 @@
   * [Additionally marine and terrestrial/freshwater samples can be determined by organism taxonomy too](#additionally-marine-and-terrestrialfreshwater-samples-can-be-determined-by-organism-taxonomy-too)
   * [Sample Types](#sample-types)
     * [Marine samples](#marine-samples)
-    * [Fresh water samples](#fresh-water-samples)
+    * [Freshwater samples](#freshwater-samples)
     * [Land samples](#land-samples)
     * [The Blue Partition](#the-blue-partition)
   * [Enhanced Sample Annotation](#enhanced-sample-annotation)
-  * [Script documentation](#script-documentation)
+  * [Further documentation](#further-documentation)
+    * [Script documentation](#script-documentation)
+    * [Presentations](#presentations)
   * [Contributors](#contributors)
 <!-- TOC -->
 
@@ -49,27 +51,32 @@ The shape and taxonomic information do broadly agree, but there are many points 
 ### Marine samples
 Samples from the sea, estuaries and other coastal feature were a key focus.
 
-### Fresh water samples
+### Freshwater samples
 Currently, there are limited polygons in shapefiles to determine if a sample is freshwater.
 * The hydroshed and wetland shapefiles have the most coverage, but it has to determine which locations are actually freshwater. 
 * Large freshwater bodies, be them lakes, reservoirs and rivers are well covered too. 
-* Smaller rivers, lakes/ponds and rivers can be determined by distance to centre lines. Although we have been getting lowet 
+* Smaller rivers, lakes/ponds and rivers can be determined by distance to centre lines. Although we have been getting a 
+far lower number of sample hits than anticipated.  (needs a more detailed investigation).
 
 ### Land samples
-These are low in the priority list for this project, but we have gathered much metadata in the course of the marine and fresh water metadata. 
+These are low in the priority list for this project, but we have gathered much metadata in the course of the marine and freshwater metadata. 
 
 ### The Blue Partition
 A key deliverable for the BlueCloud is the Blue Partition: samples that are aquatic related = marine, coastal and freshwater. 
-This exploratory coding is helping to lead to a production instance.
+This exploratory coding is helping to lead to a production instance by a software engineer.
 
 ## Enhanced Sample Annotation
 
 The GPS coordinates and Shapefiles provide a reliable way of getting enhanced metadata.
 Shapefiles for EEZ(exclusive economic zones) and other political boundaries are very useful. This metadata will be associated with the samples via the Clearing House.
 
-## Script documentation
+## Further documentation
+### Script documentation
 * [link to the script docs](docs/script_documentation.md)
 * [link to overview of aspects needed for BluePartion](docs/pointers_2_key_code_4_blue_partition.md)
+### Presentations
+* [Biocuration2023_poster](docs/presentations/Biocuration2023_poster_AugmentingTheEnvironmentalContextIBiologicalSamplesUsingGeographic+TaxonomicMetadata.pdf)
+* [Biocuration2023_flashtalk](docs/presentations/Biocuration2023_flashtalk_AugmentingTheEnvironmentalContextIBiologicalSamplesUsingGeographic+TaxonomicMetadata.pdf)
 
 ## Contributors
 * Main author so far: Peter Woollard

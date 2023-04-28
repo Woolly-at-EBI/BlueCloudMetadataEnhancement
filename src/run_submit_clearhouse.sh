@@ -3,6 +3,9 @@
 # Peter Woollard, ENA, EMBL-EBI, March 2023
 echo "script to run submit the clearinghouse submissions"
 
+
+
+
 ##################################################################################################
 ##### Configurable portion
 # set environment variables and credentials up - this is my local bash (only readable by me), suggest you doing something similar
@@ -23,7 +26,12 @@ else
   auth_url='https://api.aai.ebi.ac.uk/auth'
   creds=$aai_prod_creds
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
+  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/IHO:IHO_category/"
+  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/redo_IHO:IHO_category/split_100/"
+  submission_dir=$1
 fi
+echo "submission_dir:"$submission_dir
+
 export bearer_file="bearer_file"
 # echo $creds
 # if meed to renew the bearer ( the below is for the test):
@@ -78,6 +86,8 @@ do
     re_run_bearer_file $auth_url $creds
 done
 
+
+echo $submission_dir | mail -s "submission finished" woollard@ebi.ac.uk
 #end of script
 
 

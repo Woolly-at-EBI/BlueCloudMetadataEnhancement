@@ -35,6 +35,8 @@ Most of the marine samples have GPS coordinates for latitude and longitude. The 
 
 The GPS coordinates can be rapidly searched against the polygons and mapped to the polygon metadata. By searching a range of shapefile consensus and overlapping information can be obtained
 
+see ![shape resources](./docs/shape_resources.md)
+
 ### Polygon Searching
 
 The computational geometry that underlies the polygon searching with coordinates is now straight forwards thanks to decades of work in the field by many people. Here we are using GDAL (C++) via GEOPANDAS https://geopandas.org/en/stable/docs/user_guide/data_structures.html . It can search 1/3 million coordinates against about hundred polygon shapefile in less than 20 seconds on my laptop, which is rather impressive.

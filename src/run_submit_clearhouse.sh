@@ -2,9 +2,9 @@
 #
 # Peter Woollard, ENA, EMBL-EBI, March 2023
 echo "script to run submit the clearinghouse submissions"
-
-
-
+echo "  run: script.py dir_path_to_submission_jsons"
+echo "  suggestion, before the run: script submission_typescript.log"
+echo ""
 
 ##################################################################################################
 ##### Configurable portion
@@ -28,6 +28,8 @@ else
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/IHO:IHO_category/"
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/redo_IHO:IHO_category/split_100/"
+
+
   submission_dir=$1
 fi
 echo "submission_dir:"$submission_dir

@@ -218,6 +218,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                     ic(f"WARNING: {field} is not an intersect as EEZ is NaN so skipping record")
                     return
                 for component_field in multi_field_dict[super_category][field]:
+                    ic(f"{super_category}; {component_field}")
                     if row[component_field] == "" or row[component_field] == 0:
                         continue
                     else:
@@ -226,20 +227,24 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                     if (count == 0):
                         value_array.append(str(row[component_field]) + " (")
                     else:
-                        if "mrgid" in field_name:
+                        if field_name == "mrgid":
                             extra_array.append(field_name + ":" + str(row[component_field]))
-                        elif "iho_sea" in field_name:
-                            extra_array.append(field_name + ":" + str(row[component_field]))
-                        elif "eez" in field_name:
-                            extra_array.append("eez-name:" + str(row[component_field]))
-                        else:
-                            ic(f"WARNING: unexpected: {field_name} including it with default param")
-                            extra_array.append(field_name + ":" + str(row[component_field]))
+                        # elif "iho_sea" in field_name:
+                        #     extra_array.append(field_name + ":" + str(row[component_field]))
+                        # elif "eez" in field_name:
+                        #     extra_array.append("eez-name:" + str(row[component_field]))
+                        # else:
+                        #     ic(f"WARNING: unexpected: {field_name} including it with default param")
+                        #     extra_array.append(field_name + ":" + str(row[component_field]))
                         #ic(extra_array)
                     count += 1
                 value_array.append("; ".join(extra_array) + ")")
                 ic(value_array)
                 my_record.valuePost = "".join(value_array)
+                ic(my_record.valuePost)
+                ic(my_record.get_filled_dict())
+                ic()
+                #sys.exit()
             else:
                 for component_field in multi_field_dict[super_category][field]:
                      field_name = component_field.lower()
@@ -293,9 +298,12 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     # ic(df_specific.columns)
     # df_specific = df_specific[needed_fields].drop_duplicates()
     if debug_status == True:
-        df_specific = df_specific.sample(n=2)
+        #df_specific = df_specific.sample(n=2)
+        ic()
+
 
     for field in curation_types2add:
+        ic()
         dom_type = (":").join([super_category, field])
         ic(dom_type)
         ic(super_category + " " + field)
@@ -307,6 +315,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             # or is_unique(df_specific[field])
             ic("thus do not need")
         else:
+            ic(field)
             ic(df_specific.columns)
             ic(df_specific[field].dtype)
             #ic(df_specific[field].value_counts())
@@ -325,10 +334,14 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 attributePostVal = "EEZ-name"
             elif "IHO_category" == field:
                 attributePostVal = "IHO-name"
+            elif "MARREGION" in field:
+                attributePostVal = "EEZ-IHO-intersect-name"
             else:
                 attributePostVal = ":".join([super_category_name, lc_field.removeprefix('intersect_')])
             # else:
                 #ic(f"WARNING: skipping as nowt extra process detected for {field}")
+            ic()
+            ic(attributePostVal)
 
             if field in multi_field_dict[super_category]:
                 ic(f"{field} in {multi_field_dict[super_category][field]}")
@@ -446,7 +459,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
     annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
-    #annotation_list = ['IHO-EEZ', 'IHO']
+    annotation_list = ['IHO-EEZ']
 
     ic(df_merged_ena_sea.columns)
 
@@ -488,6 +501,7 @@ def main(args):
         ic.disable()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     clearinghouse_data_dir = "/Users/woollard/projects/bluecloud/clearinghouse/submission_data/"
+    clearinghouse_data_dir = "/Users/woollard/projects/bluecloud/clearinghouse/corrections/"
 
     ic(args.generate_specific_submissions)
     if args.generate_specific_submissions:

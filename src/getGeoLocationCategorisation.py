@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # BlueCloud
-"""Script to get the e.g. EEZ classification for a set of longitude and latitude coordinates
+"""Script: getGeoLocationCategorisation.py to get the e.g. EEZ classification for a set of longitude and latitude coordinates
  is using GDAL via geopandas lib see:
 https://geopandas.org/en/stable/docs/user_guide/data_structures.html#geoseries
 https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoSeries.contains.html#geopandas.GeoSeries.contains
@@ -239,9 +239,9 @@ def main(passed_args):
         out_filename = out_dirname + "eez_hit.tsv"
         passed_args.typeofcontents = "polygon"
 
-    if os.path.isfile(out_filename):
-        ic(f"skipping all processing as {out_filename} exits, uncomment these lines if you want to rerun the hit file")
-        sys.exit()
+    # if os.path.isfile(out_filename):
+    #     ic(f"skipping all processing as {out_filename} exits, uncomment these lines if you want to rerun the hit file")
+    #     sys.exit()
     my_shape = read_shape(shape_file, geo_crc)
     (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
 

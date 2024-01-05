@@ -130,7 +130,7 @@ out_file=$outdir/feow_hydrosheds_hits.tsv
 run_polygon_geolocation "$shape_file"  "$out_file" "$geo_crc"
 
 #marine: World_EEZ : if in an EEZ and name of
-shape_file=$shapefile_dir/World_EEZ_v11_20191118/eez_v11.shp
+shape_file=$shapefile_dir/World_EEZ_v12_20231025/eez_v12.shp
 out_file=$outdir/eez_hits.tsv
 run_polygon_geolocation "$shape_file"  "$out_file" "$geo_crc"
 

@@ -123,7 +123,7 @@ def _get_template(template_type):
         type(empty_dict)
         ic(empty_dict)
     else:
-        ic(f"ERROR: {template_file} dies not exist")
+        ic(f"ERROR: {template_file} does not exist")
         quit(1)
 
     return empty_dict
@@ -150,6 +150,7 @@ def main():
     test_status = True
     demo_format(test_status)
     # environment_biome.pickle
+
 
 if __name__ == '__main__':
     ic()

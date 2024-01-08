@@ -10,8 +10,9 @@ __docformat___ = 'reStructuredText'
 
 """
 
-from icecream import ic
 import json
+
+from icecream import ic
 
 
 class MyHitDataInfo:
@@ -23,6 +24,8 @@ class MyHitDataInfo:
     hit_dir = ""
 
     def __init__(self, hit_dir):
+        self._domain_cat_dict = None
+        self._category_info_dict = None
         MyHitDataInfo.hit_dir = hit_dir
         self.read_category_info_dict_json()
         ic()
@@ -118,13 +121,12 @@ class MyHitDataInfo:
                                          'glwd_2_category',
                                          'ne_10m_lake_category',
                                          'feow_category'],
-                          'marine': ['IHO_category', 'longhurst', 'eez_category'],
+                          'marine': ['IHO_category', 'longhurst', 'eez_category', 'eez_iho_intersect_category'],
                           'terrestrial': ['feow_category',
-                                          'eez_iho_intersect_category',
-                                          'sea_category',
                                           'land_category',
                                           'worldAdmin_category']}
         """
+        ic(self._domain_cat_dict)
         return self._domain_cat_dict
 
     def get_freshwater_cats(self):

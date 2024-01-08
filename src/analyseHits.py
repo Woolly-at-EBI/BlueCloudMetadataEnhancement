@@ -2,13 +2,14 @@
 # BlueCloud
 """Script to merge, analyse and plot the hits from getGeoLocationCategorisation.py
     directories for the hits, samples, analysis, plot etc. are set in "def get_directory_paths"
-    The hits and plot files are additionally manually copied to a google drive shared with Stephane and Josie.
+    The hits and plot files are additionally manually copied to a Google Drive shared with Stephane and Josie.
 
     The key product of this is this file:
     analysis/merged_all_categories.tsv
 
-    if you want to add new categories, make changes to:
-        clean_df, get_category_dict
+    if you want to add new categories or hit files, make changes to:
+        clean_df, get_category_dict and add_cat()
+
 ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = "2022-12-08"
 __docformat___ = 'reStructuredText'
@@ -17,31 +18,24 @@ __docformat___ = 'reStructuredText'
 # /opt/homebrew/bin/pydoc3 getGeoLocationCategorisation   #interactive
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
-import sys
-from icecream import ic
 from functools import reduce
 
-import matplotlib.pyplot as plt
 import geopandas as gpd
+import matplotlib.pyplot as plt
 from geopandas import GeoDataFrame
 from geopandas.geoseries import *
 from shapely.geometry import Point
 
-import plotly.express as px
-import plotly
-import plotly.io as pio
-pio.renderers.default = "browser"
 from get_directory_paths import get_directory_paths
 from ena_samples import get_ena_total_sample_count
 from ena_samples import get_all_ena_detailed_sample_info
 from project_utils import *
 from hitDataInfoClasses import MyHitDataInfo
-import project_utils
 
+pio.renderers.default = "browser"
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
-
 
 
 def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
@@ -53,7 +47,7 @@ def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
     """
     crs_value = "EPSG:4326"
     shapefile = shape_dir + "GIS_hs_snapped/feow_hydrosheds.shp"
-    format = 'png'
+    out_format = 'png'
 
     ic(df_merged_all_categories.head(3))
 
@@ -70,7 +64,7 @@ def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
     # quit()
     ic(pointsInHydroshed_geodf.head(2))
     pointsInHydroshed_geodf.plot(ax = base, linewidth = 1, color = "red", markersize = 1, aspect = 1)
-    out_graph_file = plot_dir + "pointsInJustHydroshed." + format
+    out_graph_file = plot_dir + "pointsInJustHydroshed." + out_format
     plt.title("All ENA sample coords in(red) the FEOW hydroshed polygons", )
     ic(out_graph_file)
     fig1 = plt.gcf()
@@ -81,7 +75,7 @@ def extra_plots(df_merged_all_categories, plot_dir, shape_dir):
     plt.title("All ENA sample coords(blue) in(red) the FEOW hydroshed polygons", )
     fig1 = plt.gcf()
 
-    out_graph_file = plot_dir + "pointsInHydroshed." + format
+    out_graph_file = plot_dir + "pointsInHydroshed." + out_format
     ic(out_graph_file)
     fig1.savefig(out_graph_file)
 
@@ -95,40 +89,41 @@ def plot_merge_all(df_merged_all, plot_dir):
               takes the largest merge all of all columns of the merged hit results and does plots that need all this,
               not just the category subset of columns
         __params__:
-               passed_args df_merged_all, plot_dir)
+               passed_args (df_merged_all, plot_dir)
     """
     width = 1000
-    format = 'png'
+    out_format = 'png'
 
-    def plot_scatter(cat, color, y, title, width, format, out_graph_file):
-
-        fig = px.scatter(df_merged_all, title = title, x = cat, y = y, width = width,
+    def plot_scatter(cat, color, y, title, plot_width, outformat, out_graph_file):
+        fig = px.scatter(df_merged_all, title = title, x = cat, y = y, width = plot_width,
                          color = color)
         ic(out_graph_file)
-        plotly.io.write_image(fig, out_graph_file, format = format)
+        plotly.io.write_image(fig, out_graph_file, format = outformat)
 
-    plot_scatter("IHO_category", "IHO_category", "lat", "IHO, lats and longhurst", width, format, plot_dir + 'IHO_by_lon.' + format)
-    plot_scatter("IHO_category", "longhurst_category", "lat", "IHO, lats and longhurst", width, format, plot_dir + 'IHO_ocean_by_lon.' + format)
+    plot_scatter("IHO_category", "IHO_category", "lat", "IHO, lats and longhurst", width, out_format,
+                 plot_dir + 'IHO_by_lon.' + out_format)
+    plot_scatter("IHO_category", "longhurst_category", "lat", "IHO, lats and longhurst", width, format,
+                 plot_dir + 'IHO_ocean_by_lon.' + out_format)
 
-    def plot_hist(cat, color, log_y, title, format, out_graph_file):
-        width = 1500
+    def plot_hist(cat, color, log_y, title, outformat, out_graph_file):
+        plot_width = 1500
         fig = px.histogram(df_merged_all, title = title, x = cat,
-                           width = width, color = color, log_y = log_y, labels = {'count': "log(count)",
+                           width = plot_width, color = color, log_y = log_y, labels = {'count': "log(count)",
                                                                                        cat: cat})
         fig.update_xaxes(categoryorder = "total descending")
         fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
         ic(out_graph_file)
-        plotly.io.write_image(fig, out_graph_file, format = format)
+        plotly.io.write_image(fig, out_graph_file, format = outformat)
         fig.show()
 
-
-    plot_hist("GEONAME", "continent", True, "EEZ by country + continent (logscale)", format, plot_dir + 'EEZ_continent_counts.' + format)
+    plot_hist("GEONAME", "continent", True, "EEZ by country + continent (logscale)", format,
+              plot_dir + 'EEZ_continent_counts.' + format)
     plot_hist("IHO_category", "longhurst_category", True, "IHO country + Longhurst biome (logscale)", format,
               plot_dir + 'IHO_longhurst_counts.' + format)
     plot_hist("SOVEREIGN1", "continent", True, "EEZ country + continent (logscale)", format,
               plot_dir + 'country_lon_lat_counts.' + format)
-    plot_scatter("lon", "AREA_SKM", "lat", 'feow_category_by_skm.', width, format, plot_dir + 'feow_category_by_skm.' + format)
-
+    plot_scatter("lon", "AREA_SKM", "lat", 'feow_category_by_skm.', width, format,
+                 plot_dir + 'feow_category_by_skm.' + format)
 
     return
 
@@ -156,13 +151,17 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
         if cat_name == "g200_fw_category":
             df[cat_name] = df['MHT']
         elif cat_name == "g200_terr_category":
-            # cut -f5 g200_terr_hits.tsv | sort | uniq -c | sort -n | sed -E 's/.*,//;s/(Woodlands and Steppe|Deserts and Shrublands|Woodlands|Steppe|Mangroves|Forest|Forests|Desert|Deserts|Mangrove|Alpine Meadows|Savannas|Shrubland|Shrublands|scrub|Rainforests|Grasslands|Taiga|Tundra|Highlands|Prairies|Scrub|Spiny Thicket|Moorlands|Shrubs)$/=====>\1<======/' | grep -v '='
+            # cut -f5 g200_terr_hits.tsv | sort | uniq -c | sort -n | sed -E 's/.*,//;s/(Woodlands and Steppe|Deserts
+            # and Shrublands|Woodlands|Steppe|Mangroves|Forest|Forests|Desert|Deserts|Mangrove|Alpine
+            # Meadows|Savannas|Shrubland|Shrublands|scrub|Rainforests|Grasslands|Taiga|Tundra|Highlands|Prairies
+            # |Scrub|Spiny Thicket|Moorlands|Shrubs)$/=====>\1<======/' | grep -v '='
             df[cat_name] = df["G200_REGIO"]
         elif cat_name == "g200_marine_category":
             df[cat_name] = df['G200_REGIO']
         ic(df[cat_name].value_counts())
-    elif cat_name in ["ne_10m_river_lake_line_category", "ne_10m_river_lake_aus_line_category", "ne_10m_river_eur_line_category",\
-                              "ne_10m_river_nam_line_category", "ne_10m_river_lake_line_category"]:
+    elif cat_name in ["ne_10m_river_lake_line_category", "ne_10m_river_lake_aus_line_category",
+                      "ne_10m_river_eur_line_category",
+                      "ne_10m_river_nam_line_category", "ne_10m_river_lake_line_category"]:
         df = df.rename({'index_right': cat_name}, axis = 1)
         df[cat_name] = df['featurecla']
     elif cat_name in ["ne_10m_lake_hit.tsv", "ne_50m_lakes_hit.tsv"]:
@@ -192,7 +191,7 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
             newName = 'intersect_' + oldName
             df = df.rename({oldName: newName}, axis = 1)
 
-    elif filter_field == "region":  # ie.. for the World admin
+    elif filter_field == "region":  # i.e. for the World admin
         df['french_shor'] = df['french_shor'].str.replace('Ã', 'e')
         df['french_shor'] = df['french_shor'].str.replace('©', '')
         df['french_shor'] = df['french_shor'].str.replace('e', 'E')
@@ -210,7 +209,7 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
     elif cat_name == "longhurst_category":
         df = df.rename({'index_right': cat_name}, axis = 1)
         df[cat_name] = df['ProvDescr'].str.extract('^([A-Za-z]*)', expand = True)
-    elif cat_name == "eez_category":
+    elif cat_name in ['eez_category', 'eez_iho_intersect_category']:
         # leave in these as, Stephane finds valuable
         df = df.drop(['X_1', 'Y_1'], axis = 1)
         # df = df.drop(['X_1', 'Y_1', 'MRGID_TER2', 'MRGID_SOV2', 'TERRITORY2', 'ISO_TER2', 'SOVEREIGN2', 'MRGID_TER3',
@@ -219,15 +218,16 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
         df['index_right'] = filter_swap_value
         df = df.rename({'index_right': cat_name}, axis = 1)
     else:
-        ic(f"ERROR {cat_name} not matching anything!")
+        ic(f"ERROR {cat_name} not matching anything! please edit clean_df()")
+        sys.exit()
     ic(df.columns)
     # ic(df.head(15))
     ic()
     return df
 
 
-def mergeDFs(data_frames, out_filename):
-    """ mergeDFs
+def merge_dfs(data_frames, out_filename):
+    """ merge_dfs
         __params__:
             list of data_frames merging on ['coords', 'lon', 'lat']
             out_filename if it has length >1
@@ -238,6 +238,9 @@ def mergeDFs(data_frames, out_filename):
 
     df_merged = reduce(lambda left, right: pd.merge(left, right, on = ['coords', 'lon', 'lat'],
                                                     how = 'outer', suffixes = ('', '_y')), data_frames)
+    # now get rid of duplicated columns, yes will sometimes lose some data...
+    df_merged.drop(df_merged.filter(regex = '_y$').columns, axis = 1, inplace = True)
+
     # df_merged = df_merged.loc[~df_merged.index.duplicated(), :].copy()
     # df_merged.reset_index(inplace=True)
     ic(df_merged.head(2))
@@ -245,13 +248,13 @@ def mergeDFs(data_frames, out_filename):
     ic(df_merged.columns)
 
     if len(out_filename) > 1:
-        df_merged.to_csv(out_filename, sep = "\t", index=False)
+        df_merged.to_csv(out_filename, sep = "\t", index = False)
         ic(out_filename)
     return df_merged
 
 
-def createTotal(df_merged_all_categories, categories, total_key_to_be):
-    """  createTotal
+def create_total(df_merged_all_categories, categories, total_key_to_be):
+    """  create_total
             Sums up the occurrences of evidence from different sources(essentially the categories)
             i.e. count the none null values.
             The solution in the end was simple, but took me 2 hours to work out!
@@ -323,8 +326,8 @@ def createTotal(df_merged_all_categories, categories, total_key_to_be):
 #     return df1
 
 
-def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rerun):
-    """  categoryPlotting
+def category_plotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rerun):
+    """  category_plotting
                 plotting using the category column subset
                 is using the scope aspect of plotly, this uses the inbuilt maps rather than the shapefile maps
         __params__:
@@ -332,10 +335,11 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         __returns__:
 
     """
+    ic(full_rerun)
     marker_size = marker_size_default = 4
 
     ic(df_merged_all_categories.head(3))
-    width =1500
+    width = 1500
     scope = 'world'
     # cat = 'ena_country'
     # ic(cat)
@@ -355,44 +359,49 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
     all_categories.append("freshwater_key_combined")
     for cat in all_categories:
         ic(cat)
-        ic(df_merged_all_categories[cat].value_counts().rename_axis('unique_values').reset_index(name='counts').head(5))
+        ic(df_merged_all_categories[cat].value_counts().rename_axis('unique_values').reset_index(name = 'counts').head(
+            5))
 
-    def create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format):
+    def create_cat_figure(figure_title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus,
+                          figure_format):
         """create_cat_figure
         plots the data on a map essentially
 
-        :param title_string:
+        :param figure_title_string:
         :param color_value:
         :param scope:
         :param out_graph_file:
         :param width:
         :param marker_size:
         :param showlegendStatus:
-        :param format:
+        :param figure_format:
         :return:
         """
-        if showlegendStatus == False:
-            title_string = ""
+        if not showlegendStatus:
+            figure_title_string = ""
         fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
                              width = width, color = color_value,
-                             title = title_string,
+                             title = figure_title_string,
                              scope = scope)
         fig.update_traces(marker = dict(size = marker_size))
         fig.update_layout(
             autosize = False,
             width = 1000,
             height = 1000, )
-        if showlegendStatus == False:
+        if not showlegendStatus:
             fig.update_layout(showlegend = False)
 
         ic(out_graph_file)
-        plotly.io.write_image(fig, out_graph_file, format = format)
-        #fig.show()
+        plotly.io.write_image(fig, out_graph_file, format = figure_format)
+        # fig.show()
         return fig
-    def create_cat_figure_w_color(df,title_string, color_value, color_discrete_map, scope, out_graph_file, width, marker_size, showlegendStatus, format):
+
+    def create_cat_figure_w_color(df, title_string, color_value, color_discrete_map, scope, out_graph_file, width,
+                                  marker_size, showlegendStatus, figure_format):
         """create_cat_figure
         plots the data on a map essentially
 
+        :param df:
         :param title_string:
         :param color_value:
         :param scope:
@@ -400,10 +409,10 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         :param width:
         :param marker_size:
         :param showlegendStatus:
-        :param format:
+        :param figure_format:
         :return:
         """
-        if showlegendStatus == False:
+        if not showlegendStatus:
             title_string = ""
         fig = px.scatter_geo(df, "lat", "lon",
                              width = width, color = color_value,
@@ -412,15 +421,15 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
                              color_discrete_map = color_discrete_map
                              )
         fig.update_traces(marker = dict(size = marker_size))
-        if showlegendStatus == False:
+        if not showlegendStatus:
             fig.update_layout(showlegend = False)
 
         ic(out_graph_file)
-        plotly.io.write_image(fig, out_graph_file, format = format)
-        #fig.show()
+        plotly.io.write_image(fig, out_graph_file, format = figure_format)
+        # fig.show()
         return fig
 
-    def plot_pie(df, cat,  out_file):
+    def plot_pie(df, cat, out_file):
         title = cat
         fig = px.pie(df[cat],
                      values = df['counts'],
@@ -430,65 +439,65 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         fig.update_layout(legend = dict(yanchor = "top", y = 0.9, xanchor = "left", x = 0.5))
         ic(out_file)
         fig.write_image(out_file)
-        #fig.show()
+        # fig.show()
         return fig
 
-    def plot_location_designation():
-        """
-
-        :return:
-        """
-        showlegendStatus = True
-        title_string = 'ENA samples in Location Designation based on multiple shapefiles'
-        color_value = "location_designation"
-        color_discrete_map = {'terrestrial': 'rgb(30,144,255)', 'marine': 'rgb(220,20,60)',
-                              'marine and terrestrial': 'rgb(50,205,50)', 'neither marine nor terrestrial': 'rgb(148,0,211)'}
-
-        format = 'png'
-        out_graph_file = plot_dir + 'merge_all_location_designation.' + format
-        fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
-                             width = width, color = color_value,
-                             title = title_string,
-                             scope = scope,
-                             color_discrete_map=color_discrete_map)
-        fig.update_traces(marker = dict(size = marker_size))
-        ic(out_graph_file)
-        fig.show()
-        plotly.io.write_image(fig, out_graph_file, format = format)
-
-        df_merged_all_categories_just = df_merged_all_categories.query('location_designation == "marine and terrestrial"')
-        out_file = plot_dir + 'merge_all_location_designation_m+t.' + format
-        cat = 'location_designation'
-        title = 'merge_all_location_designation_m+t.'
-        create_cat_figure_w_color(df_merged_all_categories_just, title, cat, color_discrete_map, scope, out_file, width, marker_size, showlegendStatus,
-                                  format)
-
-        title = 'location_designation using GPS coordinates'
-        out_file = plot_dir + "location_designation_using_GPS_pie.png"
-        fig = px.pie(df_merged_all_categories["location_designation"],
-                     values = df_merged_all_categories["location_designation"].value_counts().values,
-                     names = df_merged_all_categories["location_designation"].value_counts().index, title = title,
-                     color_discrete_map=color_discrete_map)
-        fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
-        ic(out_file)
-        fig.show()
-        fig.write_image(out_file)
-
-        ic(df_merged_all_categories["location_designation"].value_counts())
-
-        # plot_location_designation() as a pie chart
-
-        ic(df_merged_all_categories.columns)
-        cat = "eez_iho_intersect_category"
-        title = cat
-        df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
-        ic(df_all.describe())
-        df_top = df_all.head(10)
-        df_rest = df_all.iloc[10:]
-        other_count = df_rest["counts"].sum()
-        df_top.loc[len(df_top)] = ['other_areas', other_count]
-        out_file = plot_dir + "eez_iho_intersect_category_using_GPS_pie.png"
-        plot_pie(df_top, cat, out_file)
+    # def plot_location_designation():
+    #     """
+    #
+    #     :return:
+    #     """
+    #     showlegendStatus = True
+    #     title_string = 'ENA samples in Location Designation based on multiple shapefiles'
+    #     color_value = "location_designation"
+    #     color_discrete_map = {'terrestrial': 'rgb(30,144,255)', 'marine': 'rgb(220,20,60)',
+    #                           'marine and terrestrial': 'rgb(50,205,50)',
+    #                           'neither marine nor terrestrial': 'rgb(148,0,211)'}
+    #
+    #     format = 'png'
+    #     out_graph_file = plot_dir + 'merge_all_location_designation.' + format
+    #     fig = px.scatter_geo(df_merged_all_categories, "lat", "lon",
+    #                          width = width, color = color_value,
+    #                          title = title_string,
+    #                          scope = scope,
+    #                          color_discrete_map = color_discrete_map)
+    #     fig.update_traces(marker = dict(size = marker_size))
+    #     ic(out_graph_file)
+    #     fig.show()
+    #     plotly.io.write_image(fig, out_graph_file, format = format)
+    #
+    # df_merged_all_categories_just = df_merged_all_categories.query( 'location_designation == "marine and
+    # terrestrial"') out_file = plot_dir + 'merge_all_location_designation_m+t.' + format cat =
+    # 'location_designation' title = 'merge_all_location_designation_m+t.' create_cat_figure_w_color(
+    # df_merged_all_categories_just, title, cat, color_discrete_map, scope, out_file, width, marker_size,
+    # showlegendStatus, format)
+    #
+    #     title = 'location_designation using GPS coordinates'
+    #     out_file = plot_dir + "location_designation_using_GPS_pie.png"
+    #     fig = px.pie(df_merged_all_categories["location_designation"],
+    #                  values = df_merged_all_categories["location_designation"].value_counts().values,
+    #                  names = df_merged_all_categories["location_designation"].value_counts().index, title = title,
+    #                  color_discrete_map = color_discrete_map)
+    #     fig.update_traces(hoverinfo = 'label+percent', textinfo = 'value')
+    #     ic(out_file)
+    #     fig.show()
+    #     fig.write_image(out_file)
+    #
+    #     ic(df_merged_all_categories["location_designation"].value_counts())
+    #
+    #     # plot_location_designation() as a pie chart
+    #
+    #     ic(df_merged_all_categories.columns)
+    #     cat = "eez_iho_intersect_category"
+    #     title = cat
+    #     df_all = df_merged_all_categories[cat].value_counts().rename_axis(cat).to_frame('counts').reset_index()
+    #     ic(df_all.describe())
+    #     df_top = df_all.head(10)
+    #     df_rest = df_all.iloc[10:]
+    #     other_count = df_rest["counts"].sum()
+    #     df_top.loc[len(df_top)] = ['other_areas', other_count]
+    #     out_file = plot_dir + "eez_iho_intersect_category_using_GPS_pie.png"
+    #     plot_pie(df_top, cat, out_file)
 
     def plot_longhurst():
 
@@ -500,14 +509,15 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         out_file = plot_dir + "longhurst_category_using_GPS_pie.png"
         plot_pie(df_all, cat, out_file)
         out_file = plot_dir + "longhurst_category_using_GPS_map.png"
-        format="png"
+        format = "png"
         showlegendStatus = True
         color_discrete_map = {'Coastal': 'rgb(30,144,255)', 'Trades': 'rgb(220,20,60)',
                               'Westerlies': 'rgb(50,205,50)',
                               'Polar': 'rgb(148,0,211)'}
-        create_cat_figure_w_color(df_merged_all_categories, title, cat, color_discrete_map, scope, out_file, width, marker_size, showlegendStatus, format)
+        create_cat_figure_w_color(df_merged_all_categories, title, cat, color_discrete_map, scope, out_file, width,
+                                  marker_size, showlegendStatus, format)
 
-    #plotting freshwater
+    # plotting freshwater
     format = 'png'
     showlegendStatus = True
     marker_size = 2
@@ -517,10 +527,11 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         color_value = cat
         out_graph_file = plot_dir + cat + scope + '.' + format
         width = 1500
-        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
+        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus,
+                          format)
 
-    #ic("early abort")
-    #sys.exit()
+    # ic("early abort")
+    # sys.exit()
 
     title_string = 'ENA samples in Sea category (water polygons)'
     color_value = "sea_category"
@@ -533,7 +544,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
     out_graph_file = plot_dir + 'feow_category.' + format
     create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    scope= 'europe'
+    scope = 'europe'
     title_string = "ENA Samples in Hydrosheds in " + scope
     color_value = "feow_category"
     out_graph_file = plot_dir + 'feow_category_' + scope + '.' + format
@@ -544,7 +555,9 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
         format = 'png'
         out_graph_file = plot_dir + 'merge_all_intersect_eez_iho_cats' + scope + '.' + format
         color_value = "eez_iho_intersect_category"
-        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
+        create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus,
+                          format)
+
     scope = "world"
     marker_size = marker_size_default
     showlegendStatus = False
@@ -561,10 +574,9 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
     out_graph_file = plot_dir + 'merge_all_IHO_cats.' + format
     create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
 
-    # title_string = 'ENA samples in ENA Country Categories'
-    # color_value = "ena_country"
-    # out_graph_file = plot_dir + 'merge_all_ENA_country_cats.' + format
-    # create_cat_figure(title_string, color_value, scope, out_graph_file, width, marker_size, showlegendStatus, format)
+    # figure_title_string = 'ENA samples in ENA Country Categories' color_value = "ena_country" out_graph_file =
+    # plot_dir + 'merge_all_ENA_country_cats.' + figure_format create_cat_figure(figure_title_string, color_value,
+    # scope, out_graph_file, width, marker_size, showlegendStatus, figure_format)
 
     title_string = 'ENA samples in World Admin Categories'
     color_value = "worldAdmin_category"
@@ -578,6 +590,7 @@ def categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rer
 
     return
 
+
 def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all):
     """  get_category_stats
 
@@ -588,7 +601,6 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
     """
     ic()
     ic(df_merged_all_categories.head())
-
 
     ena_uniq_lat_lon_total = df_merged_all_categories.shape[0]
     ic(ena_uniq_lat_lon_total)
@@ -604,9 +616,10 @@ def get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merg
     print(f"ena_total_sample_count = {ena_total_sample_count}")
     field_name: str
     for field_name in stats_dict:
-        print(f"{field_name}={stats_dict[field_name]} = {(100 * stats_dict[field_name]/ena_uniq_lat_lon_total):.2f}%")
+        print(f"{field_name}={stats_dict[field_name]} = {(100 * stats_dict[field_name] / ena_uniq_lat_lon_total):.2f}%")
 
     return
+
 
 def extra_cat_merging(hit_cats_info, df_merged_all_categories):
     """"
@@ -614,24 +627,28 @@ def extra_cat_merging(hit_cats_info, df_merged_all_categories):
     """
     ic()
 
-    ic("freshwater extra merging, to get the freshwater type, n.b. is populated in order from .get_freshwater_cats_narrow()")
+    ic("freshwater extra merging, to get the freshwater type, n.b. is populated in order from "
+       ".get_freshwater_cats_narrow()")
     ic(hit_cats_info.get_freshwater_cats_narrow())
     for cat in hit_cats_info.get_freshwater_cats_narrow():
         ic(cat)
-        df_merged_all_categories.loc[df_merged_all_categories[cat].notnull(), 'freshwater_key_combined'] = df_merged_all_categories[cat]
+        df_merged_all_categories.loc[df_merged_all_categories[cat].notnull(), 'freshwater_key_combined'] = \
+            df_merged_all_categories[cat]
 
-    #ic(df_merged_all_categories["feow_category"].value_counts())
-    df_merged_all_categories.loc[df_merged_all_categories[cat].notnull(), 'freshwater_key_combined'] = \
-    df_merged_all_categories["feow_category"]
+    # ic(df_merged_all_categories["feow_category"].value_counts())
+    # df_merged_all_categories.loc[df_merged_all_categories[cat].notnull(), 'freshwater_key_combined'] = \
+    #    df_merged_all_categories["feow_category"]
 
-    #some basic harmonisation
-    df_merged_all_categories.loc[df_merged_all_categories['freshwater_key_combined'] == "Lakes", 'freshwater_key_combined'] = "Lake"
+    # some basic harmonisation
+    df_merged_all_categories.loc[
+        df_merged_all_categories['freshwater_key_combined'] == "Lakes", 'freshwater_key_combined'] = "Lake"
     df_merged_all_categories.loc[
         df_merged_all_categories['freshwater_key_combined'] == "Lake Centerline", 'freshwater_key_combined'] = "Lake"
-    #ic(df_merged_all_categories['freshwater_key_combined'].value_counts())
-    #sys.exit()
+    # ic(df_merged_all_categories['freshwater_key_combined'].value_counts())
+    # sys.exit()
 
     return df_merged_all_categories
+
 
 def choose_location_designations(df_merged_all_categories):
     """choose_location_designations
@@ -671,12 +688,13 @@ def choose_location_designations(df_merged_all_categories):
     df_merged_all_categories.loc[
         (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
         'location_designation'] = 'neither marine nor terrestrial'
-    df_merged_all_categories.loc[df_merged_all_categories['location_designation_marine'] == True,
-        'location_designation_aquatic'] = True
-    df_merged_all_categories.loc[df_merged_all_categories['location_designation_freshwater'] == True,
-         'location_designation_aquatic'] = True
+    df_merged_all_categories.loc[
+        df_merged_all_categories['location_designation_marine'] == True, 'location_designation_aquatic'] = True
+    df_merged_all_categories.loc[
+        df_merged_all_categories['location_designation_freshwater'] == True, 'location_designation_aquatic'] = True
     pd.options.mode.chained_assignment = 'warn'
     return df_merged_all_categories
+
 
 def analyseFreshwater():
     """
@@ -686,16 +704,17 @@ def analyseFreshwater():
     ic()
     (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
     result_file = analysis_dir + '/merged_all_categories.tsv'
-    df = pd.read_csv(result_file, sep="\t")
+    df = pd.read_csv(result_file, sep = "\t")
     ic(df.shape)
-    ic(df.sample(n=4))
+    ic(df.sample(n = 4))
 
     hit_cats_info = MyHitDataInfo(hit_dir)
     # hit_cats_info.put_category_info_dict(category_info_dict)
     # hit_cats_info.write_category_info_dict_json()
-    #hit_cats_info.read_category_info_dict_json()
+    # hit_cats_info.read_category_info_dict_json()
     cols2keep = []
-    other = ["lat", "lon", "location_designation_freshwater", "location_designation_aquatic", "freshwater_key_combined", "freshwater_total"]
+    other = ["lat", "lon", "location_designation_freshwater", "location_designation_aquatic", "freshwater_key_combined",
+             "freshwater_total"]
     for col in other:
         cols2keep.append(col)
     for col in hit_cats_info.get_freshwater_cats():
@@ -703,7 +722,7 @@ def analyseFreshwater():
     (df["freshwater_total"].value_counts())
     df = df[cols2keep].query('freshwater_total > 0')
     ic(df.shape)
-    ic(df.sample(n=4))
+    ic(df.sample(n = 4))
     ic(df["freshwater_total"].value_counts())
     ic(df["freshwater_key_combined"].value_counts())
     ic(df["feow_category"].value_counts())
@@ -720,24 +739,26 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
         __returns__:
 
     """
-
-    all_columns = df_merged_all.columns
-    #ic(all_columns)
+    ic(df_merged_all.columns)
+    test_cats = [match for match in list(df_merged_all.columns) if "category" in match]
+    ic(test_cats)
+    ic(df_merged_all.head(2))
     categories = hit_cats_info.get_category_list()
-    #ic(categories)
-    #columns2keep = ['lat', 'lon', 'coords', 'ena_country', 'ena_region'] + categories
+    # ic(categories)
+    # columns2keep = ['lat', 'lon', 'coords', 'ena_country', 'ena_region'] + categories
     columns2keep = ['lat', 'lon', 'coords'] + categories
-    #ic(columns2keep)
+    ic(columns2keep)
+    ic(df_merged_all.columns)
     df_merged_all_categories = df_merged_all[columns2keep]
-    #ic(df_merged_all_categories.head(2))
+
 
     category_dict = hit_cats_info.get_domain_cat_dict()
     ic(category_dict)
     ic()
 
-    df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['marine'], 'sea_total')
-    df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['terrestrial'], 'land_total')
-    df_merged_all_categories = createTotal(df_merged_all_categories, category_dict['freshwater'], 'freshwater_total')
+    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['marine'], 'sea_total')
+    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['terrestrial'], 'land_total')
+    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['freshwater'], 'freshwater_total')
 
     df_merged_all_categories = choose_location_designations(df_merged_all_categories)
 
@@ -748,7 +769,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
     ic(df_merged_all_categories.shape[0])
     ic(df_merged_all_categories["location_designation"].value_counts())
     ic(out_file)
-    df_merged_all_categories.to_csv(out_file, sep = '\t', index=False)
+    df_merged_all_categories.to_csv(out_file, sep = '\t', index = False)
 
     ic("========================================================")
 
@@ -756,9 +777,8 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
 
 
 def mergeAndAnalysis(hit_df_dict, hit_dir, hit_cats_info):
-    """  mergeAndAnalysis
-            is used to merge a bunch of data frames. df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds,
-                     df_intersect_eez_iho
+    """  mergeAndAnalysis is used to merge a bunch of data frames. df_ena, df_eez, df_longhurst, df_seaIHO,
+    df_seawater, df_land, df_worldAdmin, df_hydrosheds, df_intersect_eez_iho
 
         __params__:
         df_ena, df_eez, df_longhurst, df_seaIHO, df_seawater, df_land, df_worldAdmin, df_hydrosheds,
@@ -781,39 +801,40 @@ def mergeAndAnalysis(hit_df_dict, hit_dir, hit_cats_info):
         freshwater_frames.append(hit_df_dict[cat])
     out_filename = hit_dir + 'merged_freshwater.tsv'
     ic(out_filename)
-    df_merged_freshwater = mergeDFs(freshwater_frames, out_filename)
+    df_merged_freshwater = merge_dfs(freshwater_frames, out_filename)
 
     sea_data_frames = []
     for cat in domain_cat_dict['marine']:
         sea_data_frames.append(hit_df_dict[cat])
     out_filename = hit_dir + 'merged_sea.tsv'
-    df_merged_sea = mergeDFs(sea_data_frames, out_filename)
+    df_merged_sea = merge_dfs(sea_data_frames, out_filename)
 
     land_data_frames = []
     for cat in domain_cat_dict['terrestrial']:
         land_data_frames.append(hit_df_dict[cat])
     out_filename = hit_dir + 'merged_land.tsv'
-    df_merged_land = mergeDFs(land_data_frames, out_filename)
+    df_merged_land = merge_dfs(land_data_frames, out_filename)
 
     data_frames = [df_merged_sea, df_merged_land, df_merged_freshwater]
     out_filename = hit_dir + 'merged_all.tsv'
-    df_merged_all = mergeDFs(data_frames, out_filename)
+    df_merged_all = merge_dfs(data_frames, out_filename)
     ic(df_merged_all.head(3))
 
-    df_merged_all = mergeDFs(data_frames, out_filename)
+    df_merged_all = merge_dfs(data_frames, out_filename)
 
     return df_merged_all
 
 
 def processHitFiles(hit_dir, hit_cats_info):
-    """  processHitFiles
-         This is where one has to add a little metadata about the category and domain for each hit file. This is used else where!
+    """  processHitFiles This is where one has to add a little metadata about the category and domain for each hit
+    file. This is used else where!
 
          drop rows where no hits
          some tidying up: e.g. columns that usually empty, regex of strange chars.
          generating a column_category to give a gross overview
 
-         category_info_dict metadata about the category and domain  -->   get_category_info_dict object method at top of file
+         category_info_dict metadata about the category and domain  -->   get_category_info_dict object method at top
+         of file
 
         __params__: hit_dir,
                     hit_cats_info   - object reference for putting data to reuse later in script.
@@ -825,7 +846,19 @@ def processHitFiles(hit_dir, hit_cats_info):
     ic()
     hit_df_dict = {}
     category_info_dict = {}
+
     def add_cat(category_info_dict, short, hit_dir, hitfile, category, domains):
+        """
+        Add a category and domain, is one of the most important functions.
+        add_cat will need to be edited  whenever a new hitfile is being added
+        :param category_info_dict:
+        :param short:
+        :param hit_dir:
+        :param hitfile:
+        :param category:
+        :param domains:
+        :return:
+        """
         ic(category)
         category_info_dict[category] = {}
         category_info_dict[category]["hitfile"] = hit_dir + hitfile
@@ -834,70 +867,101 @@ def processHitFiles(hit_dir, hit_cats_info):
         category_info_dict[category]["domains"] = domains
         return category_info_dict, category
 
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_fw", hit_dir, 'g200_fw_hits.tsv', 'g200_fw_category', ['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho", hit_dir,
+                                             'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['marine'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category,
+                                     'eez_iho_intersect')
+
+    (category_info_dict, category) = add_cat(category_info_dict, "g200_fw", hit_dir, 'g200_fw_hits.tsv',
+                                             'g200_fw_category', ['freshwater'])
     ic(category_info_dict)
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_marine",  hit_dir, 'g200_marine_hits.tsv',
-                                                  'g200_marine_category',['marine'])
+    (category_info_dict, category) = add_cat(category_info_dict, "g200_marine", hit_dir, 'g200_marine_hits.tsv',
+                                             'g200_marine_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
-    (category_info_dict, category)  = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv', 'g200_terr_category',['terrestrial'])
+    (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv',
+                                             'g200_terr_category', ['terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
-    (category_info_dict, category)  = add_cat(category_info_dict, "g200_terr", hit_dir, 'glwd_1_hits.tsv', 'glwd_1_category', ['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'glwd_1_hits.tsv',
+                                             'glwd_1_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
 
-    (category_info_dict, category)  = add_cat(category_info_dict, "glwd_2", hit_dir, 'glwd_2_hits.tsv', 'glwd_2_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', 'glwd_2_category', 'freshwater')
+    (category_info_dict, category) = add_cat(category_info_dict, "glwd_2", hit_dir, 'glwd_2_hits.tsv',
+                                             'glwd_2_category', ['freshwater'])
+    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', 'glwd_2_category',
+                                     'freshwater')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_lake_line",  hit_dir, 'ne_10m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_lake_line", hit_dir,
+                                             'ne_10m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
+                                             ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lake",  hit_dir, 'ne_10m_lake_hits.tsv', 'ne_10m_lake_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lake", hit_dir, 'ne_10m_lake_hits.tsv',
+                                             'ne_10m_lake_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_aus_line",  hit_dir, 'ne_10m_rivers_australia_line_hits.tsv', 'ne_10m_river_lake_aus_line_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_aus_line", hit_dir,
+                                             'ne_10m_rivers_australia_line_hits.tsv',
+                                             'ne_10m_river_lake_aus_line_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_eur_line",  hit_dir, 'ne_10m_rivers_europe_line_hits.tsv', 'ne_10m_river_eur_line_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_eur_line", hit_dir,
+                                             'ne_10m_rivers_europe_line_hits.tsv', 'ne_10m_river_eur_line_category',
+                                             ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_nam_line",  hit_dir, 'ne_10m_rivers_north_america_line_hits.tsv', 'ne_10m_river_nam_line_category',['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_nam_line", hit_dir,
+                                             'ne_10m_rivers_north_america_line_hits.tsv',
+                                             'ne_10m_river_nam_line_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_lake", hit_dir, 'ne_50m_lakes_hits.tsv', 'ne_50m_lake_category', ['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_lake", hit_dir, 'ne_50m_lakes_hits.tsv',
+                                             'ne_50m_lake_category', ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_river_lake_line", hit_dir, 'ne_50m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category', ['freshwater'])
+    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_river_lake_line", hit_dir,
+                                             'ne_50m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
+                                             ['freshwater'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
 
-
-    (category_info_dict, category) = add_cat(category_info_dict, "hydrosheds",  hit_dir, 'feow_hydrosheds_hits.tsv', 'feow_category',
+    (category_info_dict, category) = add_cat(category_info_dict, "hydrosheds", hit_dir, 'feow_hydrosheds_hits.tsv',
+                                             'feow_category',
                                              ['freshwater', 'terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'hydroshed')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "intersect_eez_iho",  hit_dir, 'intersect_eez_iho_hits.tsv', 'eez_iho_intersect_category', ['marine'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category, 'eez_iho_intersect')
+
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "seawater",  hit_dir, 'seawater_polygons_hits.tsv', 'sea_category', ['terrestrial'])
+    (category_info_dict, category) = add_cat(category_info_dict, "seawater", hit_dir, 'seawater_polygons_hits.tsv',
+                                             'sea_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'seawater')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "land",  hit_dir, 'land_polygons_hits.tsv', 'land_category', ['terrestrial'])
+    (category_info_dict, category) = add_cat(category_info_dict, "land", hit_dir, 'land_polygons_hits.tsv',
+                                             'land_category', ['terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'land')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "worldAdmin",  hit_dir, 'world-administrative-boundaries_hits.tsv', 'worldAdmin_category', ['terrestrial'])
+    (category_info_dict, category) = add_cat(category_info_dict, "worldAdmin", hit_dir,
+                                             'world-administrative-boundaries_hits.tsv', 'worldAdmin_category',
+                                             ['terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'region', category, 'land')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "seaIHO",  hit_dir, 'World_Seas_IHO_v3_hits.tsv', 'IHO_category', ['marine'])
+    (category_info_dict, category) = add_cat(category_info_dict, "seaIHO", hit_dir, 'World_Seas_IHO_v3_hits.tsv',
+                                             'IHO_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MRGID', category, 'sea')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "longhurst",  hit_dir, 'longhurst_v4_hits.tsv', 'longhurst_category', ['marine'])
+    (category_info_dict, category) = add_cat(category_info_dict, "longhurst", hit_dir, 'longhurst_v4_hits.tsv',
+                                             'longhurst_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'ProvCode', category, 'blank')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "eez",  hit_dir, 'eez_hits.tsv', 'eez_category', ['marine'])
+    (category_info_dict, category) = add_cat(category_info_dict, "eez", hit_dir, 'eez_hits.tsv', 'eez_category',
+                                             ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'GEONAME', category, 'EEZ')
 
+    ic(hit_df_dict.keys())
+    ic(hit_cats_info.get_domain_cat_dict())
     hit_cats_info.put_category_info_dict(category_info_dict)
     ic(hit_cats_info.get_category_list())
 
     return (hit_df_dict)
 
-def processTrawlFindings(yes, yes_both_not_eez , no, skip,trawl_count):
+
+def processTrawlFindings(yes, yes_both_not_eez, no, skip, trawl_count):
     """ processTrawlFindings
         __params__:
                passed_args
@@ -926,7 +990,7 @@ def processTrawlFindings(yes, yes_both_not_eez , no, skip,trawl_count):
         else:
             start_lon_minus_found = '_-' in no[external_id]['start_coords']
             end_lon_minus_found = '_-' in no[external_id]['end_coords']
-            if start_lon_minus_found != end_lon_minus_found :
+            if start_lon_minus_found != end_lon_minus_found:
                 # ic("error in longitudes")
                 coordinate_entry_errors[external_id] = no[external_id]
             elif no[external_id]['start_GEONAME'] == 'nan' and no[external_id]['end_GEONAME'] == 'nan':
@@ -947,7 +1011,8 @@ def processTrawlFindings(yes, yes_both_not_eez , no, skip,trawl_count):
     ic(different_EEZs)
     ic(coordinate_entry_errors)
 
-def analyse_trawl_data(df_merged_all,df_trawl_samples):
+
+def analyse_trawl_data(df_merged_all, df_trawl_samples):
     """ analyse_trawl_data(df_merged_all,df_trawl_samples)
         __params__:
                passed_args
@@ -963,29 +1028,27 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
                                       df_trawl_samples['external_id'].apply(str)
     df_trawl_samples['actual_start_index'] = df_trawl_samples['start_index']
 
-
     df_trawl_samples['end_index'] = df_trawl_samples['lon_end'].apply(str) + "_" + \
-                                      df_trawl_samples['lat_end'].apply(str)+ "_" + \
-                                      df_trawl_samples['external_id'].apply(str)
+                                    df_trawl_samples['lat_end'].apply(str) + "_" + \
+                                    df_trawl_samples['external_id'].apply(str)
     df_trawl_samples['actual_end_index'] = df_trawl_samples['end_index']
 
     """ want to look up each pair of lat/lon starts and sea if they are in the same EEZ as lat/lon ends
     so doing via doing two intersection's """
-    df_merged_starts = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
-                                right_on=['lon_start','lat_start'], suffixes = ('', '_y'))
+    df_merged_starts = pd.merge(df_merged_all, df_trawl_samples, how = 'inner', left_on = ['lon', 'lat'],
+                                right_on = ['lon_start', 'lat_start'], suffixes = ('', '_y'))
 
     df_merged_starts = df_merged_starts.set_index('actual_start_index')
     # df_merged_starts = df_merged_starts[df_merged_starts['external_id'].notna()].reset_index()
     ic(df_merged_starts.shape[0])
     ic(df_merged_starts.head(2))
 
-    df_merged_ends = pd.merge(df_merged_all,df_trawl_samples, how='inner',left_on=['lon','lat'],
-                                right_on=['lon_end','lat_end'],suffixes = ('', '_y'))
+    df_merged_ends = pd.merge(df_merged_all, df_trawl_samples, how = 'inner', left_on = ['lon', 'lat'],
+                              right_on = ['lon_end', 'lat_end'], suffixes = ('', '_y'))
     df_merged_ends = df_merged_ends.set_index('actual_end_index')
     # df_merged_ends = df_merged_ends[df_merged_ends['external_id'].notna()].reset_index()
     ic(df_merged_ends.shape[0])
     ic(df_merged_ends.head(2))
-
 
     count = 0
     yes = {}
@@ -1005,23 +1068,21 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
         if 'end_index' not in row:
             local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in start dict'}
             ic(local_dict)
-            next()
+            next
         elif 'end_index' not in df_merged_ends:
             local_dict = {'start_coords': start_index, 'problem': 'no end_index defined in end dict'}
             ic(local_dict)
-            next()
+            next
         else:
             ic("so end_index found in both row and in df_merged_ends")
 
         df = pd.DataFrame()
         row_end_index = row['end_index']
-        ffs=0
 
         try:
             ic("in try for looking up merged_ends")
             ic(row_end_index)
-            df  = df_merged_ends.loc[[row_end_index]]
-            ffs=1
+            df = df_merged_ends.loc[[row_end_index]]
             df = df.reset_index()
             # ic(df)
             ic(df.shape[0])
@@ -1067,11 +1128,11 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
             # df = df.set_index('external_id')
             ic(df.loc[[row['external_id']]])
             ic(df.loc[[row['external_id']]].shape[0])
-            df_total_row_num= df.loc[[row['external_id']]].shape[0]
+            df_total_row_num = df.loc[[row['external_id']]].shape[0]
             short_end = []
-            if(df_total_row_num == 1):
+            if df_total_row_num == 1:
                 short_end = df.loc[row['external_id']].to_dict()
-            elif(df_total_row_num >1):
+            elif df_total_row_num > 1:
                 ic("Multiple matches! So just select first one, as all checked are identical.")
                 df_tmp = df.loc[[row['external_id']]].head(1)
                 short_end = df_tmp.squeeze().to_dict()
@@ -1084,8 +1145,8 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
             key_name = 'GEONAME'
             start_key = "start_" + key_name
             end_key = "end_" + key_name
-            local_dict = {'start_coords': start_index , start_key: row[key_name], end_key: short_end[key_name],
-                          'end_coords': short_end['end_index'] }
+            local_dict = {'start_coords': start_index, start_key: row[key_name], end_key: short_end[key_name],
+                          'end_coords': short_end['end_index']}
             if row[key_name] == short_end[key_name]:
                 yes[row['external_id']] = local_dict
             elif row[key_name] == 'nan' and short_end[key_name] == 'nan':
@@ -1105,10 +1166,10 @@ def analyse_trawl_data(df_merged_all,df_trawl_samples):
             # if count > 100:
             #      break
 
-    processTrawlFindings(yes,yes_both_not_eez,no,skip,count)
-
+    processTrawlFindings(yes, yes_both_not_eez, no, skip, count)
 
     return
+
 
 def clean_merge_all(df_merged_all):
     """ clean_merge_all
@@ -1123,10 +1184,11 @@ def clean_merge_all(df_merged_all):
     if 'GEONAME' in df_merged_all.columns:
         df_merged_all['GEONAME'] = df_merged_all['GEONAME'].astype(str)
 
-        #geoname_list = df_merged_all['GEONAME'].unique()
+        # geoname_list = df_merged_all['GEONAME'].unique()
         # ic(sorted(geoname_list))
 
     return df_merged_all
+
 
 def analysis_lat_lon(sample_dir):
     """ analysis_lat_lon
@@ -1152,12 +1214,11 @@ def analysis_lat_lon(sample_dir):
     ic(df_filtered.head(100))
 
     ic(df_filtered['lat_len'].value_counts())
-    df_tmp = df_filtered.drop(columns=['lat', 'lon']).groupby('lat_len').size().to_frame('count').reset_index()
+    df_tmp = df_filtered.drop(columns = ['lat', 'lon']).groupby('lat_len').size().to_frame('count').reset_index()
     ic(df_tmp)
 
-    df_tmp = df_filtered.drop(columns=['lat', 'lon']).groupby('lon_len').size().to_frame('count').reset_index()
+    df_tmp = df_filtered.drop(columns = ['lat', 'lon']).groupby('lon_len').size().to_frame('count').reset_index()
     ic(df_tmp)
-
 
     return df
 
@@ -1167,8 +1228,8 @@ def main():
         __params__:
                passed_args
     """
-    #analyseFreshwater()
-    #sys.exit()
+    # analyseFreshwater()
+    # sys.exit()
 
     full_rerun = True
 
@@ -1181,7 +1242,7 @@ def main():
 
     # get all the files processed
     if full_rerun:
-        #df_ena = get_all_ena_lat_lon_geo(sample_dir)
+        # df_ena = get_all_ena_lat_lon_geo(sample_dir)
         fast_run = True
         pickle_file = analysis_dir + "in_analysis_df_merged_all.pickle"
         if not os.path.isfile(pickle_file) or (fast_run is False):
@@ -1192,6 +1253,10 @@ def main():
             df_merged_all = get_pickleObj(pickle_file)
         ic(df_merged_all.columns)
         ic(hit_cats_info.get_freshwater_cats())
+        ic(hit_cats_info.get_marine_cats())
+        category_fields = [match for match in df_merged_all.columns if "category" in match]
+        ic(category_fields)
+        sys.exit()
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info)
         ic("Finished full_rerun, including generation of ", merged_all_categories_file)
     else:
@@ -1204,7 +1269,7 @@ def main():
     get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
 
     analyseFreshwater()
-    #sys.exit()
+    # sys.exit()
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)
@@ -1214,9 +1279,9 @@ def main():
         Done so that can save the time etc. of re-running the merging
      '''
 
-    categoryPlotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rerun)
+    category_plotting(df_merged_all_categories, plot_dir, hit_cats_info, full_rerun)
     ic("Aborting early")
-    #sys.exit()
+    # sys.exit()
     if full_rerun == False:
         ic("Aborting early")
         sys.exit()

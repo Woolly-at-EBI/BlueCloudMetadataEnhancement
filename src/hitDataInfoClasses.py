@@ -129,6 +129,12 @@ class MyHitDataInfo:
         ic(self._domain_cat_dict)
         return self._domain_cat_dict
 
+    def get_terrestrial_cats(self):
+        return self._domain_cat_dict['terrestrial']
+
+    def get_marine_cats(self):
+        return self._domain_cat_dict['marine']
+
     def get_freshwater_cats(self):
         return self._domain_cat_dict['freshwater']
 

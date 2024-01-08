@@ -11,6 +11,7 @@ __docformat___ = 'reStructuredText'
 
 import argparse
 import re
+import sys
 
 import numpy as np
 import pandas as pd
@@ -26,12 +27,14 @@ pd.set_option('display.width', 1000)
 
 def demo_format(test_status):
     ic()
+    ic(test_status)
     my_record = NewSampleCuration(useENAAutoCurationValues = True)
     ic(my_record.get_filled_dict())
     sample_id = 'SAMD'
     ic(my_record.attributeDelete)
     my_record.recordId = sample_id
     ic(my_record.get_filled_dict())
+
 
 def get_multi_field_dict():
     """ get_multi_field_dict dictionary for providing which fields are associated and to thus provide together in the
@@ -66,7 +69,9 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     """process_supercat_fields
         process all the EEZ etc. relevant fields and return a list of sample curations in JSON format to make.
         and print to file
-
+        trying to do relatively efficiently by using the pandas, although doing apply to row by row!
+            def createIndividualSubmissionsJson(row):
+            def createMultiSubmissionsJson(row):
     :param debug_status:
     :param df_merge_sea_ena:
     :param super_category:
@@ -75,15 +80,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     """
     ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     ic()
-    df_merge_sea_ena = df_merge_sea_ena.head(2)
-    ic(df_merge_sea_ena.sample(n = 2))
-    ic(df_merge_sea_ena.columns)
-    # super_category = 'EEZ'
-
-    curation_list = []
-    ic()
-
-    # sys.exit()
+    ic(debug_status)
 
     def createIndividualSubmissionsJson(row):
         """
@@ -187,11 +184,17 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             # sys.exit()
             return my_record.get_filled_json()
 
-    # comparing the first value with the rest, as want to know if all values are the same
+    df_merge_sea_ena = df_merge_sea_ena.head(2)
+    ic(df_merge_sea_ena.sample(n = 2))
+    ic(df_merge_sea_ena.columns)
+    # super_category = 'EEZ'
 
-    curation_types2add = []
+    curation_list = []
+    ic()
+
+    # sys.exit()
+    # comparing the first value with the rest, as want to know if all values are the same
     assertion_additional_infoVal = ""
-    super_category_name = super_category
     multi_field_dict = get_multi_field_dict()
 
     if super_category == "EEZ":
@@ -216,22 +219,11 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     else:
         ic(f"WARNING: {super_category} not recognised")
         sys.exit()
-    # ic(multi_field_dict)
-    # ic(super_category)
-    # needed_fields = multi_field_dict[super_category][super_category_name]
-    # needed_fields.append('accession')
-    # ic(needed_fields)
-    # ic(df_specific.columns)
-    # df_specific = df_specific[needed_fields].drop_duplicates()
-    if debug_status:
-        # df_specific = df_specific.sample(n=2)
-        ic()
 
     for field in curation_types2add:
         ic()
         dom_type = ":".join([super_category, field])
-        ic(dom_type)
-        ic(super_category + " " + field)
+        ic(f"{dom_type} {super_category} {field}")
         lc_field = field.lower()
 
         # if(df_specific[field].isnull().all() or (df_specific.loc[0,field] == 0 and is_unique(df_specific[field]))):
@@ -243,15 +235,13 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             ic(field)
             ic(df_specific.columns)
             ic(df_specific[field].dtype)
-            # ic(df_specific[field].value_counts())
-            # during the below some empty "" values are created in json_col
 
+            # during the below some empty "" values are created in json_col
             if "TERRITORY" in field:
                 result = re.search(r"(\d+)$", field)
                 attributePostVal = "EEZ-territory-level-" + result.group(1)
                 # Stephane's wish:   "EEZ-territory-level-1"
                 # "Japan (mrgid:2121) (ISO3166-1 alpha-3:JPN) (ISO3166-1 num-3:392)"
-                ic(attributePostVal)
             elif "SOVEREIGN" in field:
                 result = re.search(r"(\d+)$", field)
                 attributePostVal = "EEZ-sovereign-level-" + result.group(1)
@@ -263,8 +253,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 attributePostVal = "EEZ-IHO-intersect-name"
             else:
                 attributePostVal = ":".join([super_category_name, lc_field.removeprefix('intersect_')])
-            # else:
-            # ic(f"WARNING: skipping as nowt extra process detected for {field}")
+
             ic()
             ic(attributePostVal)
 
@@ -272,18 +261,18 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 ic(f"{field} in {multi_field_dict[super_category][field]}")
                 df_specific['json_col'] = df_specific.apply(createMultiSubmissionsJson, axis = 1)
             else:
+                ic(f"{field} not in {multi_field_dict[super_category][field]}")
                 df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
+
             if is_numeric_dtype(df_specific[field]):
                 ic(f"{field} is numeric!")
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             else:
-                # ic(f"{field} is not numeric!")
                 df_specific.loc[df_specific[field].isnull(), 'json_col'] = ""
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             local_list = df_specific['json_col'].values.tolist()
             # remove empty list items
             local_list = [i for i in local_list if i]
-            # ic("============", local_list)
 
             out_file = clearinghouse_data_dir + dom_type + '.json'
             ic(out_file)
@@ -363,8 +352,7 @@ def create_submit_curations_file(full_curation_list, out_file):
         ic(out_file)
         # with open(out_file, 'w') as fp:
         #     fp.write('\n'.join(full_curation_list))
-        submission_dict = {}
-        submission_dict['curations'] = []
+        submission_dict = {'curations': []}
 
         for json_string in full_curation_list:
             json_data = json.loads(json_string)
@@ -388,7 +376,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     """
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
-    annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
+    # annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
     annotation_list = ['IHO-EEZ']
 
     ic(df_merged_ena_sea.columns)
@@ -407,7 +395,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
         else:
             print(f"ERROR: annotation_type: {annotation_type} is unknown")
         ic(len(local_curation_list))
-    full_curation_list = []
+    # full_curation_list = []
     # demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'
     # df_gps = pd.read_csv(in_file, sep='\t', nrows =100)

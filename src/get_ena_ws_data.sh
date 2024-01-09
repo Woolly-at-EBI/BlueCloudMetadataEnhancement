@@ -4,6 +4,7 @@
 
 sample_dir="../data/samples/downloads"
 cd $sample_dir || exit
+src_dir="/Users/woollard/projects/bluecloud/src"
 
 #the most important fields
 
@@ -16,15 +17,15 @@ outfile="all_sample_lat_lon_country.tsv"
 echo "From ENA, extract all lat lon column needed for the shapefile: " $outfile
 curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&fields=lon%2Clat%2Ccountry&includeMetagenomes=true&limit=0&result=sample" -H "accept: */*" > $outfile
 infile=$outfile
-echo "creating "$outfile" from "$infile
 outfile="all_sample_lat_longs_present_uniq.tsv"
+echo "creating "$outfile" from "$infile
 head -1 $infile | cut -f 1,2 > $outfile
 tail +2 $infile | cut -f 1,2 | sed '/^\t$/d' | sort | uniq >> $outfile
 
 infile="sample_much_raw.tsv"
 outfile="sample_much_raw.pa"
 echo ""creating "$outfile" from "$infile"
-./convertCSV2parquet.py -i sample_much_raw.tsv -o sample_much_raw.pa
+python3 $src_dir/convertCSV2parquet.py -i sample_much_raw.tsv -o sample_much_raw.pa
 
 
 #informative fields
@@ -43,4 +44,5 @@ curl -X GET 'https://www.ebi.ac.uk/ena/portal/api/returnFields?result=study'  -H
 
 outfile="ena_sample_species.txt"
 echo "All the species in ENA tax id and scientific_name"
-curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&fields=tax_id%2Cscientific_name&includeMetagenomes=true&result=sample" -H "accept: */*" | cut -f 2-3 | uniq | sort | uniq > $outfile
+curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&fields=tax_id%2Cscientific_name&includeMetagenomes=true&result=sample" -H "accept: */*" | cut -f 1-2 | uniq | sort | uniq > $outfile
+# n.b. did the initial uniq to get rid of many identical rows next to each other, it made the subsequent sort less onerous

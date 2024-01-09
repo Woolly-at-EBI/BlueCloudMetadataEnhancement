@@ -5,6 +5,7 @@
  - get_ena_species_count
  - get_ena_species_info
 
+    It is using already downloaded files. This will need to be periodically updated, by running get_ena_ws_data.sh
  ___author___ = "woollard@ebi.ac.uk"
 ___start_date___ = 2023-02-14
 __docformat___ = 'reStructuredText'
@@ -27,6 +28,8 @@ def get_all_ena_detailed_sample_info(debug_status):
          This is using ALL ENA samples whether they have GPS coordinates (lat lons) or not.
          It contains many, but not all columns of sample metadata
          refactored to both use a parquet and to check if this df has already been called and to reuse that
+
+         It is using an already downloaded file. This will need to be periodically updated.
         __params__:
                passed_args:
                   debug_status=test_bool
@@ -34,20 +37,16 @@ def get_all_ena_detailed_sample_info(debug_status):
             df_all_ena_sample_detail
     """
     ic()
-    ic(f"debug_status={debug_status}")
+    """    ic(f"debug_status={debug_status}") """
     key_name = 'df_all_ena_detailed_sample_info'
     if key_name in MyDataStuctures:
         df = MyDataStuctures[key_name]
-        ic("yes! can reuse")
+        # ic("yes! can reuse")
     else:
-        ic("have to generate the dataframe")
-
+        """ ic("have to generate the dataframe") """
         (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
-
         infile = sample_dir + "sample_much_raw.pa"
         ic(infile)
-        # df = pd.read_csv(infile, sep = "\t", nrows = 100000)
-        # df = pd.read_csv(infile, sep = "\t")
 
         pf = ParquetFile(infile)
         specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date", "environment_biome"]
@@ -58,7 +57,7 @@ def get_all_ena_detailed_sample_info(debug_status):
             ic(f"restricted to {nrows}")
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
-            ic(df.head())
+            # ic(df.head())
             df = df[specific_columns_needed]
             del first_nrows
         else:
@@ -78,13 +77,13 @@ def get_all_ena_detailed_sample_info(debug_status):
 
         #df = df.query(
         #   '(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis") or (scientific_name == "Equisetum")')
-        ic(df.head(3))
+        # ic(df.head(3))
 
         MyDataStuctures[key_name] = df
 
-    ic(df.head())
+    # ic(df.head())
     ic(df.shape)
-    ic()
+    # ic()
     return df
 
 def get_ena_species_count(sample_dir):

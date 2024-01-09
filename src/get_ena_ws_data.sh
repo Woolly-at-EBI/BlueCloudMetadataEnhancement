@@ -21,6 +21,11 @@ outfile="all_sample_lat_longs_present_uniq.tsv"
 head -1 $infile | cut -f 1,2 > $outfile
 tail +2 $infile | cut -f 1,2 | sed '/^\t$/d' | sort | uniq >> $outfile
 
+infile="sample_much_raw.tsv"
+outfile="sample_much_raw.pa"
+echo ""creating "$outfile" from "$infile"
+./convertCSV2parquet.py -i sample_much_raw.tsv -o sample_much_raw.pa
+
 
 #informative fields
 outfile="all_sample_rtn_fields.txt"

@@ -351,7 +351,7 @@ def create_submit_curations_file(full_curation_list, out_file):
 
         ic(out_file)
         # with open(out_file, 'w') as fp:
-        #     fp.write('\n'.join(full_curation_list))
+        #     fp.write('\n'.join(full_curation_list))h
         submission_dict = {'curations': []}
 
         for json_string in full_curation_list:

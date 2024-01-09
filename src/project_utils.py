@@ -38,8 +38,10 @@ def get_pickleObj(pickle_file):
     """
     if os.path.isfile(pickle_file):
         ic(pickle_file + " exists, so using it")
-        with open(pickle_file, 'rb') as handle:
-            obj = pickle.load(handle)
+        # with open(pickle_file, 'rb') as handle:
+        #     obj = pickle.load(handle)
+        # above no longer works after pandas 2.0
+        obj = pd.read_pickle(pickle_file)
     else:
         ic(pickle_file + " does not exist")
     return obj

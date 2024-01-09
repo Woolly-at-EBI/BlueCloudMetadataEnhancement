@@ -28,8 +28,7 @@ else
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/IHO:IHO_category/"
   submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/redo_IHO:IHO_category/split_100/"
-
-
+  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/corrections/splits/remainder/"
   submission_dir=$1
 fi
 echo "submission_dir:"$submission_dir

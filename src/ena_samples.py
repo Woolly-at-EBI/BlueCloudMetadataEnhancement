@@ -18,6 +18,7 @@ import pyarrow as pa
 from pyarrow import parquet as pq
 from pyarrow.parquet import ParquetFile
 from icecream import ic
+import sys
 
 MyDataStuctures = {}
 
@@ -49,7 +50,8 @@ def get_all_ena_detailed_sample_info(debug_status):
         ic(infile)
 
         pf = ParquetFile(infile)
-        specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date", "environment_biome"]
+        #specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date", "environment_biome"]
+        specific_columns_needed = ["accession", "tax_id", "lat", "lon", "collection_date","environment_biome"]
 
         # was useful to limit number of rows, and alternatively focus on specific species
         if debug_status == True:
@@ -57,7 +59,8 @@ def get_all_ena_detailed_sample_info(debug_status):
             ic(f"restricted to {nrows}")
             first_nrows = next(pf.iter_batches(batch_size = nrows))
             df = pa.Table.from_batches([first_nrows]).to_pandas()
-            # ic(df.head())
+            ic(df.head())
+            ic(df.columns)
             df = df[specific_columns_needed]
             del first_nrows
         else:
@@ -67,11 +70,13 @@ def get_all_ena_detailed_sample_info(debug_status):
             # df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces cerevisiae") or (scientific_name == "Piscirickettsia salmonis")')
             # df = df.query('(scientific_name == "Piscirickettsia salmonis")')
             del table
+        ic(df.columns)
 
         #reduce memory
         df["tax_id"] = df["tax_id"].astype(np.int32)
         df["collection_date"] = pd.to_datetime(df['collection_date'], errors='coerce')
-        for cat in ["scientific_name", "environment_biome"]:
+        # for cat in ["scientific_name", "environment_biome"]:
+        for cat in ["environment_biome"]:
             df[cat] = df[cat].astype('category')
 
 

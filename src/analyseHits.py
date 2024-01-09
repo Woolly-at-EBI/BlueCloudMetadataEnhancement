@@ -15,6 +15,7 @@ ___start_date___ = "2022-12-08"
 __docformat___ = 'reStructuredText'
 
 """
+import sys
 # /opt/homebrew/bin/pydoc3 getGeoLocationCategorisation   #interactive
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
@@ -102,7 +103,7 @@ def plot_merge_all(df_merged_all, plot_dir):
 
     plot_scatter("IHO_category", "IHO_category", "lat", "IHO, lats and longhurst", width, out_format,
                  plot_dir + 'IHO_by_lon.' + out_format)
-    plot_scatter("IHO_category", "longhurst_category", "lat", "IHO, lats and longhurst", width, format,
+    plot_scatter("IHO_category", "longhurst_category", "lat", "IHO, lats and longhurst", width, out_format,
                  plot_dir + 'IHO_ocean_by_lon.' + out_format)
 
     def plot_hist(cat, color, log_y, title, outformat, out_graph_file):
@@ -114,16 +115,16 @@ def plot_merge_all(df_merged_all, plot_dir):
         fig.update_xaxes(tickangle = 60, tickfont = dict(size = 6))
         ic(out_graph_file)
         plotly.io.write_image(fig, out_graph_file, format = outformat)
-        fig.show()
+        # fig.show()
 
-    plot_hist("GEONAME", "continent", True, "EEZ by country + continent (logscale)", format,
-              plot_dir + 'EEZ_continent_counts.' + format)
-    plot_hist("IHO_category", "longhurst_category", True, "IHO country + Longhurst biome (logscale)", format,
-              plot_dir + 'IHO_longhurst_counts.' + format)
-    plot_hist("SOVEREIGN1", "continent", True, "EEZ country + continent (logscale)", format,
-              plot_dir + 'country_lon_lat_counts.' + format)
-    plot_scatter("lon", "AREA_SKM", "lat", 'feow_category_by_skm.', width, format,
-                 plot_dir + 'feow_category_by_skm.' + format)
+    plot_hist("GEONAME", "continent", True, "EEZ by country + continent (logscale)", out_format,
+              plot_dir + 'EEZ_continent_counts.' + out_format)
+    plot_hist("IHO_category", "longhurst_category", True, "IHO country + Longhurst biome (logscale)", out_format,
+              plot_dir + 'IHO_longhurst_counts.' + out_format)
+    plot_hist("SOVEREIGN1", "continent", True, "EEZ country + continent (logscale)", out_format,
+              plot_dir + 'country_lon_lat_counts.' + out_format)
+    plot_scatter("lon", "AREA_SKM", "lat", 'feow_category_by_skm.', width, out_format,
+                 plot_dir + 'feow_category_by_skm.' + out_format)
 
     return
 
@@ -142,9 +143,9 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
     ic()
     ic(hit_file, filter_field, cat_name, filter_swap_value)
     df = pd.read_csv(hit_file, sep = '\t', low_memory = False)
-    ic(df.columns)
+    # ic(df.columns)
     df = df[~df[filter_field].isnull()]
-    ic(df.head(2))
+    # ic(df.head(2))
     # the first one captures feow_category
     if cat_name in ["g200_fw_category", "g200_marine_category", "g200_terr_category"]:
         df = df.rename({'index_right': cat_name}, axis = 1)
@@ -176,7 +177,7 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
             df = df.drop(['x', 'y'], axis = 1)
         df[filter_field] = filter_swap_value
         df = df.rename({'index_right': cat_name}, axis = 1)
-    elif filter_field == "intersect_MARREGION":
+    elif filter_field == "intersect_MARREGION" or filter_swap_value == "eez_iho_intersect":
         if 'X_1' in df.columns:
             df = df.drop(['X_1', 'Y_1'], axis = 1)
         df = df.rename({'index_right': cat_name}, axis = 1)
@@ -209,7 +210,7 @@ def clean_df(hit_file, filter_field, cat_name, filter_swap_value):
     elif cat_name == "longhurst_category":
         df = df.rename({'index_right': cat_name}, axis = 1)
         df[cat_name] = df['ProvDescr'].str.extract('^([A-Za-z]*)', expand = True)
-    elif cat_name in ['eez_category', 'eez_iho_intersect_category']:
+    elif cat_name in ['eez_category']:
         # leave in these as, Stephane finds valuable
         df = df.drop(['X_1', 'Y_1'], axis = 1)
         # df = df.drop(['X_1', 'Y_1', 'MRGID_TER2', 'MRGID_SOV2', 'TERRITORY2', 'ISO_TER2', 'SOVEREIGN2', 'MRGID_TER3',
@@ -234,7 +235,7 @@ def merge_dfs(data_frames, out_filename):
         __returns__:
             df_merged
     """
-    ic()
+    # ic()
 
     df_merged = reduce(lambda left, right: pd.merge(left, right, on = ['coords', 'lon', 'lat'],
                                                     how = 'outer', suffixes = ('', '_y')), data_frames)
@@ -243,9 +244,9 @@ def merge_dfs(data_frames, out_filename):
 
     # df_merged = df_merged.loc[~df_merged.index.duplicated(), :].copy()
     # df_merged.reset_index(inplace=True)
-    ic(df_merged.head(2))
-    ic(df_merged.shape[0])
-    ic(df_merged.columns)
+    # ic(df_merged.head(2))
+    # ic(df_merged.shape[0])
+    # ic(df_merged.columns)
 
     if len(out_filename) > 1:
         df_merged.to_csv(out_filename, sep = "\t", index = False)
@@ -629,6 +630,7 @@ def extra_cat_merging(hit_cats_info, df_merged_all_categories):
 
     ic("freshwater extra merging, to get the freshwater type, n.b. is populated in order from "
        ".get_freshwater_cats_narrow()")
+    ic(hit_cats_info.get_terrestrial_cats())
     ic(hit_cats_info.get_freshwater_cats_narrow())
     for cat in hit_cats_info.get_freshwater_cats_narrow():
         ic(cat)
@@ -658,16 +660,18 @@ def choose_location_designations(df_merged_all_categories):
     ic()
 
     pd.options.mode.chained_assignment = None  # default='warn'
-    df_merged_all_categories.loc[
-        (df_merged_all_categories['sea_total'] > 0),
-        'location_designation_marine'] = True
 
     df_merged_all_categories.loc[
-        (df_merged_all_categories['land_total'] > 0),
-        'location_designation_terrestrial'] = True
+         (df_merged_all_categories['sea_total'] > 0),'location_designation_marine'] = True
+
     df_merged_all_categories.loc[
-        (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
-        'location_designation_other'] = 'neither marine nor terrestrial'
+            (df_merged_all_categories['land_total'] > 0),
+            'location_designation_terrestrial'] = True
+
+    df_merged_all_categories.loc[
+            (df_merged_all_categories['sea_total'] == 0) & (df_merged_all_categories['land_total'] == 0),
+            'location_designation_other'] = 'neither marine nor terrestrial'
+
     df_merged_all_categories.loc[
         (df_merged_all_categories['freshwater_total'] > 0),
         'location_designation_freshwater'] = True
@@ -742,6 +746,7 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
     ic(df_merged_all.columns)
     test_cats = [match for match in list(df_merged_all.columns) if "category" in match]
     ic(test_cats)
+    sys.exit()
     ic(df_merged_all.head(2))
     categories = hit_cats_info.get_category_list()
     # ic(categories)
@@ -756,12 +761,14 @@ def analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info):
     ic(category_dict)
     ic()
 
-    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['marine'], 'sea_total')
-    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['terrestrial'], 'land_total')
-    df_merged_all_categories = create_total(df_merged_all_categories, category_dict['freshwater'], 'freshwater_total')
+    for cat in category_dict.keys():
+        if cat == "marine":
+            total_label = 'sea_total'
+        else:
+            total_label = cat + "_total"
+        df_merged_all_categories = create_total(df_merged_all_categories, category_dict[cat], total_label)
 
     df_merged_all_categories = choose_location_designations(df_merged_all_categories)
-
     df_merged_all_categories = extra_cat_merging(hit_cats_info, df_merged_all_categories)
 
     ic(df_merged_all_categories.head(5))
@@ -788,27 +795,28 @@ def mergeAndAnalysis(hit_df_dict, hit_dir, hit_cats_info):
 
     """
     ic()
-    ic(hit_df_dict.keys())
+    #  ic(hit_df_dict.keys())
 
     category_info_dict = hit_cats_info.get_category_info_dict()
-    ic(category_info_dict)
+    # ic(category_info_dict)
 
     domain_cat_dict = hit_cats_info.get_domain_cat_dict()
-    ic(domain_cat_dict)
+    # ic(domain_cat_dict)
 
+    # temporarily removed the freshwater and land_data to get the f%&K£@% IHO_EEZ intersect working
     freshwater_frames = []
     for cat in domain_cat_dict['freshwater']:
         freshwater_frames.append(hit_df_dict[cat])
     out_filename = hit_dir + 'merged_freshwater.tsv'
     ic(out_filename)
     df_merged_freshwater = merge_dfs(freshwater_frames, out_filename)
-
+    #
     sea_data_frames = []
     for cat in domain_cat_dict['marine']:
         sea_data_frames.append(hit_df_dict[cat])
     out_filename = hit_dir + 'merged_sea.tsv'
     df_merged_sea = merge_dfs(sea_data_frames, out_filename)
-
+    #
     land_data_frames = []
     for cat in domain_cat_dict['terrestrial']:
         land_data_frames.append(hit_df_dict[cat])
@@ -816,11 +824,10 @@ def mergeAndAnalysis(hit_df_dict, hit_dir, hit_cats_info):
     df_merged_land = merge_dfs(land_data_frames, out_filename)
 
     data_frames = [df_merged_sea, df_merged_land, df_merged_freshwater]
+    #data_frames = [df_merged_sea]
     out_filename = hit_dir + 'merged_all.tsv'
     df_merged_all = merge_dfs(data_frames, out_filename)
-    ic(df_merged_all.head(3))
-
-    df_merged_all = merge_dfs(data_frames, out_filename)
+    # ic(df_merged_all.head(3))
 
     return df_merged_all
 
@@ -872,83 +879,83 @@ def processHitFiles(hit_dir, hit_cats_info):
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MARREGION', category,
                                      'eez_iho_intersect')
 
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_fw", hit_dir, 'g200_fw_hits.tsv',
-                                             'g200_fw_category', ['freshwater'])
-    ic(category_info_dict)
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
-
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_marine", hit_dir, 'g200_marine_hits.tsv',
-                                             'g200_marine_category', ['marine'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
-
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv',
-                                             'g200_terr_category', ['terrestrial'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
-
-    (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'glwd_1_hits.tsv',
-                                             'glwd_1_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
-
-    (category_info_dict, category) = add_cat(category_info_dict, "glwd_2", hit_dir, 'glwd_2_hits.tsv',
-                                             'glwd_2_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', 'glwd_2_category',
-                                     'freshwater')
-
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_lake_line", hit_dir,
-                                             'ne_10m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
-                                             ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lake", hit_dir, 'ne_10m_lake_hits.tsv',
-                                             'ne_10m_lake_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_aus_line", hit_dir,
-                                             'ne_10m_rivers_australia_line_hits.tsv',
-                                             'ne_10m_river_lake_aus_line_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_eur_line", hit_dir,
-                                             'ne_10m_rivers_europe_line_hits.tsv', 'ne_10m_river_eur_line_category',
-                                             ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_nam_line", hit_dir,
-                                             'ne_10m_rivers_north_america_line_hits.tsv',
-                                             'ne_10m_river_nam_line_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_lake", hit_dir, 'ne_50m_lakes_hits.tsv',
-                                             'ne_50m_lake_category', ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-    (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_river_lake_line", hit_dir,
-                                             'ne_50m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
-                                             ['freshwater'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
-
+    # (category_info_dict, category) = add_cat(category_info_dict, "g200_fw", hit_dir, 'g200_fw_hits.tsv',
+    #                                          'g200_fw_category', ['freshwater'])
+    # ic(category_info_dict)
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
+    #
+    # (category_info_dict, category) = add_cat(category_info_dict, "g200_marine", hit_dir, 'g200_marine_hits.tsv',
+    #                                          'g200_marine_category', ['marine'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
+    #
+    # (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'g200_terr_hits.tsv',
+    #                                          'g200_terr_category', ['terrestrial'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
+    #
+    # (category_info_dict, category) = add_cat(category_info_dict, "g200_terr", hit_dir, 'glwd_1_hits.tsv',
+    #                                          'glwd_1_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'freshwater')
+    #
+    # (category_info_dict, category) = add_cat(category_info_dict, "glwd_2", hit_dir, 'glwd_2_hits.tsv',
+    #                                          'glwd_2_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', 'glwd_2_category',
+    #                                  'freshwater')
+    #
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_lake_line", hit_dir,
+    #                                          'ne_10m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
+    #                                          ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_lake", hit_dir, 'ne_10m_lake_hits.tsv',
+    #                                          'ne_10m_lake_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_aus_line", hit_dir,
+    #                                          'ne_10m_rivers_australia_line_hits.tsv',
+    #                                          'ne_10m_river_lake_aus_line_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_eur_line", hit_dir,
+    #                                          'ne_10m_rivers_europe_line_hits.tsv', 'ne_10m_river_eur_line_category',
+    #                                          ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_10m_river_nam_line", hit_dir,
+    #                                          'ne_10m_rivers_north_america_line_hits.tsv',
+    #                                          'ne_10m_river_nam_line_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_lake", hit_dir, 'ne_50m_lakes_hits.tsv',
+    #                                          'ne_50m_lake_category', ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    # (category_info_dict, category) = add_cat(category_info_dict, "ne_50m_river_lake_line", hit_dir,
+    #                                          'ne_50m_river_lake_line_hits.tsv', 'ne_10m_river_lake_line_category',
+    #                                          ['freshwater'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'Lakes')
+    #
     (category_info_dict, category) = add_cat(category_info_dict, "hydrosheds", hit_dir, 'feow_hydrosheds_hits.tsv',
                                              'feow_category',
                                              ['freshwater', 'terrestrial'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'hydroshed')
-
-
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "seawater", hit_dir, 'seawater_polygons_hits.tsv',
-                                             'sea_category', ['marine'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'seawater')
     #
-    (category_info_dict, category) = add_cat(category_info_dict, "land", hit_dir, 'land_polygons_hits.tsv',
-                                             'land_category', ['terrestrial'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'land')
-    #
-    (category_info_dict, category) = add_cat(category_info_dict, "worldAdmin", hit_dir,
-                                             'world-administrative-boundaries_hits.tsv', 'worldAdmin_category',
-                                             ['terrestrial'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'region', category, 'land')
-    #
+    # #
+    # (category_info_dict, category) = add_cat(category_info_dict, "seawater", hit_dir, 'seawater_polygons_hits.tsv',
+    #                                          'sea_category', ['marine'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'seawater')
+    # #
+    # (category_info_dict, category) = add_cat(category_info_dict, "land", hit_dir, 'land_polygons_hits.tsv',
+    #                                          'land_category', ['terrestrial'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'index_right', category, 'land')
+    # #
+    # (category_info_dict, category) = add_cat(category_info_dict, "worldAdmin", hit_dir,
+    #                                          'world-administrative-boundaries_hits.tsv', 'worldAdmin_category',
+    #                                          ['terrestrial'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'region', category, 'land')
+    # #
     (category_info_dict, category) = add_cat(category_info_dict, "seaIHO", hit_dir, 'World_Seas_IHO_v3_hits.tsv',
-                                             'IHO_category', ['marine'])
+                                              'IHO_category', ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'MRGID', category, 'sea')
-    #
-    (category_info_dict, category) = add_cat(category_info_dict, "longhurst", hit_dir, 'longhurst_v4_hits.tsv',
-                                             'longhurst_category', ['marine'])
-    hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'ProvCode', category, 'blank')
-    #
+    # #
+    # (category_info_dict, category) = add_cat(category_info_dict, "longhurst", hit_dir, 'longhurst_v4_hits.tsv',
+    #                                          'longhurst_category', ['marine'])
+    # hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'ProvCode', category, 'blank')
+    # #
     (category_info_dict, category) = add_cat(category_info_dict, "eez", hit_dir, 'eez_hits.tsv', 'eez_category',
                                              ['marine'])
     hit_df_dict[category] = clean_df(category_info_dict[category]["hitfile"], 'GEONAME', category, 'EEZ')
@@ -1256,7 +1263,6 @@ def main():
         ic(hit_cats_info.get_marine_cats())
         category_fields = [match for match in df_merged_all.columns if "category" in match]
         ic(category_fields)
-        sys.exit()
         merged_all_categories_file = analysis(df_merged_all, analysis_dir, plot_dir, hit_cats_info)
         ic("Finished full_rerun, including generation of ", merged_all_categories_file)
     else:
@@ -1269,7 +1275,9 @@ def main():
     get_category_stats(ena_total_sample_count, df_merged_all_categories, df_merged_all)
 
     analyseFreshwater()
-    # sys.exit()
+
+    ic("Finishing before the plotting")
+    sys.exit()
 
     # df_trawl_samples = pd.read_csv(sample_dir + 'sample_trawl_all_start_ends_clean.tsv', sep = "\t")
     # analyse_trawl_data(df_merged_all,df_trawl_samples)

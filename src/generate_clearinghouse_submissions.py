@@ -81,6 +81,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     ic()
     ic(debug_status)
+    sys.exit()
 
     def createIndividualSubmissionsJson(row):
         """
@@ -293,11 +294,12 @@ def merge_sea_ena(debug_status, hit_dir):
     ic()
     ic(debug_status)
 
-    df_ena_detail = get_all_ena_detailed_sample_info(debug_status)
+    df_ena_detail = get_all_ena_detailed_sample_info(True)
     ic(df_ena_detail.shape)
 
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep = '\t')
-    ic(df_sea_hits.columns)
+
+    # ic(df_sea_hits.columns)
 
     # 'intersect_MRGID', 'intersect_MARREGION', 'intersect_MRGID_IHO', 'intersect_IHO_SEA'
 
@@ -326,9 +328,12 @@ def merge_sea_ena(debug_status, hit_dir):
 
     if debug_status:
         ic(df_merge_sea_ena.shape)
-        ic(df_merge_sea_ena.dtypes)
-        ic(df_merge_sea_ena.head(3))
+        #
+        # ic(df_merge_sea_ena.dtypes)
+        # ic(df_merge_sea_ena.head(2))
+        ic(df_merge_sea_ena.columns)
 
+    sys.exit()
     return df_merge_sea_ena
 
 
@@ -376,25 +381,32 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     """
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
+
+    sys.exit()
     # annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
     annotation_list = ['IHO-EEZ']
 
-    ic(df_merged_ena_sea.columns)
+    # ic(df_merged_ena_sea.columns)
     local_curation_list = []
+    ic(annotation_list)
+    # sys.exit()
     for annotation_type in annotation_list:
+        ic(annotation_type)
         if annotation_type == 'EEZ':
             df_merged_ena_sea = df_merged_ena_sea.query('eez_category == "EEZ"')
             ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
             local_curation_list = process_supercat_fields(debug_status, df_merged_ena_sea, annotation_type,
                                                           clearinghouse_data_dir)
         elif annotation_type == 'IHO-EEZ' or annotation_type == 'IHO':
-            df_merged_ena_sea = df_merged_ena_sea.query('intersect_MARREGION != ""')
+            # 9-mar-2024: not sure why the following query was being done, whatever intersect_MARREGION no longer exists
+            # df_merged_ena_sea = df_merged_ena_sea.query('intersect_MARREGION != ""')
             ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
             local_curation_list = process_supercat_fields(debug_status, df_merged_ena_sea, annotation_type,
                                                           clearinghouse_data_dir)
         else:
             print(f"ERROR: annotation_type: {annotation_type} is unknown")
         ic(len(local_curation_list))
+    sys.exit()
     # full_curation_list = []
     # demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'
@@ -432,6 +444,7 @@ def main(args):
     else:
         ic("whoops, no specific submissions found")
 
+    ic()
     sys.exit()
 
     # submit_curations(full_curation_list, analysis_dir)

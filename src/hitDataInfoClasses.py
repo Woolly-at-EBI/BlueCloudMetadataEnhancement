@@ -130,13 +130,18 @@ class MyHitDataInfo:
         return self._domain_cat_dict
 
     def get_terrestrial_cats(self):
-        return self._domain_cat_dict['terrestrial']
-
+        if 'terrestrial' in self._domain_cat_dict:
+            return self._domain_cat_dict['terrestrial']
+        return []
     def get_marine_cats(self):
-        return self._domain_cat_dict['marine']
+        if 'marine' in self._domain_cat_dict:
+            return self._domain_cat_dict['marine']
+        return []
 
     def get_freshwater_cats(self):
-        return self._domain_cat_dict['freshwater']
+        if 'freshwater' in self._domain_cat_dict:
+            return self._domain_cat_dict['freshwater']
+        return []
 
     def get_freshwater_cats_narrow(self):
         """

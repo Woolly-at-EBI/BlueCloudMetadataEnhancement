@@ -47,18 +47,18 @@ class NewSampleCuration:
 
     def putAttributionType(self, attributionType):
        if attributionType == "shapefile":
-           self._assertionAdditionalInfo = "The attribution was determined by mapping GEO spatial coordinates of the sample the information in the"
-
-       self._attributionType = attributionType
+           self.assertionAdditionalInfo = "The attribution was determined by mapping Geospatial coordinates of the sample to information compiled in a shapefile."
+       else:
+           self.assertionAdditionalInfo = attributionType
 
     def getAttributionType(self):
-        if hasattr(self, "_attributionType"):
-            return self._attributionType
+        if hasattr(self, "attributionType"):
+            return self.attributionType
         return ""
 
     def getAssertionAdditionalInfo(self):
-        if hasattr(self, "_assertionAdditionalInfo"):
-            return self._assertionAdditionalInfo
+        if hasattr(self, "assertionAdditionalInfo"):
+            return self.assertionAdditionalInfo
         return ""
 
     def emptyAssertionEvidence(self):

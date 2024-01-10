@@ -19,14 +19,14 @@ class NewSampleCuration:
         see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
       """
 
-    def __init__(self, useENAAutoCurationValues):
+    def __init__(self, use_ena_auto_curation_values):
         ic()
         self.recordId = ""  # mandatory
         self.recordType = 'sample'  # mandatory
         self.dataType = ""  # optional , CV
         self.dataIdentifier = ""  # optional, free text
-        self.providerName = ""  # Mandatory, see useENAAutoCurationValues
-        self.providerUrl = ""  # optional, see useENAAutoCurationValues
+        self.providerName = ""  # Mandatory, see use_ena_auto_curation_values
+        self.providerUrl = ""  # optional, see use_ena_auto_curation_values
 
         self.assertionEvidences = []  # optional free text, see putAssertionEvidence
         self.assertionSource = ""  # optional Valid URI  e.g. to a publication
@@ -39,17 +39,18 @@ class NewSampleCuration:
         self.valuePost = ""  # optional
         self.valuePre = ""  # optional
 
-        if useENAAutoCurationValues:
+        if use_ena_auto_curation_values:
             self.assertionMethod = "automatic assertion"  # mandatory child term of ECO_0000217 assertion method
             self.providerName = "European Nucleotide Archive"  # Mandatory
             self.providerUrl = "https://www.ebi.ac.uk/ena/browser/home"  # optional
             self.addAutoAssertionEvidence("void")
 
     def putAttributionType(self, attributionType):
-       if attributionType == "shapefile":
-           self.assertionAdditionalInfo = "The attribution was determined by mapping Geospatial coordinates of the sample to information compiled in a shapefile."
-       else:
-           self.assertionAdditionalInfo = attributionType
+        if attributionType == "shapefile":
+            self.assertionAdditionalInfo = ("The attribution was determined by mapping Geospatial coordinates of the "
+                                            "sample to information compiled in a shapefile.")
+        else:
+            self.assertionAdditionalInfo = attributionType
 
     def getAttributionType(self):
         if hasattr(self, "attributionType"):
@@ -154,7 +155,7 @@ def demo_format(test_status):
     curation_template_record = curations[0].copy()
     ic(curation_template_record)
 
-    my_record = NewSampleCuration(useENAAutoCurationValues = True)
+    my_record = NewSampleCuration(use_ena_auto_curation_values = True)
     ic(my_record.get_filled_dict())
     sample_id = 'SAMD'
     ic(my_record.attributeDelete)

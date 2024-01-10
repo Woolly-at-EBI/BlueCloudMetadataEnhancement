@@ -81,7 +81,6 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     ic()
     ic(debug_status)
-    sys.exit()
 
     def createIndividualSubmissionsJson(row):
         """
@@ -112,17 +111,22 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         field) as lower case is the preferred INSDC format NewSampleCuration is Class from clearinghouse_object.pl
         :param row: :return:
         """
+        ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         ic()
+        ic(field)
+
         if row[field] == "" or row[field] == 0:
             return
         else:
             my_record = NewSampleCuration(useENAAutoCurationValues = True)
+            my_record.putAttributionType("shapefile")
             my_record.recordId = row["accession"]
             my_record.attributePost = attributePostVal
             value_array = []
             extra_array = []
-            # ic(row)
+            ic(row)
             matches = ["TERRITORY", "SOVEREIGN", "GEONAME", "IHO_category"]
+            ic(matches)
             if any([x in field for x in matches]):
                 count = 0
                 for component_field in multi_field_dict[super_category][field]:
@@ -147,6 +151,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 my_record.valuePost = "".join(value_array)
             elif "intersect_MARREGION" in field:
                 ic("intersect_MARREGION in field")
+                bracketNeeded = False
                 count = 0
                 if type(row["intersect_EEZ"]) is not str or row["intersect_EEZ"] == "":
                     # as EEZ name is nan (actually float...)"
@@ -160,13 +165,19 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                         ic(f"component:{row[component_field]}<---")
                     field_name = component_field.lower().removeprefix('intersect_')
                     if count == 0:
-                        value_array.append(str(row[component_field]) + " (")
+                        value_array.append(str(row[component_field]))
                     else:
                         if field_name == "mrgid":
-                            extra_array.append(field_name + ":" + str(row[component_field]))
+                            pass # re- instigate this or similar if new fields open up in ClearingHouse
+                            # extra_array.append(field_name + ":" + str(row[component_field]))
+                            # bracketNeeded = True
+
                     count += 1
-                value_array.append("; ".join(extra_array) + ")")
-                ic(value_array)
+                    if bracketNeeded:
+                        value_array.append(" (" + "; ".join(extra_array) + ")")
+                    else:
+                        value_array.append("; ".join(extra_array))
+                # ic(value_array)
                 my_record.valuePost = "".join(value_array)
                 ic(my_record.valuePost)
                 ic(my_record.get_filled_dict())
@@ -182,7 +193,8 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             my_record.emptyAssertionEvidence()
             my_record.addAutoAssertionEvidence(super_category)
             # print(my_record.get_filled_json())
-            # sys.exit()
+            sys.exit()
+
             return my_record.get_filled_json()
 
     df_merge_sea_ena = df_merge_sea_ena.head(2)
@@ -257,6 +269,8 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
 
             ic()
             ic(attributePostVal)
+
+            #sys.exit()
 
             if field in multi_field_dict[super_category]:
                 ic(f"{field} in {multi_field_dict[super_category][field]}")
@@ -333,7 +347,7 @@ def merge_sea_ena(debug_status, hit_dir):
         # ic(df_merge_sea_ena.head(2))
         ic(df_merge_sea_ena.columns)
 
-    sys.exit()
+    ic()
     return df_merge_sea_ena
 
 
@@ -382,7 +396,6 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     df_merged_ena_sea = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea.shape)
 
-    sys.exit()
     # annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
     annotation_list = ['IHO-EEZ']
 
@@ -398,6 +411,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
             local_curation_list = process_supercat_fields(debug_status, df_merged_ena_sea, annotation_type,
                                                           clearinghouse_data_dir)
         elif annotation_type == 'IHO-EEZ' or annotation_type == 'IHO':
+            ic()
             # 9-mar-2024: not sure why the following query was being done, whatever intersect_MARREGION no longer exists
             # df_merged_ena_sea = df_merged_ena_sea.query('intersect_MARREGION != ""')
             ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
@@ -406,7 +420,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
         else:
             print(f"ERROR: annotation_type: {annotation_type} is unknown")
         ic(len(local_curation_list))
-    sys.exit()
+    ic()
     # full_curation_list = []
     # demo_format(test_status)
     # in_file = analysis_dir + 'all_ena_gps_tax_combined.tsv'

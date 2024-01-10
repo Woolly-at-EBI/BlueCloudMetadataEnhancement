@@ -56,6 +56,8 @@ class NewSampleCuration:
         if hasattr(self, "attributionType"):
             return self.attributionType
         return ""
+    def putAssertionAdditionalInfo(self, assertionAdditionalInfo):
+        self.assertionAdditionalInfo = self.assertionAdditionalInfo
 
     def getAssertionAdditionalInfo(self):
         if hasattr(self, "assertionAdditionalInfo"):

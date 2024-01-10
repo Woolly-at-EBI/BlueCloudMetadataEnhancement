@@ -28,7 +28,7 @@ pd.set_option('display.width', 1000)
 def demo_format(test_status):
     ic()
     ic(test_status)
-    my_record = NewSampleCuration(useENAAutoCurationValues = True)
+    my_record = NewSampleCuration(use_ena_auto_curation_values = True)
     ic(my_record.get_filled_dict())
     sample_id = 'SAMD'
     ic(my_record.attributeDelete)
@@ -95,7 +95,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         if row[field] == "" or row[field] == 0:
             return
         else:
-            my_record = NewSampleCuration(useENAAutoCurationValues = True)
+            my_record = NewSampleCuration(use_ena_auto_curation_values = True)
             my_record.recordId = row["accession"]
             my_record.attributePost = ":".join([super_category, lc_field])
             my_record.valuePost = row[field]
@@ -118,7 +118,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         if row[field] == "" or row[field] == 0:
             return
         else:
-            my_record = NewSampleCuration(useENAAutoCurationValues = True)
+            my_record = NewSampleCuration(use_ena_auto_curation_values = True)
             my_record.putAttributionType("shapefile")
             my_record.recordId = row["accession"]
             my_record.attributePost = attributePostVal

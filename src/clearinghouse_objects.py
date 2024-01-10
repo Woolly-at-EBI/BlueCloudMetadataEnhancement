@@ -45,6 +45,22 @@ class NewSampleCuration:
             self.providerUrl = "https://www.ebi.ac.uk/ena/browser/home"  # optional
             self.addAutoAssertionEvidence("void")
 
+    def putAttributionType(self, attributionType):
+       if attributionType == "shapefile":
+           self._assertionAdditionalInfo = "The attribution was determined by mapping GEO spatial coordinates of the sample the information in the"
+
+       self._attributionType = attributionType
+
+    def getAttributionType(self):
+        if hasattr(self, "_attributionType"):
+            return self._attributionType
+        return ""
+
+    def getAssertionAdditionalInfo(self):
+        if hasattr(self, "_assertionAdditionalInfo"):
+            return self._assertionAdditionalInfo
+        return ""
+
     def emptyAssertionEvidence(self):
         self.assertionEvidences = []
 

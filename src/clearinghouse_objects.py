@@ -20,7 +20,6 @@ class NewSampleCuration:
       """
 
     def __init__(self, use_ena_auto_curation_values):
-        ic()
         self.recordId = ""  # mandatory
         self.recordType = 'sample'  # mandatory
         self.dataType = ""  # optional , CV
@@ -58,7 +57,6 @@ class NewSampleCuration:
         self.assertionSource = assertionSource
 
     def getAssertionSource(self):
-        ic()
         if hasattr(self, "assertionSource") and self.assertionSource != "":
             return self.assertionSource
         elif self.getAttributionType() == "shapefile":

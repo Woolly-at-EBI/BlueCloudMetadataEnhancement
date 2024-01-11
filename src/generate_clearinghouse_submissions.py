@@ -99,7 +99,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             my_record.recordId = row["accession"]
             my_record.attributePost = ":".join([super_category, lc_field])
             my_record.valuePost = row[field]
-            my_record.assertionAdditionalInfo = assertion_additional_infoVal
+            my_record.putAssertionAdditionalInfo(assertion_additional_infoVal)
             my_record.emptyAssertionEvidence()
             my_record.addAutoAssertionEvidence(super_category)
             # print(my_record.get_filled_json())
@@ -115,6 +115,16 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         ic()
         ic(field)
 
+        def get_mrgid_array_extra_annotation(my_field_name, value):
+            if "mrgid" in my_field_name:
+                return f"mrgid: {str(value)}"
+            elif "iso" in my_field_name:
+                return f"ISO3166-1 alpha-3: {str(value)}"
+            elif "un" in my_field_name:
+                return f"ISO3166-1 num: {str(value)}"
+            else:
+                return ""  # possibly an error, but can handle later
+
         if row[field] == "" or row[field] == 0:
             return
         else:
@@ -127,29 +137,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             ic(row)
             matches = ["TERRITORY", "SOVEREIGN", "GEONAME", "IHO_category"]
             ic(matches)
-            if any([x in field for x in matches]):
-                count = 0
-                for component_field in multi_field_dict[super_category][field]:
-                    if row[component_field] == "" or row[component_field] == 0:
-                        continue
-                    else:
-                        ic(f"component:{row[component_field]}<---")
-                    field_name = component_field.lower().removesuffix("_category")
-                    if count == 0:
-                        value_array.append(str(row[component_field]) + " (")
-                    else:
-                        if "mrgid" in field_name:
-                            extra_array.append("mrgid:" + str(row[component_field]))
-                        elif "iso" in field_name:
-                            extra_array.append("ISO3166-1 alpha-3:" + str(row[component_field]))
-                        elif "un" in field_name:
-                            extra_array.append("ISO3166-1 num:" + str(row[component_field]))
-                    ic()
-                    count += 1
-                value_array.append("; ".join(extra_array) + ")")
-                ic(value_array)
-                my_record.valuePost = "".join(value_array)
-            elif "intersect_MARREGION" in field:
+            if "intersect_MARREGION" in field:
                 ic("intersect_MARREGION in field")
                 bracketNeeded = False
                 count = 0
@@ -168,31 +156,54 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                         value_array.append(str(row[component_field]))
                     else:
                         if field_name == "mrgid":
-                            pass # re- instigate this or similar if new fields open up in ClearingHouse
-                            # extra_array.append(field_name + ":" + str(row[component_field]))
-                            # bracketNeeded = True
-
+                            extra_array.append(get_mrgid_array_extra_annotation(field_name, row[component_field]))
+                            bracketNeeded = True
                     count += 1
-                    if bracketNeeded:
-                        value_array.append(" (" + "; ".join(extra_array) + ")")
-                    else:
-                        value_array.append("; ".join(extra_array))
+                    # if bracketNeeded:
+                    #     value_array.append(" (" + "; ".join(extra_array) + ")")
+                    # else:
+                    #     value_array.append("; ".join(extra_array))
                 # ic(value_array)
-                my_record.valuePost = "".join(value_array)
-                ic(my_record.valuePost)
-                ic(my_record.get_filled_dict())
-                ic()
+
                 # sys.exit()
+            elif any([x in field for x in matches]):
+                ic()
+                count = 0
+                for component_field in multi_field_dict[super_category][field]:
+                    if row[component_field] == "" or row[component_field] == 0:
+                        continue
+                    else:
+                        ic(f"component:{row[component_field]}<---")
+                    field_name = component_field.lower().removesuffix("_category")
+                    ic(f"aaaaaa{field_name}")
+                    if count == 0:
+                        value_array.append(str(row[component_field]))
+                    else:
+                        extra_array.append(get_mrgid_array_extra_annotation(field_name, row[component_field]))
+                        bracketNeeded = True
+
+                    ic()
+                    count += 1
+                # value_array.append(" (" + "; ".join(extra_array) + ")")  # currently not needed, will be needed
+                # when extra information about the value can be provided
+                ic(value_array)
+                my_record.valuePost = "".join(value_array)
+
             else:
+                ic()
                 for component_field in multi_field_dict[super_category][field]:
                     field_name = component_field.lower()
                     value_array.append(":".join([field_name, str(row[component_field])]))
                 my_record.valuePost = "; ".join(value_array)
 
-            my_record.assertionAdditionalInfo = assertion_additional_infoVal
+            my_record.putAssertionAdditionalInfo(assertion_additional_infoVal)
             my_record.emptyAssertionEvidence()
             my_record.addAutoAssertionEvidence(super_category)
-            # print(my_record.get_filled_json())
+
+            my_record.valuePost = "".join(value_array)
+            ic(my_record.valuePost)
+            ic(my_record.get_filled_dict())
+            ic()
             sys.exit()
 
             return my_record.get_filled_json()
@@ -261,7 +272,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             elif "GEONAME" in field:
                 attributePostVal = "EEZ-name"
             elif "IHO_category" == field:
-                attributePostVal = "IHO-name"
+                attributePostVal = "IHO-sea-area-name"
             elif "MARREGION" in field:
                 attributePostVal = "EEZ-IHO-intersect-name"
             else:
@@ -270,7 +281,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             ic()
             ic(attributePostVal)
 
-            #sys.exit()
+            # sys.exit()
 
             if field in multi_field_dict[super_category]:
                 ic(f"{field} in {multi_field_dict[super_category][field]}")
@@ -397,7 +408,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     ic(df_merged_ena_sea.shape)
 
     # annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
-    annotation_list = ['IHO-EEZ']
+    annotation_list = ['EEZ']
 
     # ic(df_merged_ena_sea.columns)
     local_curation_list = []

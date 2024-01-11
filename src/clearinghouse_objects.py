@@ -28,6 +28,7 @@ class NewSampleCuration:
         self.providerName = ""  # Mandatory, see use_ena_auto_curation_values
         self.providerUrl = ""  # optional, see use_ena_auto_curation_values
 
+        self.attributionType = ""  # helper attribute e.g. if set as "shapefile", then it can determine other attrs.
         self.assertionEvidences = []  # optional free text, see putAssertionEvidence
         self.assertionSource = ""  # optional Valid URI  e.g. to a publication
         self.assertionMethod = ""  # mandatory child term of ECO_0000217 assertion method
@@ -49,7 +50,7 @@ class NewSampleCuration:
         self.attributionType = attributionType
 
     def getAttributionType(self):
-        if hasattr(self, "attributionType"):
+        if hasattr(self, "attributionType") and self.attributionType != "":
             return self.attributionType
         return ""
 
@@ -57,10 +58,11 @@ class NewSampleCuration:
         self.assertionSource = assertionSource
 
     def getAssertionSource(self):
-        if hasattr(self, "assertionSource"):
+        ic()
+        if hasattr(self, "assertionSource") and self.assertionSource != "":
             return self.assertionSource
         elif self.getAttributionType() == "shapefile":
-            self.assertionSource = ("https://www.marineregions.org")
+            self.assertionSource = "https://www.marineregions.org"
             return self.assertionSource
 
         return ""
@@ -133,7 +135,8 @@ class NewSampleCuration:
         """
         my_dict = {'recordId': self.recordId, 'recordType': self.recordType,
                    'assertionEvidences': self.assertionEvidences,
-                   'assertionAdditionalInfo': self.assertionAdditionalInfo, 'assertionSource': self.assertionSource,
+                   'assertionAdditionalInfo': self.assertionAdditionalInfo,
+                   'assertionSource': self.getAssertionSource(),
                    'assertionMethod': self.assertionMethod, 'attributePost': self.attributePost,
                    'valuePost': self.valuePost, 'providerName': self.providerName, 'providerUrl': self.providerUrl}
 

@@ -46,22 +46,31 @@ class NewSampleCuration:
             self.addAutoAssertionEvidence("void")
 
     def putAttributionType(self, attributionType):
-        if attributionType == "shapefile":
-            self.assertionAdditionalInfo = ("The attribution was determined by mapping Geospatial coordinates of the "
-                                            "sample to information compiled in a shapefile.")
-        else:
-            self.assertionAdditionalInfo = attributionType
+        self.attributionType = attributionType
 
     def getAttributionType(self):
         if hasattr(self, "attributionType"):
             return self.attributionType
         return ""
+
     def putAssertionAdditionalInfo(self, assertionAdditionalInfo):
-        self.assertionAdditionalInfo = self.assertionAdditionalInfo
+        self.assertionAdditionalInfo = assertionAdditionalInfo
 
     def getAssertionAdditionalInfo(self):
+        """
+        Returns assertionAdditionalInfo, wanted to have some meaningful text in there.
+        There are several scenarios of how people put information in the assertionAdditionalInfo
+        and what they want. e.g. for the BlueCloud we want to have more annotation about the value too.
+        Not exactly correct here, but is currently the only custom text area.
+        :return:
+        """
         if hasattr(self, "assertionAdditionalInfo"):
             return self.assertionAdditionalInfo
+        elif self.getAttributionType() == "shapefile":
+            self.assertionAdditionalInfo = ("The attribution was determined by mapping Geospatial coordinates of the "
+                                            "sample to information compiled in a shapefile.")
+            return self.assertionAdditionalInfo
+
         return ""
 
     def emptyAssertionEvidence(self):

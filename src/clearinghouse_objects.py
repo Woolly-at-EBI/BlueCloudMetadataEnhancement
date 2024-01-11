@@ -53,6 +53,18 @@ class NewSampleCuration:
             return self.attributionType
         return ""
 
+    def putAssertionSource(self, assertionSource):
+        self.assertionSource = assertionSource
+
+    def getAssertionSource(self):
+        if hasattr(self, "assertionSource"):
+            return self.assertionSource
+        elif self.getAttributionType() == "shapefile":
+            self.assertionSource = ("https://www.marineregions.org")
+            return self.assertionSource
+
+        return ""
+
     def putAssertionAdditionalInfo(self, assertionAdditionalInfo):
         self.assertionAdditionalInfo = assertionAdditionalInfo
 

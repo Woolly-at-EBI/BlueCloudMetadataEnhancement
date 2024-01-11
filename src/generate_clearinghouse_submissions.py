@@ -132,6 +132,9 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             my_record.putAttributionType("shapefile")
             my_record.recordId = row["accession"]
             my_record.attributePost = attributePostVal
+            my_record.putAssertionAdditionalInfo(assertion_additional_infoVal)
+            my_record.emptyAssertionEvidence()
+            my_record.addAutoAssertionEvidence(super_category)
             value_array = []
             extra_array = []
             ic(row)
@@ -175,7 +178,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                     else:
                         ic(f"component:{row[component_field]}<---")
                     field_name = component_field.lower().removesuffix("_category")
-                    ic(f"aaaaaa{field_name}")
+                    ic(f"{field_name}")
                     if count == 0:
                         value_array.append(str(row[component_field]))
                     else:
@@ -195,10 +198,6 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                     field_name = component_field.lower()
                     value_array.append(":".join([field_name, str(row[component_field])]))
                 my_record.valuePost = "; ".join(value_array)
-
-            my_record.putAssertionAdditionalInfo(assertion_additional_infoVal)
-            my_record.emptyAssertionEvidence()
-            my_record.addAutoAssertionEvidence(super_category)
 
             my_record.valuePost = "".join(value_array)
             ic(my_record.valuePost)
@@ -241,7 +240,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         assertion_additional_infoVal = "confidence:high; evidence:sample coordinates within IHO World Seas shapefile"
         super_category_name = "IHO_category"
     else:
-        ic(f"WARNING: {super_category} not recognised")
+        ic(f"ERROR: {super_category} not recognised")
         sys.exit()
 
     for field in curation_types2add:
@@ -277,11 +276,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 attributePostVal = "EEZ-IHO-intersect-name"
             else:
                 attributePostVal = ":".join([super_category_name, lc_field.removeprefix('intersect_')])
-
-            ic()
             ic(attributePostVal)
-
-            # sys.exit()
 
             if field in multi_field_dict[super_category]:
                 ic(f"{field} in {multi_field_dict[super_category][field]}")
@@ -291,20 +286,17 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
 
             if is_numeric_dtype(df_specific[field]):
-                ic(f"{field} is numeric!")
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             else:
                 df_specific.loc[df_specific[field].isnull(), 'json_col'] = ""
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
             local_list = df_specific['json_col'].values.tolist()
-            # remove empty list items
-            local_list = [i for i in local_list if i]
-
+            local_list = [i for i in local_list if i]  # remove empty list items
             out_file = clearinghouse_data_dir + dom_type + '.json'
             ic(out_file)
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
-            # ic(len(curation_list))
+
     return curation_list
 
 
@@ -408,7 +400,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     ic(df_merged_ena_sea.shape)
 
     # annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
-    annotation_list = ['EEZ']
+    annotation_list = ['IHO-EEZ']
 
     # ic(df_merged_ena_sea.columns)
     local_curation_list = []

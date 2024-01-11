@@ -64,11 +64,14 @@ class NewSampleCuration:
         elif self.getAttributionType() == "shapefile":
             self.assertionSource = "https://www.marineregions.org"
             return self.assertionSource
-
-        return ""
+        return ''
 
     def putAssertionAdditionalInfo(self, assertionAdditionalInfo):
         self.assertionAdditionalInfo = assertionAdditionalInfo
+
+    def appendAssertionAdditionalInfo(self, extra_annot_string):
+        #  force it to get any automatic values
+        self.assertionAdditionalInfo = self.getAssertionAdditionalInfo() + "; " + extra_annot_string
 
     def getAssertionAdditionalInfo(self):
         """

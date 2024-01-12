@@ -7,10 +7,7 @@ import pyarrow as pa
 from pyarrow import csv
 from pyarrow import parquet
 from pyarrow.parquet import ParquetFile
-
-import pandas as pd
 from icecream import ic
-
 import argparse
 
 
@@ -28,11 +25,11 @@ def convert_csv3parquet(args):
         else:
             return 'error'
 
-    parse_options = csv.ParseOptions(delimiter="\t", invalid_row_handler=skip_comment)
+    parse_options = csv.ParseOptions(delimiter = "\t", invalid_row_handler = skip_comment)
 
-    table = pa.csv.read_csv(fn, read_options=None, parse_options=parse_options)
+    table = pa.csv.read_csv(fn, read_options = None, parse_options = parse_options)
     df_new = table.to_pandas()
-    ic(df_new.head())
+    # ic(df_new.head())
 
     pa.parquet.write_table(table, ofn)
 
@@ -43,8 +40,7 @@ def convert_csv3parquet(args):
     # table = pa.parquet.read_table(ofn)
     # # Convert back to pandas
     # df_new = table.to_pandas()
-    ic(df_new.head())
-
+    #  ic(df_new.head())
 
 
 def main():
@@ -54,6 +50,7 @@ def main():
     """
 
     convert_csv3parquet(args)
+
 
 if __name__ == '__main__':
     ic()

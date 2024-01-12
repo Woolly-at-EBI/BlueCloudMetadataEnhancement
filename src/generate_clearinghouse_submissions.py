@@ -65,7 +65,7 @@ def get_multi_field_dict():
     return multi_field_dict
 
 
-def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clearinghouse_data_dir):
+def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clearinghouse_data_dir, stats):
     """process_supercat_fields
         process all the EEZ etc. relevant fields and return a list of sample curations in JSON format to make.
         and print to file
@@ -108,7 +108,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         """
         returns valid JSON if there is a hit, Notes: the attributePost format is super_category + : + lower_case(
         field) as lower case is the preferred INSDC format NewSampleCuration is Class from clearinghouse_object.pl
-        :param row: :return:
+        :param row: :return: local_stats
         """
         # ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         # ic()
@@ -266,10 +266,10 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
 
             if field in multi_field_dict[super_category]:
                 # ic(f"{field} in {multi_field_dict[super_category][field]}")
-                df_specific['json_col'] = df_specific.apply(createMultiSubmissionsJson, axis = 1)
+                local_stats = df_specific['json_col'] = df_specific.apply(createMultiSubmissionsJson, axis = 1)
             else:
                 # ic(f"{field} not in {multi_field_dict[super_category][field]}")
-                df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
+                local_stats = df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
 
             if is_numeric_dtype(df_specific[field]):
                 df_specific.loc[df_specific[field] == 0, 'json_col'] = ""
@@ -279,11 +279,12 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             local_list = df_specific['json_col'].values.tolist()
             local_list = [i for i in local_list if i]  # remove empty list items
             out_file = clearinghouse_data_dir + dom_type + '.json'
+            stats['by_curation_type'][field] = {'curation_count': len(local_list)}
             create_submit_curations_file(local_list, out_file)
             curation_list.extend(local_list)
         # sys.exit()
-
-    return curation_list
+    ic(stats)
+    return stats
 
 
 def merge_sea_ena(debug_status, hit_dir):
@@ -343,8 +344,9 @@ def create_submit_curations_file(full_curation_list, out_file):
     :param out_file:
     :param full_curation_list:
     :param  out_file: file name
-    :return: nowt
+    :return: total number of curations
     """
+    print(f"Creating curations for {len(full_curation_list)} {out_file}")
     if len(full_curation_list) == 0:
         ic("Warning no curations, so not creating: ", out_file)
     else:
@@ -357,7 +359,7 @@ def create_submit_curations_file(full_curation_list, out_file):
         with open(out_file, 'w') as fp:
             fp.write(json.dumps(submission_dict, indent = 2))
 
-    return
+    return len(full_curation_list)
 
 
 def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, clearinghouse_data_dir):
@@ -372,6 +374,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     """
     df_merged_ena_sea_full = merge_sea_ena(debug_status, hit_dir)
     ic(df_merged_ena_sea_full.shape)
+    stats = {"by_curation_type": {}}
 
     annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
 
@@ -390,7 +393,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
             continue
         # ic(f"filtered for {annotation_type}: {df_merged_ena_sea.shape}")
         local_curation_list = process_supercat_fields(debug_status, df_merged_ena_sea, annotation_type,
-                                                      clearinghouse_data_dir)
+                                                      clearinghouse_data_dir, stats)
         # ic(len(local_curation_list))
     # ic()
     # full_curation_list = []

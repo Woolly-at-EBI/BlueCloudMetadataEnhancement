@@ -38,12 +38,21 @@ class NewSampleCuration:
         self.attributePre = ""  # optional, but at least one of Post or Pre needed
         self.valuePost = ""  # optional
         self.valuePre = ""  # optional
+        self.valuePID = ""  # optional and currently not being used, is Stephane's wish to be implemented in ClearingHouse
 
         if use_ena_auto_curation_values:
             self.assertionMethod = "automatic assertion"  # mandatory child term of ECO_0000217 assertion method
             self.providerName = "European Nucleotide Archive"  # Mandatory
             self.providerUrl = "https://www.ebi.ac.uk/ena/browser/home"  # optional
             self.addAutoAssertionEvidence("void")
+
+    def putValuePID(self, valuePID ):
+        self.valuePID = valuePID
+
+    def getValuePID(self):
+        if hasattr(self, "valuePID") and self.attributionType != "":
+            return self.valuePID
+        return ""
 
     def putAttributionType(self, attributionType):
         self.attributionType = attributionType

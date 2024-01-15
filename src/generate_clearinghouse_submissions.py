@@ -183,7 +183,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
 
             if len(extra_array) > 0:
                 # ic("have some extra_array fields")
-                my_record.appendAssertionAdditionalInfo("Custom extra annotation follows; " + "; ".join(extra_array))
+                my_record.putValuePID("; ".join(extra_array))  # n.b. This ValuePID is not being used yet
 
                 # Stephane wants, the value to look like "China (CHN; 156)"
                 if my_record.attributePost in ['EEZ-sovereign-level-1', 'EEZ-territory-level-1']:

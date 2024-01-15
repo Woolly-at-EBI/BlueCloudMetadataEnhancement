@@ -11,7 +11,7 @@ from icecream import ic
 import argparse
 
 
-def convert_csv3parquet(args):
+def convert_csv2parquet(args):
     # Convert from pandas to Arrow
 
     fn = args.infile
@@ -33,15 +33,6 @@ def convert_csv3parquet(args):
 
     pa.parquet.write_table(table, ofn)
 
-    pf = ParquetFile(ofn)
-    first_ten_rows = next(pf.iter_batches(batch_size = 10))
-    df_new = pa.Table.from_batches([first_ten_rows]).to_pandas()
-
-    # table = pa.parquet.read_table(ofn)
-    # # Convert back to pandas
-    # df_new = table.to_pandas()
-    #  ic(df_new.head())
-
 
 def main():
     """ main
@@ -49,7 +40,8 @@ def main():
                passed_args
     """
 
-    convert_csv3parquet(args)
+    convert_csv2parquet(args)
+    print("The convert_csv2parquet completed successfully!")
 
 
 if __name__ == '__main__':

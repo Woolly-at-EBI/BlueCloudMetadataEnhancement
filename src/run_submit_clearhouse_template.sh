@@ -43,8 +43,7 @@ function submit_2_clearinghouse () {
 ##################################################################################################
 ##### Configurable portion
 # set environment variables and credentials up - this is my local bash (chmod 007 ~/.my_secrets), please contact your IT admin to see whether this is permissible or they have a better solution
-#source ~/.my_secrets
-source ~/.ayup
+source ~/.my_secrets
 #these are the relevant contents of the file
 #export my_email_address='great_crested_newt@redbrick.ac.uk'
 #export aai_test_user='my_test_username'

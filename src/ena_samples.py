@@ -18,9 +18,22 @@ from pyarrow import parquet as pq
 from pyarrow.parquet import ParquetFile
 from icecream import ic
 from get_directory_paths import get_directory_paths
+from pathlib import Path
+import sys
 
 MyDataStuctures = {}
 
+def exit_if_file_not_found(my_file):
+    """
+    Checks if the file exists and if it does not exists
+    :param my_file:
+    :return: path_file
+    """
+    path_file = Path(my_file)
+    if not path_file:
+        ic(f"{my_file} does not exist")
+        sys.exit(f"{my_file} does not exist")
+    return path_file
 
 def get_all_ena_detailed_sample_info(debug_status, optional_nrows):
     """ get_all_ena_detailed_sample_info
@@ -48,8 +61,9 @@ def get_all_ena_detailed_sample_info(debug_status, optional_nrows):
         (hit_dir, shape_dir, sample_dir, analysis_dir, plot_dir, taxonomy_dir) = get_directory_paths()
         infile = sample_dir + "sample_much_raw.pa"
         ic(infile)
-
+        exit_if_file_not_found(infile)
         pf = ParquetFile(infile)
+
         # specific_columns_needed = ["accession", "tax_id", "scientific_name", "lat", "lon", "collection_date",
         # "environment_biome"]
         specific_columns_needed = ["accession", "tax_id", "lat", "lon", "collection_date", "environment_biome"]
@@ -69,6 +83,7 @@ def get_all_ena_detailed_sample_info(debug_status, optional_nrows):
             del first_nrows
         else:
             ic("all ENA")
+            exit_if_file_not_found(infile)
             table = pq.read_table(infile, columns = specific_columns_needed)
             df = table.to_pandas()
             # df = df.query('(scientific_name == "marine metagenome") or (scientific_name == "Saccharomyces
@@ -140,6 +155,7 @@ def get_ena_total_sample_count(sample_dir):
         rtn: integer line count
     """
     sample_file = sample_dir + 'sample_much_raw.tsv'
+    exit_if_file_not_found(sample_file)
     num_lines = sum(1 for _ in open(sample_file))
 
     return num_lines

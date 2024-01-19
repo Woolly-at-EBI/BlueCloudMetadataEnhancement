@@ -189,9 +189,12 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                 if my_record.attributePost in ['EEZ-sovereign-level-1', 'EEZ-territory-level-1']:
                     name_matches = [x for x in extra_array if re.match("ISO3166-1 alpha-3", x)]
                     if len(name_matches) > 0:
-                        country_abbr = name_matches[0].removeprefix("ISO3166-1 alpha-3:")
+                        country_abbr = country_num = ""
+                        if "ISO3166-1 alpha-3:" in name_matches[0]:
+                            country_abbr = name_matches[0].removeprefix("ISO3166-1 alpha-3:")
                         num_matches = [x for x in extra_array if re.match("ISO3166-1 num", x)]
-                        country_num = num_matches[0].removeprefix("ISO3166-1 num:")
+                        if len(num_matches) >0 and "ISO3166-1 num:" in num_matches[0]:  #had a few cases where this did not exist
+                            country_num = num_matches[0].removeprefix("ISO3166-1 num:")
                         value_array.append(f" ({country_abbr}; {country_num})")
             # else:
             #     ic("Don't have some extra_array fields")
@@ -297,8 +300,10 @@ def merge_sea_ena(debug_status, hit_dir):
     """
     ic()
     ic(debug_status)
+    if debug_status == False:
+        print("WARNING: debug is False, so will run on the complete ENA dataset!")
 
-    df_ena_detail = get_all_ena_detailed_sample_info(True)
+    df_ena_detail = get_all_ena_detailed_sample_info(debug_status)
     ic(df_ena_detail.shape)
 
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep = '\t')

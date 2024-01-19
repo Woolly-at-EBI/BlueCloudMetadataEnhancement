@@ -82,8 +82,8 @@ export bearer_file="bearer_file"
 #re-running the bearer key frequently as it times out within an hour...
 
 re_run_bearer_file $auth_url $creds
-export bearerkey=`cat $bearer_file`
-export bearer="Authorization: Bearer $bearerkey"
+export bearer_key=`cat $bearer_file`
+export bearer="Authorization: Bearer ${bearer_key}"
 
 ##################################################################################################
 # processing every json file

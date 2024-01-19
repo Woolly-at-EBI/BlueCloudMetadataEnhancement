@@ -596,7 +596,7 @@ def print_df_mega(prefix, df_mega):
     glossary[title] = 'count of all ENA samples for a tax_id'
     ic('###', title)
     out_file = analysis_dir + prefix + '_' + title + '.tsv'
-    df = get_ena_species_count(sample_dir)
+    df = get_ena_species_count()
     df = df.reset_index()
     ic(df.columns)
     df = df.rename(columns={'scientific_term': 'NCBI term'})

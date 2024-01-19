@@ -1833,7 +1833,7 @@ def main(verbosity, stage, debug_status):
         # get category information from hit file
         df_merged_all_categories = get_merged_all_categories_file(analysis_dir)
         # gets all sample data rows in ENA(with or without GPS coords), and a rich but limited selection of metadata files
-        df_all_ena_sample_detail = get_all_ena_detailed_sample_info(debug_status)
+        df_all_ena_sample_detail = get_all_ena_detailed_sample_info(debug_status, 0)
         ic(df_all_ena_sample_detail.head())
         ic(df_all_ena_sample_detail.shape[0])
         ic('-' * 100)

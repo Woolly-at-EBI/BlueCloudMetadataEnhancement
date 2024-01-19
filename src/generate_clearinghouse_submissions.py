@@ -303,7 +303,7 @@ def merge_sea_ena(debug_status, hit_dir):
     if debug_status == False:
         print("WARNING: debug is False, so will run on the complete ENA dataset!")
 
-    df_ena_detail = get_all_ena_detailed_sample_info(debug_status)
+    df_ena_detail = get_all_ena_detailed_sample_info(debug_status, 0)
     ic(df_ena_detail.shape)
 
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep = '\t')

@@ -1206,7 +1206,7 @@ def analysis_lat_lon(sample_dir):
     ic()
 
     test_status = True
-    df = get_all_ena_detailed_sample_info(test_status)
+    df = get_all_ena_detailed_sample_info(test_status, 0)
     cols = ["accession", "lat", "lon"]
 
     df_filtered = df.loc[df['lat'].notnull()]

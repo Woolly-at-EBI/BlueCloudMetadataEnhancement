@@ -2,37 +2,64 @@
 #
 # Peter Woollard, ENA, EMBL-EBI, March 2023
 echo "script to run submit the clearinghouse submissions"
-echo "  run: script.py dir_path_to_submission_jsons"
-echo "  suggestion, before the run: script submission_typescript.log"
-echo ""
+export usage="  run: script.py -m [test|prod] -d dir_path_to_submission_jsons"
+echo "INFO: suggestion, before the run, ensure you capture all the screen output e.g. by: script submission_typescript.log"
+echo "#####################################################"
 
 ##################################################################################################
 ##### Configurable portion
 # set environment variables and credentials up - this is my local bash (only readable by me), suggest you doing something similar
 source ~/.ayup
 
-TEST=0
-if [ $TEST -eq 1 ]; then
-  echo "using test credentials and setup"
+while getopts m:d: flag
+do
+    case "${flag}" in
+        m) mode=${OPTARG};;
+        d) submission_dir=${OPTARG};;
+    esac
+done
+
+echo "INFO: run_mode=${mode}<--"
+echo "INFO: submission_dir=${submission_dir}<--"
+original_submission_dir=${submission_dir}
+if ! { [ ${mode} = "test" ] || [ ${mode} = "prod" ]; } ; then
+  echo "ERROR with the -m parameter: ${usage}"
+  exit
+fi
+if ! { [ ${submission_dir} != "" ] &&  [ -d $submission_dir ]; } ; then
+    echo "ERROR with the -d parameter: ${usage}"
+    if ! [ -d $submission_dir ]; then
+      echo "${submission_dir}<--is not a valid directory, so exiting"
+      exit
+    fi
+fi
+echo "INFO: commandline parameters are apparently correct (well done you!)"
+
+if [ ${mode} == "test" ]; then
+  echo "INFO: using -->test<--- credentials etc."
   url="https://wwwdev.ebi.ac.uk/ena/clearinghouse/api/curations"
   auth_url='https://explore.api.aai.ebi.ac.uk/auth'
   creds=$aai_test2_creds
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/test/splits/"
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
+  # submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/test/splits/"
+  # submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
 else
   #PROD
   echo "using production credentials and setup"
   url="https://www.ebi.ac.uk/ena/clearinghouse/api/curations"
   auth_url='https://api.aai.ebi.ac.uk/auth'
   creds=$aai_prod_creds
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/IHO:IHO_category/"
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/redo_IHO:IHO_category/split_100/"
-  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/corrections/splits/remainder/"
-  submission_dir=$1
+#  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/"
+#  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/IHO:IHO_category/"
+#  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/submission_data/full/splits/redo_IHO:IHO_category/split_100/"
+#  submission_dir="/Users/woollard/projects/bluecloud/clearinghouse/corrections/splits/remainder/"
+#  submission_dir=$1
 fi
-echo "submission_dir:"$submission_dir
 
+if [ ${original_submission_dir} != ${submission_dir} ]; then
+  echo "WARNING: submission_dir is not what was passed to commandline, currently: ${submission_dir}"
+fi
+
+exit
 export bearer_file="bearer_file"
 # echo $creds
 # if meed to renew the bearer ( the below is for the test):
@@ -41,7 +68,7 @@ export bearer_file="bearer_file"
 
 
 ##################################################################################################
-echo "submission_dir: "$submission_dir
+#
 
 function re_run_bearer_file () {
   auth_url=$1

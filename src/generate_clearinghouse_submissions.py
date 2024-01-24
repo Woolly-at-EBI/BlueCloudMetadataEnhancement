@@ -76,6 +76,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
     :param df_merge_sea_ena:
     :param super_category:
     :param clearinghouse_data_dir:
+    :param stats:
     :return: curation_list
     """
     ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -110,6 +111,7 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         field) as lower case is the preferred INSDC format NewSampleCuration is Class from clearinghouse_object.pl
         :param row: :return: local_stats
         """
+
         # ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         # ic()
         # ic(field)
@@ -140,19 +142,26 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             matches = ["TERRITORY", "SOVEREIGN", "GEONAME", "IHO_category"]
             # ic(matches)
             if "intersect_MARREGION" in field:
+                # ic()
                 # ic("intersect_MARREGION in field")
+                # ic(row)
                 count = 0
-                if type(row["intersect_EEZ"]) is not str or row["intersect_EEZ"] == "":
-                    # as EEZ name is nan (actually float...)"
-                    # ic(f"WARNING: {field} is not an intersect as EEZ is NaN so skipping record")
-                    return
+                # if type(row["intersect_EEZ"]) is not str or row["intersect_EEZ"] == "":
+                #     # as EEZ name is nan (actually float...)"
+                #     ic(f"WARNING: {field} is not an intersect as EEZ is NaN so skipping record")
+                #     return
                 for component_field in multi_field_dict[super_category][field]:
+                    # if component_field != "intersect_MARREGION":  #Peter, this is just in debuggig!
+                    #    continue
                     # ic(f"   {super_category}; {component_field}")
                     if row[component_field] == "" or row[component_field] == 0:
                         continue
                     # else:
-                    #     ic(f"component:{row[component_field]}<---")
+                    # ic(f"{component_field} component:{row[component_field]}<---")
                     field_name = component_field.lower().removeprefix('intersect_')
+
+                    # if component_field == "intersect_MARREGION" and 'High' in row[component_field]:
+                    #     ic(f"Yipeeeeee High found")
                     if count == 0:
                         value_array.append(str(row[component_field]))
                     else:
@@ -193,7 +202,8 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
                         if "ISO3166-1 alpha-3:" in name_matches[0]:
                             country_abbr = name_matches[0].removeprefix("ISO3166-1 alpha-3:")
                         num_matches = [x for x in extra_array if re.match("ISO3166-1 num", x)]
-                        if len(num_matches) >0 and "ISO3166-1 num:" in num_matches[0]:  #had a few cases where this did not exist
+                        if len(num_matches) > 0 and "ISO3166-1 num:" in num_matches[0]:
+                            # had a few cases where this did not exist
                             country_num = num_matches[0].removeprefix("ISO3166-1 num:")
                         value_array.append(f" ({country_abbr}; {country_num})")
             # else:
@@ -223,9 +233,12 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
         df_specific = df_merge_sea_ena.query('GEONAME != None', engine = 'python').copy()
         assertion_additional_infoVal = "confidence:high; evidence:sample coordinates within EEZ shapefile"
     elif super_category == "IHO-EEZ":
+        ic()
         curation_types2add = ['intersect_MARREGION']
         super_category_name = 'intersect_MARREGION'
-        df_specific = df_merge_sea_ena.query('intersect_UN_TER3 != None').copy()
+        # df_specific = df_merge_sea_ena.query('intersect_UN_TER3 != None').copy()
+        df_specific = df_merge_sea_ena.query('intersect_MARREGION != None').copy()
+        ic(df_specific.shape)
         assertion_additional_infoVal = "confidence:high; evidence:sample coordinates within IHO-EEZ intersect shapefile"
     elif super_category == "IHO":
         curation_types2add = ['IHO_category']
@@ -268,8 +281,9 @@ def process_supercat_fields(debug_status, df_merge_sea_ena, super_category, clea
             # ic(attributePostVal)
 
             if field in multi_field_dict[super_category]:
-                # ic(f"{field} in {multi_field_dict[super_category][field]}")
+                ic(f"{field} in {multi_field_dict[super_category][field]}")
                 local_stats = df_specific['json_col'] = df_specific.apply(createMultiSubmissionsJson, axis = 1)
+                # sys.exit()
             else:
                 # ic(f"{field} not in {multi_field_dict[super_category][field]}")
                 local_stats = df_specific['json_col'] = df_specific.apply(createIndividualSubmissionsJson, axis = 1)
@@ -300,7 +314,7 @@ def merge_sea_ena(debug_status, hit_dir):
     """
     ic()
     ic(debug_status)
-    if debug_status == False:
+    if not debug_status:
         print("WARNING: debug is False, so will run on the complete ENA dataset!")
 
     df_ena_detail = get_all_ena_detailed_sample_info(debug_status, 0)
@@ -308,6 +322,11 @@ def merge_sea_ena(debug_status, hit_dir):
 
     df_sea_hits = pd.read_csv(hit_dir + "merged_sea.tsv", sep = '\t')
 
+    # For debugging getting just the High Sea containing entries
+    ic(df_sea_hits.columns)
+    # df_sea_hits = df_sea_hits[df_sea_hits['intersect_MARREGION'].str.contains("High", na=False)]
+    # ic(df_sea_hits.head())
+    ic(df_sea_hits.shape)
     # ic(df_sea_hits.columns)
 
     # 'intersect_MRGID', 'intersect_MARREGION', 'intersect_MRGID_IHO', 'intersect_IHO_SEA'
@@ -339,6 +358,11 @@ def merge_sea_ena(debug_status, hit_dir):
         # ic(df_merge_sea_ena.dtypes)
         # ic(df_merge_sea_ena.head(2))
         ic(df_merge_sea_ena.columns)
+        # df_merge_sea_ena = df_merge_sea_ena[df_merge_sea_ena['intersect_MARREGION'].str.contains("High", na = False)]
+        # ic(df_merge_sea_ena.shape)
+        # df_merge_sea_ena = df_merge_sea_ena.head(5)
+        # ic(df_merge_sea_ena)
+    # sys.exit()
     return df_merge_sea_ena
 
 
@@ -382,6 +406,7 @@ def generate_marine_related_annotations(debug_status, hit_dir, analysis_dir, cle
     stats = {"by_curation_type": {}}
 
     annotation_list = ["EEZ", 'IHO-EEZ', 'IHO']
+    annotation_list = ['IHO-EEZ']
 
     local_curation_list = []
 
@@ -438,9 +463,6 @@ def main(args):
     else:
         ic("whoops, no specific submissions found")
 
-    ic()
-    sys.exit()
-
     # submit_curations(full_curation_list, analysis_dir)
 
 
@@ -457,7 +479,7 @@ if __name__ == '__main__':
                         required = False, action = "store_true")
     parser.add_argument("-s", "--generate_specific_submissions",
                         help = "Generate specific submissions, needed if you want to actually generate ought.",
-                        required = False,
+                        required = True,
                         action = "store_true"
                         )
 

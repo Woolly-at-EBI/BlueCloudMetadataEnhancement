@@ -1,5 +1,19 @@
-
 # High Level Script Documentation
+
+Table of contents:
+<!-- TOC -->
+* [High Level Script Documentation](#high-level-script-documentation)
+  * [Philosophy](#philosophy)
+  * [Table of documentation, the high level docs from pydocs for each script](#table-of-documentation-the-high-level-docs-from-pydocs-for-each-script-)
+  * [To have new versions of ena_data including new lat and longs](#to-have-new-versions-of-ena_data-including-new-lat-and-longs)
+  * [to generate and submit](#to-generate-and-submit-)
+    * [Flow: Generating and Submitting Curations](#flow-generating-and-submitting-curations)
+  * [Suppressing Existing Curations in the ClearingHouse](#suppressing-existing-curations-in-the-clearinghouse)
+    * [Flow: Suppressing Existing Curations](#flow-suppressing-existing-curations)
+  * [General notes about the scripts](#general-notes-about-the-scripts)
+<!-- TOC -->
+
+***
 
 ## Philosophy
 Smaller scripts/utilities focused on different aspects 
@@ -51,11 +65,45 @@ Then run these scripts
 * ./waterTaxonomyAnalysis.py
 * ./extra_comparisons.py 
 
-## to generate and submit 
+
+### Flow: Mining ENA and working out Marine/Terrestrial etc.
+```mermaid
+graph TD;
+    A(get_ena_ws_data.sh)-- extract of key fields and values from ENA portal-->B(A large flat file of values inc. coordinates);
+    B-->C(run_all.sh);
+    C-- Searching coordinates against all the shapefiles -->D("hit files for EEZ's etc.");
+    D-->E(analyseHits.py)
+    E-- analysis -->F(flat files and graphs)
+```
+
+## To Generate and Submit Information to the ClearingHouse
 See each scripts help for the details 
 * generate_clearinghouse_submissions.py
 * split_submission_json.py - split a curation submission JSON file into batches e.g. of 100 curations 
 * run_submit_clearhouse.sh - script to curation submission JSON files to the clearinghouse
 
+### Flow: Generating and Submitting Curations
+```mermaid
+graph TD;
+    A(generate_clearinghouse_submissions.py)-->B(A large JSON file per category);
+    B-- foreach JSON file -->C(split_submission_json.py);
+    C-->D(run_submit_clearhouse.sh);
+```
+
+## Suppressing Existing Curations in the ClearingHouse
+Can't delete records in the ClearingHouse, but they can be supressed.
+
+### Flow: Suppressing Existing Curations
+```mermaid
+graph TD;
+    A(getCurationIds.py) -- to generate curl commands for extractions to certain time period -->B(Large JSON files, of clearinghouse entries);
+    B-- to extract curations_ids from the JSON outputs of all entries -->C(Files of curation ids);
+    C-->D(run_suppress_clearinghouse.sh);
+    D-- true - in logs -->E(Success, curations suppressed)
+    D-- "false or TOKEN expired" -->F("Do some clean-up and resubmissions")
+```
 ## General notes about the scripts
-Many of the scripts e.g. get_directory_paths.py are utility scripts
+Many of the scripts e.g. get_directory_paths.py are utility scripts.
+
+Are a mix of python and bash scripts.  Would prefer for it to be pure python, but was easier working with bash where environmental values and bearer files were needed etc. Plus hard to replicate what Curl and pipelining of jq was doing.
+if these are to be used more in production, will probably need porting to python.

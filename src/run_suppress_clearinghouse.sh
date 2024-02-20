@@ -1,8 +1,9 @@
-# script to run submit the clearinghouse submissions
+# script to run the generate and submit to clearinghouse submissions
+# takes as input a directory, that contains files of curation ids.
 #
 # Peter Woollard, ENA, EMBL-EBI, March 2023
 set -e
-echo "script to run submit the clearinghouse submissions"
+echo "script to run the submit to clearinghouse submissions"
 export usage="  run: script.py -m [test|prod] -d dir_path_to_curations_ids"
 echo "INFO: suggestion, before the run, ensure you capture all the screen output e.g. by: script supress_typescript.log"
 echo "#####################################################"
@@ -89,26 +90,29 @@ function re_run_bearer_file () {
 
 function suppress_in_clearinghouse () {
   mode=$1
-  export input_file=$2
+  input_file=$2
+  out_dir=$3
+  echo ${input_file}
+
   # echo $input_file
   export bearerkey=`cat $bearer_file`
   export bearer="Authorization: Bearer $bearerkey"
-  out_run_tmp="tmp_suppress_run.sh"
+  out_run_tmp=${input_file}".sh"
+  out_run_log=${input_file}".log"
   echo $out_run_tmp
+
   if [ $mode = "test" ]; then
      echo "in test...."
-     head -1 $input_file | sed 's/"//g;'  | awk '{ print "curl -s -X PATCH \"https://wwwdev.ebi.ac.uk/ena/clearinghouse/api/curations/"$1 }' | awk '{print $0"/suppress\" -H \"accept: */*\" -H \""}' | sed "s/$/$bearer\"/" > $out_run_tmp
+     cat $input_file | sed 's/"//g;'  | awk '{ print "curl -s -X PATCH \"https://wwwdev.ebi.ac.uk/ena/clearinghouse/api/curations/"$1 }' | awk '{print $0"/suppress\" -H \"accept: */*\" -H \""}' | sed "s/$/$bearer\"/" > $out_run_tmp
   else
      echo "in prod...."
-     head -1 $input_file | sed 's/"//g;'  | awk '{ print "curl -s -X PATCH \"https://www.ebi.ac.uk/ena/clearinghouse/api/curations/"$1 }' | awk '{print $0"/suppress\" -H \"accept: */*\" -H \""}' | sed "s/$/$bearer\"/" > $out_run_tmp
+     cat $input_file | sed 's/"//g;'  | awk '{ print "curl -s -X PATCH \"https://www.ebi.ac.uk/ena/clearinghouse/api/curations/"$1 }' | awk '{print $0"/suppress\" -H \"accept: */*\" -H \""}' | sed "s/$/$bearer\"/" > $out_run_tmp
   fi
-  fmt_date=`date '+%Y-%m-%d:%H:%M'`
-  out_run_tmp_log="tmp_suppress_run_$fmt_date.log"
-  echo "Writing output to "$out_run_tmp_log
-  bash $out_run_tmp > $out_run_tmp_log
-  cat $out_run_tmp_log
-
-  exit
+  # fmt_date=`date '+%Y-%m-%d:%H:%M'`
+  # out_run_tmp_log="tmp_suppress_run_$fmt_date.log"
+  echo "Writing output to "$out_run_log
+  bash $out_run_tmp > $out_run_log &
+  # cat $out_run_tmp_log
 
   echo " "
 }
@@ -119,15 +123,25 @@ export bearerkey=`cat $bearer_file`
 export bearer="Authorization: Bearer $bearerkey"
 
 file_counter=0
-for file in $submission_dir/*.txt
-do
-    echo $file
+EXT=txt
+for file in "$submission_dir"/*; do
+
     #echo $bearer
-    suppress_in_clearinghouse $mode $file
-#    sleep 0.1 # wait 0.1 seconds to give a break to the curl etc.
-#    re_run_bearer_file $auth_url $creds
+    if [[ $file = *.sh ]] ;  then
+      echo "is bash so skipping: $file"
+      continue
+    fi
+    if [[ $file = *.log ]] ;  then
+      echo "is log so skipping: $file"
+      continue
+    fi
+    # echo "file is-->"${file}"<--"
+    suppress_in_clearinghouse $mode $file $submission_dir
+    sleep 0.1  # wait 0.1 seconds to give a break to the curl etc.
+    re_run_bearer_file $auth_url $creds
     file_counter=$[$file_counter +1]
 done
+exit
 
 out_message="submission_dir was ${submission_dir}\ncount of JSON files was: ${file_counter}"
 out_message="${out_message}\nsee curation_server_api: ${curation_server_api} and try out some curation ids and also some sample ids you saw in the submission output"

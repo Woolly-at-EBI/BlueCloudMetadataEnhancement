@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Script of extract_curations_ids.sh is to extract_curations_ids.sh
+# Script of extract_curations_ids.sh is to extract curations_ids from the JSON outputs of all entries in date ranges.
+# This was written before attribute specific queries were possible
 #
 # ___author___ = "woollard@ebi.ac.uk"
 # ___start_date___ = 2024-02-14
@@ -28,17 +29,36 @@ js_cmd() {
   # remaining array=(EEZ-sovereign-level-1 EEZ-sovereign-level-2 EEZ-sovereign-level-3 EEZ-territory-level-1 EEZ-territory-level-2 EEZ-territory-level-3 )
 
   case $attributeField in
-    IHO-name)
-    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "IHO-name") | .id' >> $outfile
+#    IHO-name)
+#    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "IHO-name") | .id' >> $outfile
+#    ;;
+#    EEZ-IHO-intersect-name)
+#    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-IHO-intersect-name") | .id' >> $outfile
+#    ;;
+#    EEZ-name)
+#    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-name") | .id' >> $outfile
+#    ;;
+#    intersect_MARREGION:marregion)
+#    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "intersect_MARREGION:marregion") | .id' >> $outfile
+#    ;;
+#    *)
+    EEZ-sovereign-level-1)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-sovereign-level-1") | .id' >> $outfile
     ;;
-    EEZ-IHO-intersect-name)
-    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-IHO-intersect-name") | .id' >> $outfile
+    EEZ-sovereign-level-2)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-sovereign-level-2") | .id' >> $outfile
     ;;
-    EEZ-name)
-    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-name") | .id' >> $outfile
+    EEZ-sovereign-level-3)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-sovereign-level-3") | .id' >> $outfile
     ;;
-    intersect_MARREGION:marregion)
-    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "intersect_MARREGION:marregion") | .id' >> $outfile
+    EEZ-territory-level-1)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-territory-level-1") | .id' >> $outfile
+    ;;
+    EEZ-territory-level-2)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-territory-level-1") | .id' >> $outfile
+    ;;
+    EEZ-territory-level-3)
+    cat $1 | jq -s '.[] | .curations | .[] | select(.attributePost == "EEZ-territory-level-1") | .id' >> $outfile
     ;;
     *)
     echo -n "unknown attribute $attributeField"
@@ -54,6 +74,7 @@ function get_file_curationids() {
   # echo $arg1
   array=(EEZ-IHO-intersect-name EEZ-name EEZ-sovereign-level-1 EEZ-sovereign-level-2 EEZ-sovereign-level-3 EEZ-territory-level-1 EEZ-territory-level-2 EEZ-territory-level-3 IHO-name intersect_MARREGION:marregion)
   array=(EEZ-IHO-intersect-name EEZ-name IHO-name intersect_MARREGION:marregion)
+  array=(EEZ-sovereign-level-1 EEZ-sovereign-level-2 EEZ-sovereign-level-3 EEZ-territory-level-1 EEZ-territory-level-2 EEZ-territory-level-3)
   # array=(intersect_MARREGION:marregion)
   # cat $arg1 | jq | jq -s '.[] | .curations | .[] | select(.attributePost == "IHO-name") | .id'
   prefix="cat $arg1 | jq -s '.[] | .curations | .[] | select(.attributePost == \""

@@ -88,7 +88,7 @@ done
 out_message="submission_dir was ${submission_dir}\ncount of JSON files was: ${file_counter}"
 out_message="${out_message}\nsee curation_server_api: ${curation_server_api} and try out some curation ids and also some sample ids you saw in the submission output"
 echo ${out_message}
-# echo $out_message| mail -s "Clearinghouse ${mode} submission finished" woollard@ebi.ac.uk
+echo $out_message| mail -s "Clearinghouse ${mode} submission finished" woollard@ebi.ac.uk
 echo "###########################end of script"
 
 

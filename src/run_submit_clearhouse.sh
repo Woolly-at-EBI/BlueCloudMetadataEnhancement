@@ -64,8 +64,10 @@ function submit_2_clearinghouse () {
   # cmd=`echo curl -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -d @${curation_json_file}`
   #could not get to both see the command and execute it, so doing the dirty way via a new file
   echo $cmd
-  echo $cmd > run_me.sh
-  time sh ./run_me.sh
+  run_me_script="run_me_"$$".sh"
+  echo $cmd > $run_me_script
+  time sh ./$run_me_script
+  rm ./$run_me_script
   echo " "
 }
 #################################################################################################

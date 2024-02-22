@@ -6,7 +6,8 @@ Table of contents:
   * [Philosophy](#philosophy)
   * [Table of documentation, the high level docs from pydocs for each script](#table-of-documentation-the-high-level-docs-from-pydocs-for-each-script-)
   * [To have new versions of ena_data including new lat and longs](#to-have-new-versions-of-ena_data-including-new-lat-and-longs)
-  * [to generate and submit](#to-generate-and-submit-)
+    * [Flow: Mining ENA and working out Marine/Terrestrial etc.](#flow-mining-ena-and-working-out-marineterrestrial-etc)
+  * [To Generate and Submit Information to the ClearingHouse](#to-generate-and-submit-information-to-the-clearinghouse)
     * [Flow: Generating and Submitting Curations](#flow-generating-and-submitting-curations)
   * [Suppressing Existing Curations in the ClearingHouse](#suppressing-existing-curations-in-the-clearinghouse)
     * [Flow: Suppressing Existing Curations](#flow-suppressing-existing-curations)
@@ -88,6 +89,12 @@ graph TD;
     A(generate_clearinghouse_submissions.py)-->B(A large JSON file per category);
     B-- foreach JSON file -->C(split_submission_json.py);
     C-->D(run_submit_clearhouse.sh);
+    D-->ErrorChecking
+    ErrorChecking-->G(curationSubmission_log_processing.sh)
+    G--checks the logs/typescript-->validation
+    validation--if Error-->D
+    validation--if No Error-->E(move the JSON submissions files)
+
 ```
 
 ## Suppressing Existing Curations in the ClearingHouse

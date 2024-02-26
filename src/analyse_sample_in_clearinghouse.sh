@@ -11,13 +11,33 @@
 
 # """
 #configuration
-while getopts di: flag
+curation_prefix="https://www.ebi.ac.uk/ena/clearinghouse/api/curations/"
+extra_curations2supress_file="/Users/woollard/projects/bluecloud/clearinghouse/high_seas/extra_curations2_suppress/suppress_todo_from_checking.txt"
+extra_curations2supress_logfile=$extra_curations2supress_file".log"
+logged_fmt_date=`date '+%Y-%m-%d:%H:%M'`
+# echo "logged_fmt_date=${logged_fmt_date}"
+
+usage() { echo "Usage: $0 [-i <your_sample_id>] [-f <file_for_suppress_ids>]" 1>&2; exit 1; }
+while getopts "i:f:" flag
 do
     case "${flag}" in
-        d) directory=${OPTARG};;
-        i) input_sample_id=${OPTARG};;
+        i) input_sample_id=${OPTARG}
+          ((${#input_sample_id}  > 10)) || echo "sample_id too short" usage;;
+        f) extra_curations2supress_file=${OPTARG}
+          ((${#extra_curations2supress_file} > 3)) || echo "file name too short" usage;;
+        *)
+            echo "Unrecognized option '$1'"
+            usage ;;
     esac
 done
+if [ -z "${input_sample_id}" ] || [ -z "${extra_curations2supress_file}" ]; then
+        echo 'Missing -i or -f' >&2
+        usage
+fi
+
+extra_curations2supress_logfile=${extra_curations2supress_file%.*}".log"
+# echo ${extra_curations2supress_logfile}
+
 
 # trivial QC test...
 if [ ${#input_sample_id} -lt 10 ]; then
@@ -26,11 +46,7 @@ if [ ${#input_sample_id} -lt 10 ]; then
 fi
 
 
-curation_prefix="https://www.ebi.ac.uk/ena/clearinghouse/api/curations/"
-extra_curations2supress_file="/Users/woollard/projects/bluecloud/clearinghouse/high_seas/extra_curations2_suppress/suppress_todo_from_checking.txt"
-extra_curations2supress_logfile=$extra_curations2supress_file".log"
-logged_fmt_date=`date '+%Y-%m-%d:%H:%M'`
-# echo "logged_fmt_date=${logged_fmt_date}"
+
 
 ################################################################
 # Functions

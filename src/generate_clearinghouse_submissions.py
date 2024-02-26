@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ generate_clearinghouse_submissions.py
-    from merge of shape hit files and also from waterTaxonomyAnalysis.p
+    from merge of shape hit files and also from waterTaxonomyAnalysis.py
      see the PDF details in https://www.ebi.ac.uk/ena/clearinghouse/api/
 
  ___author___ = "woollard@ebi.ac.uk"

@@ -11,6 +11,8 @@ Table of contents:
     * [Flow: Generating and Submitting Curations](#flow-generating-and-submitting-curations)
   * [Suppressing Existing Curations in the ClearingHouse](#suppressing-existing-curations-in-the-clearinghouse)
     * [Flow: Suppressing Existing Curations](#flow-suppressing-existing-curations)
+  * [Finding Duplicated Curations that can then be suppressed as above](#finding-duplicated-curations-that-can-then-be-suppressed-as-above)
+    * [Flow: Finding Duplicated Curations](#flow-finding-duplicated-curations)
   * [General notes about the scripts](#general-notes-about-the-scripts)
 <!-- TOC -->
 
@@ -98,7 +100,7 @@ graph TD;
 ```
 
 ## Suppressing Existing Curations in the ClearingHouse
-Can't delete records in the ClearingHouse, but they can be supressed.
+Can't delete records in the ClearingHouse, but they can be suppressed.
 
 ### Flow: Suppressing Existing Curations
 ```mermaid
@@ -106,9 +108,27 @@ graph TD;
     A(getCurationIds.py) -- to generate curl commands for extractions to certain time period -->B(Large JSON files, of clearinghouse entries);
     B-- to extract curations_ids from the JSON outputs of all entries -->C(Files of curation ids);
     C-->D(run_suppress_clearinghouse.sh);
-    D-- true - in logs -->E(Success, curations suppressed)
-    D-- "false or TOKEN expired" -->F("Do some clean-up and resubmissions")
+    D-- true - in logs -->E[Success, curations suppressed]
+    D-- "false or TOKEN expired" -->F["Do some clean-up and resubmissions"]
 ```
+
+## Finding Duplicated Curations that can then be suppressed as above
+Found that I had duplicated many curations. ClearingHouse should not allow one to have done that,  but it had, (reported it, and it has since been fixed).
+
+### Flow: Finding Duplicated Curations
+```mermaid
+graph TD;
+    A(Large JSON files, of clearinghouse entries) -->E(check_duplicates_in_all_categories.sh)
+    E --> sample_ids[massive_sample_id_file]
+    sample_ids-- split -l # to multiple sample id files --> E
+    E-- runs >30 parallel stream of 1 per file of sample ids -->F(launch_check_duplicates.sh)
+    F --> G(analyse_sample_in_clearinghouse.sh)
+    G -- if duplicated curations -->curation_id_file[curation ids]
+    G -- log information -->log_file[information by sample id, curation id + attribute]
+    curation_id_file -- sort *.txt > combined_curations_ids_2_supress --> ids_2_supress[combined_curation_ids]
+    ids_2_supress -- use the previous flow --> suppressCurationIds(Suppressing Existing Curations)
+``` 
+   
 ## General notes about the scripts
 Many of the scripts e.g. get_directory_paths.py are utility scripts.
 

@@ -5,7 +5,11 @@
 # these are captured as pure curation ids in one file and more descriptive info. in a logged file
 #
 # input are JSON dumps of particular categories from the clearinghouse
-
+#
+# This script has been parallelised for ./launch_check_duplicates.sh , to do this need to put the ids into multiple files in a dir.
+# Could be automated, but may not need to do it again. Below using 35 input files worked nicely
+#  work out how many lines per file needed to split into about 35 streams to run in parallel: bc  532981/35 =15228 lines
+# split -l 15228 ../all_sample_ids_2_check.txt ids_
 #
 # ___author___ = "woollard@ebi.ac.uk"
 # ___start_date___ = 2024-02-23

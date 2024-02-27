@@ -1,5 +1,6 @@
 # script to run the generate and submit to clearinghouse submissions
 # takes as input a directory, that contains files of curation ids.
+# it will run in as many parallel streams as the number of files of curation ids
 #
 # Peter Woollard, ENA, EMBL-EBI, March 2023
 set -e
@@ -23,6 +24,9 @@ done
 
 echo "INFO: run_mode=${mode}<--"
 echo "INFO: submission_dir=${submission_dir}<--"
+
+# exit
+
 original_submission_dir=${submission_dir}
 if ! { [ ${mode} = "test" ] || [ ${mode} = "prod" ]; } ; then
   echo "ERROR with the -m parameter: ${usage}"

@@ -128,7 +128,7 @@ def prepare(start_date, end_date, do_per_hour):
 
     def get_curl_cmd(startTime, endTime):
         start = r"""curl 'https://www.ebi.ac.uk/ena/clearinghouse/api/curations?offset=0&providerName=European%20Nucleotide%20Archive&recordType=sample"""
-        # time_part = r"""&startTime=2023-04-06T00%3A00%3A00.000Z&endTime=2023-04-07T00%3A00%3A00.000Z' """
+        # time_part = r"""&startTime=2023-04-06T00%3A00%3A00.000Z&endTime=2023-04-06T00%3A00%3A00.000Z' """
         my_string = f"&startTime={startTime}&endTime={endTime}&limit=0" + r"""'"""
         full_curl = f"{start}{my_string}"
         # run_cmd_line(full_curl)

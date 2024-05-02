@@ -17,14 +17,14 @@ cd $sample_dir || exit
 #the most important fields
 
 #the most used file N.B. this takes 90 minutes to download
-outfile="sample_much_raw.tsv"
-echo "From ENA, extract lots of useful columns of data as well as lat lon column: " $outfile
-# curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&fields=accession%2C%20secondary_sample_accession%2C%20description%2C%20checklist%2C%20collection_date%2C%20first_public%2C%20tax_id%2C%20taxonomic_classification%2C%20lat%2C%20%20lon%2C%20country%2C%20depth%2C%20altitude%2C%20elevation%2C%20salinity%2C%20environment_biome%2C%20environment_feature%2C%20environment_material&includeMetagenomes=true&limit=0&result=sample" -H "accept: */*" > $outfile
-FullSearchString 10
-curlString=${returnVal}
-echo ${curlString}
-curl -s -X POST -H "Content-Type: application/x-www-form-urlencoded" ${curlString} > $outfile
-to_parquet $outfile &
+#outfile="sample_much_raw.tsv"
+#echo "From ENA, extract lots of useful columns of data as well as lat lon column: " $outfile
+#curl -X GET "https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena&dccDataOnly=false&download=false&fields=accession%2C%20secondary_sample_accession%2C%20description%2C%20checklist%2C%20collection_date%2C%20first_public%2C%20tax_id%2C%20taxonomic_classification%2C%20lat%2C%20%20lon%2C%20country%2C%20depth%2C%20altitude%2C%20elevation%2C%20salinity%2C%20environment_biome%2C%20environment_feature%2C%20environment_material&includeMetagenomes=true&limit=0&result=sample" -H "accept: */*" > $outfile
+#FullSearchString 10
+#curlString=${returnVal}
+#echo ${curlString}
+#curl -s -X POST -H "Content-Type: application/x-www-form-urlencoded" ${curlString} > $outfile
+#to_parquet $outfile &
 
 # cat ../data/samples/downloads/sample_much_raw.tsv | awk -F ',' 'NR == 1 || $9 != "" {print}' | head -3  | cat -n
 outfile="all_sample_lat_lon_country.tsv"

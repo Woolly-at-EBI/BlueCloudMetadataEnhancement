@@ -18,7 +18,7 @@ do
 done
 
 prog=$basedir/src/getGeoLocationCategorisation.py
-coordinates_file=$basedir/data/tests/test_lat_lon.tsv
+# coordinates_file=$basedir/data/tests/test_lat_lon.tsv
 coordinates_file=$basedir/data/samples/all_sample_lat_longs_present_uniq.tsv
 outdir=$basedir/data/hits
 shapefile_dir=$basedir/data/shapefiles

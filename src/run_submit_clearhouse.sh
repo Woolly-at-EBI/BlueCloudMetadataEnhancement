@@ -9,7 +9,7 @@ echo "#####################################################"
 ##################################################################################################
 ##### Configurable portion
 # set environment variables and credentials up - this is my local bash (only readable by me), suggest you doing something similar
-source bearer_credentials_setup.sh
+source /Users/woollard/projects/bluecloud/src/bearer_credentials_setup.sh
 
 while getopts m:d: flag
 do
@@ -60,7 +60,7 @@ function submit_2_clearinghouse () {
   export bearer="Authorization: Bearer $bearerkey"
   #echo $bearer
   # -T is needed for big files -d @ is slightly faster and puts it into memory
-  cmd=`echo curl -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -T ${curation_json_file}`
+  cmd=`echo curl -s -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -T ${curation_json_file}`
   # cmd=`echo curl -X POST \"${url}\" -H \"accept: */*\"  -H \"Content-Type: application/json\"   -H \"${bearer}\"  -d @${curation_json_file}`
   #could not get to both see the command and execute it, so doing the dirty way via a new file
   echo $cmd

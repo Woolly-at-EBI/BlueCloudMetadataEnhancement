@@ -16,7 +16,11 @@ def get_term_regex_dict():
         "simple_int": "[0-9]+",
         "broken_int": "[",
         "elevation": "[+-]?(0|((0\.)|([1-9][0-9]*\.?))[0-9]*)([Ee][+-]?[0-9]+)?",
-        "elevation_new": "([+-]?(0|((0\.)|([1-9][0-9]*\.?))[0-9]*)([Ee][+-]?[0-9]+)?)|((^not collected$)|(^not provided$)|(^restricted access$)|(^missing: control sample$)|(^missing: sample group$)|(^missing: synthetic construct$)|(^missing: lab stock$)|(^missing: third party data$)|(^missing: data agreement established pre-2023$)|(^missing: endangered species$)|(^missing: human-identifiable$))",
+        "elevation_new": "([+-]?(0|((0\.)|([1-9][0-9]*\.?))[0-9]*)([Ee][+-]?[0-9]+)?)|((^not collected$)|(^not "
+                         "provided$)|(^restricted access$)|(^missing: control sample$)|(^missing: sample group$)|("
+                         "^missing: synthetic construct$)|(^missing: lab stock$)|(^missing: third party data$)|("
+                         "^missing: data agreement established pre-2023$)|(^missing: endangered species$)|(^missing: "
+                         "human-identifiable$))",
         "test_regex": "([+-]?",
         "altitude": "((0|((0\.)|([1-9][0-9]*\.?))[0-9]*)([Ee][+-]?[0-9]+)?)|((^not collected$)|(^not provided$)|("
                     "^restricted access$)|(^missing: control sample$)|(^missing: sample group$)|(^missing: synthetic "

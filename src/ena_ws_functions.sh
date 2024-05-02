@@ -5,8 +5,9 @@
 echo "--------------------------------------------------------------------------------------"
 echo "                inside ena_ws_functions.sh                      "
 date
-sample_dir="../data/samples/downloads"
-src_dir="/Users/woollard/projects/bluecloud/src"
+base_dir="/Users/woollard/projects/bluecloud/"
+sample_dir=${base_dir}"/data/samples/downloads"
+src_dir=${base_dir}"src"
 
 endpoint="https://www.ebi.ac.uk/ena/portal/api/search?dataPortal=ena"
 base_search_prefix="${endpoint}&dccDataOnly=false&download=false"

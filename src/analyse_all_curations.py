@@ -50,16 +50,18 @@ def get_curation_json_data(json_file):
     # ic("JSON file contains multiple JSON document, so having to join them before reading.")
     with open(json_file, 'r') as infile:
         new_data = infile.read()
-        new_data = new_data.replace('}{', '},{').replace('}\n{', '},{').replace('{"id"', '\n{"id"')
+        # removing newlines initially to allow some other patterns matching work
+        new_data = new_data.replace('\n', '').replace('}{', '},{').replace('}\n{', '},{').replace('{"id"', '\n{"id"')
         # ic(f"before replacements: {len(new_data)}")
         start_size = len(new_data)
         # re.sub('\n{"id"[^\n]*},\n', '', new_data) remove lines that only have a partial pattern!  want to delete
         # any "line" that starts /{"id"/ and doesn't /end }/ these should not exist, but they do... after some
         # exploration it is those that have a single white space. new_data = re.sub(r'\n{"id"[^\n]+^((?!},).)\n',
-        # '\n', new_data)
+        # '\n', new_data) need to remove partial records. Cause broken JSON. We think that there was possibly an
+        # interruption to streaming
         new_data = re.sub('\n{"id".* \n', '\n', new_data)
         end_size = len(new_data)
-        if end_size > start_size:
+        if end_size < start_size:
             ic(f"WARNING Removed some defective JSON records: went from start_len={start_size} to end_len={end_size}")
 
         # ic("trying to debug json")
@@ -175,7 +177,7 @@ def get_generated_curations():
         'EEZ:TERRITORY2.json': 'EEZ:TERRITORY2',
         'EEZ:TERRITORY3.json': 'EEZ:TERRITORY3',
         'IHO:IHO_category.json': 'IHO-sea-area-name',
-        'EEZ:GEONAME.json': 'EEZ:GEONAME',
+        'EEZ:GEONAME.json': 'EEZ-name',
         'EEZ:TERRITORY1.json': 'EEZ:TERRITORY1',
         'EEZ:SOVEREIGN3.json': 'EEZ:SOVEREIGN3',
         'EEZ:SOVEREIGN2.json': 'EEZ:SOVEREIGN2'
@@ -186,6 +188,7 @@ def get_generated_curations():
     # json_file_list = ['IHO:IHO_category.json', 'IHO-EEZ:intersect_MARREGION.json']
     # json_file_list = ['IHO:IHO_category.json']
     json_file_list = ['IHO-EEZ:intersect_MARREGION.json']
+    json_file_list = ['EEZ:GEONAME.json']
     ic(json_file_list)
     for json_file in json_file_list:
         sample_id_list = []
@@ -195,6 +198,7 @@ def get_generated_curations():
         ic(len(json_data))
         for record in json_data:
             sample_id_list.append(record['recordId'])
+
         name = name_dict[json_file]
         samples_by_cat_dict[name] = list(set(sample_id_list))  # make it unique.
         name_json = name + '_json'
@@ -219,13 +223,29 @@ def analyse_submitted_data(samples_by_cat_dict):
     ic("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
     outdir = ("/Users/woollard/projects/bluecloud/clearinghouse/high_seas/past_curations_records"
               "/pull_all_curations_done/output/tmp_for_IHO-sea-area-name/")
-    my_list = ['EEZ-IHO-intersect-name']
+    ic(samples_by_cat_dict.keys())
+    my_list = ['EEZ-name']
+    # my_list = list(samples_by_cat_dict.keys())
+    # sys.exit()
     for name in my_list:
         ic(len(samples_by_cat_dict[name]))
+        try_file_name = outdir + name + "_sample_ids_unsuppressed.txt"
+        ic(try_file_name)
+        if not os.path.isfile(try_file_name):
+            ic(f" {try_file_name} does not exist, so trying to recreate")
+            for sample in samples_by_cat_dict[name]:
+                ic(sample)
+                ic(samples_by_cat_dict[name][sample])
+                break
 
-        sample_ids_unsuppressed_idfile = ("/Users/woollard/projects/bluecloud/clearinghouse/high_seas"
-                                          "/past_curations_records/pull_all_curations_done/output/tmp_for_IHO-sea"
-                                          "-area-name/EEZ-IHO-intersect-name_sample_ids_unsuppressed.txt")
+        else:
+            ic("already exists")
+        sample_ids_unsuppressed_idfile = try_file_name
+        sys.exit()
+
+        # sample_ids_unsuppressed_idfile = ("/Users/woollard/projects/bluecloud/clearinghouse/high_seas"
+        #                                   "/past_curations_records/pull_all_curations_done/output/tmp_for_IHO-sea"
+        #                                   "-area-name/EEZ-IHO-intersect-name_sample_ids_unsuppressed.txt")
         sample_unsuppressed_id_set = set(get_file_ids(sample_ids_unsuppressed_idfile))
         ic(len(sample_unsuppressed_id_set))
         name_json = name + '_json'
@@ -240,6 +260,7 @@ def analyse_submitted_data(samples_by_cat_dict):
         ic(out_file_name)
         json_list_to_json(not_found_json_record_list, out_file_name)
         # cat EEZ-IHO-intersect-name_to_resubmit.json | jq '. | .curations[].recordId' | wc -l
+    ic()
     sys.exit()
 
 
@@ -257,10 +278,10 @@ def get_file_ids(id_file_name):
 def main():
     #  #################### looking at data being submitted to the clearinghouse ####################
 
-    # samples_by_cat_dict = get_generated_curations()
-    # ic(samples_by_cat_dict.keys())
-    # analyse_submitted_data(samples_by_cat_dict)
-    # sys.exit()
+    samples_by_cat_dict = get_generated_curations()
+    ic(samples_by_cat_dict.keys())
+    analyse_submitted_data(samples_by_cat_dict)
+    sys.exit()
 
     #  #################### looking at data from the clearinghouse ####################
     data_dir = ("/Users/woollard/projects/bluecloud/clearinghouse/high_seas/past_curations_records"
@@ -302,7 +323,7 @@ def main():
         ic(outfile_name)
         print_list(sample_id_list, outfile_name)
         ic()
-        sys.exit()
+        # sys.exit()
 
     analyse_curations(merged_json_list)
     curation_id_list = get_curation_ids(merged_json_list, 'unsuppressed')

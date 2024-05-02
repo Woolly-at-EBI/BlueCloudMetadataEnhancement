@@ -470,7 +470,9 @@ if __name__ == '__main__':
     ic()
     # Read arguments from command line
     prog_des = "Script to get the marine zone classification for a set of longitude and latitude coordinates\n" + \
-               "Typical debug usage: ./generate_clearinghouse_submissions.py -d -s"
+               "Typical prod usage: ./generate_clearinghouse_submissions.py -s" + \
+                "Typical debug usage: ./generate_clearinghouse_submissions.py -d -s" + \
+                "Pre-requesites, uses these input files: merged_sea.tsv  which in turn uses hits files particularly the High seas one,"
     parser = argparse.ArgumentParser(description = prog_des)
 
     # Adding optional argument, n.b. in debugging mode in IDE, had to turn required to false.

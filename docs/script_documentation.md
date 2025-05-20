@@ -22,12 +22,12 @@ Table of contents:
 Smaller scripts/utilities focused on different aspects 
 * get ENA sample data
 * run latitude and longitude points against shapefiles to generate hit files
-  * multiple shapefile each with specific attributes
-  * some "category" overlaps e.g. 4 different ones inform on 
+  * multiple shapefiles each with specific attributes
+  * some "category" overlaps, e.g. four different ones inform on 
 * analysis scripts to merge and combine the above attributes
 *  a script to read files generated above to create formatted metadata for submission to the clearinghouse.
 
-These scripts were also used to explore the data and space, hence there were dead-end, thus deprecated scripts as well functions, sorry.
+These scripts were also used to explore the data and space, hence there were dead-end, thus deprecated scripts and functions, sorry.
 
 ## Table of documentation, the high level docs from pydocs for each script 
 | Script                                       | Language | Description                                                                                                                                                                                                                                                                                                      |
@@ -80,10 +80,10 @@ graph TD;
 ```
 
 ## To Generate and Submit Information to the ClearingHouse
-See each scripts help for the details 
+See each script for detailed help 
 * generate_clearinghouse_submissions.py
-* split_submission_json.py - split a curation submission JSON file into batches e.g. of 100 curations 
-* run_submit_clearhouse.sh - script to curation submission JSON files to the clearinghouse
+* split_submission_json.py - split a curation submission JSON file into batches, e.g. of 100 curations 
+* run_submit_clearhouse.sh — script to curation submission JSON files to the clearinghouse
 
 ### Flow: Generating and Submitting Curations
 ```mermaid
@@ -113,7 +113,7 @@ graph TD;
 ```
 
 ## Finding Duplicated Curations that can then be suppressed as above
-Found that I had duplicated many curations. ClearingHouse should not allow one to have done that,  but it had, (reported it, and it has since been fixed).
+Found that I had duplicated many curations. ClearingHouse should not allow one to have done that, but it had, (reported it, and it has since been fixed).
 
 ### Flow: Finding Duplicated Curations
 ```mermaid
@@ -130,7 +130,7 @@ graph TD;
 ``` 
    
 ## General notes about the scripts
-Many of the scripts e.g. get_directory_paths.py are utility scripts.
+Many of the scripts, e.g. get_directory_paths.py are utility scripts.
 
-Are a mix of python and bash scripts.  Would prefer for it to be pure python, but was easier working with bash where environmental values and bearer files were needed etc. Plus hard to replicate what Curl and pipelining of jq was doing.
-if these are to be used more in production, will probably need porting to python.
+Are a mix of python and bash scripts.  Would prefer for it to be a pure python, but it was easier working with bash where environmental values and bearer files were needed etc. Plus hard to replicate what Curl and pipelining of jq was doing.
+If these are to be used more in production, will probably need porting to python.

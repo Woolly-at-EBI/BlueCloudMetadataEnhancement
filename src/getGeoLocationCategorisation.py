@@ -90,7 +90,7 @@ def create_points_geoseries(coordfile, debug):
         __returns__:
                 points_series, points_geodf
     """
-    logger.info()
+    logger.debug("inside create_points_geoseries")
     crs_value = "EPSG:4326"
     if debug:
         nrow = 10000000
@@ -140,7 +140,7 @@ def test_locations(my_shape, points_geodf):
         __returns__:
                 get_locations as df_with_hits
     """
-    logger.info()
+    logger.debug("inside test_locations")
 
     # logger.info(type(points_series))
     # the points are the columns, the shapes are the row names
@@ -165,7 +165,7 @@ def process_line_shapes(shape_line_file, points_geodf):
     :param points_geodf:
     :return:
     """
-    logger.info()
+    logger.debug("inside process_line_shapes")
 
     logger.info(shape_line_file)
     features = geopandas.read_file(shape_line_file)
@@ -223,7 +223,7 @@ def main(passed_args):
         __params__:
                passed_args
     """
-    logger.info()
+    logger.debug("inside main")
 
     debug_status = False
     geo_crc = 'EPSG:4326'

@@ -251,8 +251,8 @@ def main():
       - Merges them on lat/lon
       - Writes a combined TSV to sample_data_dir
     """
-    limite = 100000
-    df_minimal_high_sea = get_minimal_high_seas_df(limit = 0)
+    limit = 100000
+    df_minimal_high_sea = get_minimal_high_seas_df(limit)
     outfile = f"{sample_data_dir}/target_samples_sea_area.tsv"
     logger.info(f"Writing to {outfile} row_total={len(df_minimal_high_sea)}")
     df_minimal_high_sea.to_csv(outfile, sep="\t", index=False)

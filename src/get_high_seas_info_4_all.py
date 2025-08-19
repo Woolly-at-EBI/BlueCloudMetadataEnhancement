@@ -102,13 +102,17 @@ def fetch_ena_accession_lat_lon(limit: int = 0, start_date: str | None = None, e
     :param end_date: optional ISO date (YYYY-MM-DD) for first_public upperbound
     :return: pandas.DataFrame with columns ['accession', 'lon', 'lat']
     """
+
+    #https://www.ebi.ac.uk/ena/portal/api/search?result=sample&format=tsv&fields=%20lat,lon,location,country&query=location=%22*%22
     base = "https://www.ebi.ac.uk/ena/portal/api/search"
     # mandatory and useful parameters
+
+    # "dataPortal=ena"
+    # "&dccDataOnly=false"
+    # "&download=false"
+    # "&includeMetagenomes=true"
+
     params = (
-        "dataPortal=ena"
-        "&dccDataOnly=false"
-        "&download=false"
-        "&includeMetagenomes=true"
         "&result=sample"
         "&fields=accession%2Clat%2Clon"
         "&format=tsv"
@@ -118,9 +122,11 @@ def fetch_ena_accession_lat_lon(limit: int = 0, start_date: str | None = None, e
         query = f"first_public%3E%3D{start_date}%20AND%20first_public%3C%3D{end_date}"
         url = f"{base}?{params}&query={query}"
     else:
-        url = f"{base}?{params}"
+        query = (f"location=%22*%22")
+        url = f"{base}?query={query}&{params}"
 
     logger.info(f"Fetching ENA data (accession, lat, lon) from: {url}")
+
     df = pd.read_csv(url, sep="\t")
 
     # Ensure expected columns exist and filter non-null coords
@@ -251,7 +257,7 @@ def main():
       - Merges them on lat/lon
       - Writes a combined TSV to sample_data_dir
     """
-    limit = 100000
+    limit = 0
     df_minimal_high_sea = get_minimal_high_seas_df(limit)
     outfile = f"{sample_data_dir}/target_samples_sea_area.tsv"
     logger.info(f"Writing to {outfile} row_total={len(df_minimal_high_sea)}")

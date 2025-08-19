@@ -25,12 +25,14 @@ __docformat___ = 'reStructuredText'
 # /opt/homebrew/bin/pydoc3 getGeoLocationCategorisation   #interactive
 # python3 -m pydoc -w getGeoLocationCategorisation.py     #to html file
 
-from icecream import ic
+
 
 import matplotlib.pyplot as plt
 import geopandas as gpd
 from geopandas.geoseries import *
 from shapely.geometry import Point
+import logging
+logger = logging.getLogger(__name__)
 
 import argparse
 import sys
@@ -47,12 +49,12 @@ def read_shape(shapefile, geo_crs):
     __returns__
         my_shape - geopanda object
     """
-    ic(f"in read_shape: {shapefile}")
+    logger.info(f"in read_shape: {shapefile}")
     my_shape = gpd.read_file(shapefile)
-    ic(f"# of polygons in shape {len(my_shape.index)}")  # getting the total number of images
+    logger.info(f"# of polygons in shape {len(my_shape.index)}")  # getting the total number of images
 
     if my_shape.crs is None:
-        ic(f"No CRC in shape file so trying: {geo_crs}")
+        logger.info(f"No CRC in shape file so trying: {geo_crs}")
         my_shape = my_shape.set_crs(geo_crs)
 
     return my_shape
@@ -65,18 +67,18 @@ def geo_lon_lat2points_geodf(df, crs_value):
         :param crs_value:
         :return: points_series, points_geodf
         """
-    ic(f"creating both points GeoSeries and GeoDataFrame with crs_value = {crs_value}")
+    logger.info(f"creating both points GeoSeries and GeoDataFrame with crs_value = {crs_value}")
 
     df["lat"] = df["lat"].astype(float)
     df["lon"] = df["lon"].astype(float)
     points_series = geopandas.GeoSeries.from_xy(x = df.lon, y = df.lat)
     # points_series.drop_duplicates()  is very slow, so did the dropping in the panda data frames.
-    # ic(points_series)
+    # logger.info(points_series)
     df['coords'] = list(zip(df['lon'], df['lat']))
     df['coords'] = df['coords'].apply(Point)
     points_geodf = gpd.GeoDataFrame(df, geometry = 'coords', crs = crs_value)
-    ic(points_geodf.count())
-    ic(points_geodf.sample(n=3))
+    logger.info(points_geodf.count())
+    logger.info(points_geodf.sample(n=3))
     return points_series, points_geodf
 
 def create_points_geoseries(coordfile, debug):
@@ -88,15 +90,15 @@ def create_points_geoseries(coordfile, debug):
         __returns__:
                 points_series, points_geodf
     """
-    ic()
+    logger.info()
     crs_value = "EPSG:4326"
     if debug:
         nrow = 10000000
-        ic(f"debug={debug} nrows of point coordinates limited to {nrow}")
+        logger.info(f"debug={debug} nrows of point coordinates limited to {nrow}")
         df = pd.read_csv(coordfile, sep = '\t', nrows = nrow)
     else:
         df = pd.read_csv(coordfile, sep = '\t')
-        ic(f"count of point coordinates = {df.shape[0]}")
+        logger.info(f"count of point coordinates = {df.shape[0]}")
     # Select just the specific columns and drop the duplicates, dropping duplicates cuts down much searching
     df = df[['lon', 'lat']]
     df = df.drop_duplicates(keep = 'first', ignore_index = True)
@@ -117,7 +119,7 @@ def plotting_hit_points(my_shape, shape_file_name, points_geodf):
 
     """
     title = shape_file_name
-    ic(title)
+    logger.info(title)
     my_shape.plot()
     base = my_shape.boundary.plot(linewidth = 1, edgecolor = "black")
     points_geodf.plot(ax = base, linewidth = 1, color = "blue", markersize = 1, aspect = 1)
@@ -138,21 +140,21 @@ def test_locations(my_shape, points_geodf):
         __returns__:
                 get_locations as df_with_hits
     """
-    ic()
+    logger.info()
 
-    # ic(type(points_series))
+    # logger.info(type(points_series))
     # the points are the columns, the shapes are the row names
-    # ic(points_geodf.crs)
-    # ic(my_shape.crs)
+    # logger.info(points_geodf.crs)
+    # logger.info(my_shape.crs)
 
     if points_geodf.crs != my_shape.crs:
-        ic("CRS mismatch so re-projecting the CRS for the shape from: " + my_shape.crs)
+        logger.info("CRS mismatch so re-projecting the CRS for the shape from: " + my_shape.crs)
         my_shape = my_shape.to_crs(points_geodf.crs)
 
     # The geo dataframe contains one row per query point, whether there are hits or not
     df_with_hits = gpd.tools.sjoin(points_geodf, my_shape, predicate = "within", how = 'left')
 
-    ic(len(df_with_hits.index))
+    logger.info(len(df_with_hits.index))
     return df_with_hits
 
 
@@ -163,16 +165,16 @@ def process_line_shapes(shape_line_file, points_geodf):
     :param points_geodf:
     :return:
     """
-    ic()
+    logger.info()
 
-    ic(shape_line_file)
+    logger.info(shape_line_file)
     features = geopandas.read_file(shape_line_file)
     # get rid of superfluous columns
     columns2drop = [s for s in features.columns if "name_" in s]
     features = features.drop(columns2drop, axis = 1)
     # clean up superfluous columns
     #for col in ['note', 'min_zoom', 'min_label']
-    ic(features.head(2))
+    logger.info(features.head(2))
 
     # egrep -Ei '(river|fresh)' merged_all_categories.tsv | head -1001 | cut -f 1-3 > test_freshwater_points.tsv
     # egrep -Ei '(river|fresh)' merged_all_categories.tsv  | cut -f 1-3 > test_freshwater_points.tsv
@@ -184,20 +186,20 @@ def process_line_shapes(shape_line_file, points_geodf):
     # test_points.set_geometry('geometry')
     # m = test_points_geodf.head(1000)
     # m = test_points_geodf
-    # ic(m.head(2))
+    # logger.info(m.head(2))
 
     if points_geodf.crs != features.crs:
-        ic("Warning: the CRS for points and features don't match, so attempting to reproject")
-        ic(points_geodf.crs)
-        ic(features.crs)
+        logger.info("Warning: the CRS for points and features don't match, so attempting to reproject")
+        logger.info(points_geodf.crs)
+        logger.info(features.crs)
 
     # reprojecting to metric as want distance in metres
     p = points_geodf.to_crs(crs = 3857)
-    ic(f"point total = {points_geodf.shape[0]}")
-    ic(p.sample(n = 3))
+    logger.info(f"point total = {points_geodf.shape[0]}")
+    logger.info(p.sample(n = 3))
     features = features.to_crs(crs = 3857)
     max_distance = 5  # was 100
-    ic(f"FYI: using max_distance from line = {max_distance} metres")
+    logger.info(f"FYI: using max_distance from line = {max_distance} metres")
 
     df_hits = p.sjoin_nearest(features, how = "inner", distance_col = "distance")
     #implementation error with max_distance, annoying as this increases the run time
@@ -209,9 +211,9 @@ def process_line_shapes(shape_line_file, points_geodf):
     # degree_multiplier=111139
     # hits["distance_metres"] = hits["distance"] * degree_multiplier
     # hits["distance_metres"] = hits["distance_metres"].astype(int)
-    ic(f"total hits = {df_hits.shape[0]}")
-    ic(df_hits.head())
-    ic(df_hits.crs.axis_info[0].unit_name)
+    logger.info(f"total hits = {df_hits.shape[0]}")
+    logger.info(df_hits.head())
+    logger.info(df_hits.crs.axis_info[0].unit_name)
 
     return df_hits
 
@@ -221,7 +223,7 @@ def main(passed_args):
         __params__:
                passed_args
     """
-    ic()
+    logger.info()
 
     debug_status = False
     geo_crc = 'EPSG:4326'
@@ -231,7 +233,7 @@ def main(passed_args):
         out_filename = passed_args.outfile
         geo_crc = passed_args.geo_crc
     else:
-        ic("Testing: as no command line options provided")
+        logger.info("Testing: as no command line options provided")
         # coordinates_file = "/Users/woollard/projects/bluecloud/data/tests/test_lat_lon.tsv"
         coordinates_file = "/Users/woollard/projects/bluecloud/data/samples/all_sample_lat_longs_present_uniq.tsv"
         shape_file = "/Users/woollard/projects/bluecloud/data/shapefiles/World_EEZ_v11_20191118/eez_v11.shp"
@@ -240,7 +242,7 @@ def main(passed_args):
         passed_args.typeofcontents = "polygon"
 
     # if os.path.isfile(out_filename):
-    #     ic(f"skipping all processing as {out_filename} exits, uncomment these lines if you want to rerun the hit file")
+    #     logger.info(f"skipping all processing as {out_filename} exits, uncomment these lines if you want to rerun the hit file")
     #     sys.exit()
     my_shape = read_shape(shape_file, geo_crc)
     (points_series, points_geodf) = create_points_geoseries(coordinates_file, debug_status)
@@ -251,7 +253,7 @@ def main(passed_args):
         # line_shape_file = '/Users/woollard/projects/bluecloud/data/shapefiles/natural_earth_vector/10m_physical/ne_10m_rivers_lake_centerlines.shp'
         df_hits_geodf = process_line_shapes(shape_file, points_geodf)
     else:
-        ic("ERROR: Can't currently work with{passed_args.typeofcontents }")
+        logger.info("ERROR: Can't currently work with{passed_args.typeofcontents }")
         sys.exit()
 
     print(f"writing to {out_filename}")
@@ -267,7 +269,7 @@ if __name__ == '__main__':
     typeofcontents - only polygon and line are currently handled. 
     
     """
-    ic()
+    logging.basicConfig(level = logging.DEBUG, format = '%(levelname)s - %(message)s')
     # Read arguments from command line
     prog_des = "Script to get any hits to supplied shapefiles for a set of longitude and latitude coordinates"
     parser = argparse.ArgumentParser(description = prog_des)
@@ -284,7 +286,12 @@ if __name__ == '__main__':
                         default = "point", required = False)
     parser.parse_args()
     args = parser.parse_args()
-    ic(args)
+    logger.info(args)
     if args.verbosity:
-        ic("verbosity turned on")
+        logger.setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.DEBUG)
+        for h in logging.getLogger().handlers:
+            h.setLevel(logging.DEBUG)
+        logger.debug("Debug logging enabled via --verbosity")
+
     main(args)
